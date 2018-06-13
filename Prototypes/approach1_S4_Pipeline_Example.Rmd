@@ -1,0 +1,64 @@
+---
+title: "Analysis journey - Approach 1 - S4 Class + Pipeline operator - Prototype/ Example"
+author: "Naren Srinivasan"
+date: "6/13/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+source("./approach1_S4_Pipeline.R")
+```
+
+# Objective
+
+* To prototype an approach using S4 classes and the pipeline operator to document an journey of analysis into a report
+
+# Description of the approach
+
+* A report is defined as an S4 class which contains the entire sequence of analyses performed on the dataset, along with the results of these analyses
+* The output containing the name of the analysis and the result is stored as a tibble
+* Analysis wrapper functions are defined over the base analysis functions, in order to work consistently with the defined S4 class
+* The results are defined as promises on the input data, to enable lazy evaluation
+
+# Example
+
+## Iniializaing the object
+
+* Data is to be loaded to the R session, and initialized into an object of class "AnalysisReport"
+
+```{r}
+data(iris)
+analysisRecipeObject <- .AnalysisReport(input = iris)
+str(analysisRecipeObject)
+```
+
+
+## Pipelining operations and creating reports
+
+* Different reports with different sequences of analysis can be created using the '%>%' operator
+
+```{r}
+analysisRecipeObject %>% generateSummary(.) -> report1
+str(report1)
+
+analysisRecipeObject %>% plotBivariate(., "Sepal.Length", "Sepal.Width")-> report2
+
+analysisRecipeObject %>% generateSummary(.) %>%
+              plotBivariate(., "Sepal.Length", "Sepal.Width") -> report3
+str(report3)
+```
+
+## Viewing results
+
+```{r}
+report3@output[1,2][[1]][[1]]
+report3@output[2,2][[1]][[1]]
+
+```
+
+# Conclusion and next steps
+
+* This approach provides a consistent way to sequence analysis to create a report
+* The recipe (containing only sequence) vs. results should be decoupled. This can be done by having a separate Recipe class
+* The performance impact of lazy evaluation needs be understood
+* The choice of operator - %>% vs + needs to explored in terms of semantics
