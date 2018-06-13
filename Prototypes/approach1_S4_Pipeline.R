@@ -28,11 +28,30 @@ setMethod(
   definition = function(.Object, input)
   {
     .Object@input  <- input
-    .Object@output   <- tibble(operation = character(), 
-                               result = list())
+    .Object@output   <- tibble(analysis = character(), 
+                               result = list(),
+                               resultClass = list())
     return(.Object)
   }
 )
+
+# Result classes
+
+tableClass <- "table"
+ggplotClass <- "ggplot"
+
+#' @decription This function generates a report based on a 'AnalysisReport' object
+#' @param analysisReportObject An initialized object of the class 'AnalysisReport' with dataset
+#'                             on which analysis is to be performed
+#' @return The report in html
+
+generateReport <- function(analysisReportObject){
+  
+  
+
+}
+
+
 
 ########## Example analysis functions######################################################
 
@@ -44,13 +63,14 @@ setMethod(
 generateSummary <- function(analysisReportObject){
   
   getSummary <- function(dataset){
-    sum <- summary(dataset)
+    sum <- as.tibble(summary(dataset))
     return(sum)
   }
   
   dataset <- analysisReportObject@input
-  analysisReportObject@output %>% add_row(operation = "generateSummary",
-                       result = list(get("getSummary")(dataset))) -> analysisReportObject@output
+  analysisReportObject@output %>% add_row(analysis = "generateSummary",
+                       result = list(get("getSummary")(dataset)),
+                       resultClass = tableClass ) -> analysisReportObject@output
   return(analysisReportObject)
 }
 
@@ -70,7 +90,8 @@ plotBivariate <- function(analysisReportObject, x, y){
   }
   
   dataset <- analysisReportObject@input
-  analysisReportObject@output %>% add_row(operation = "plotBivariate",
-                              result = list(get("getBivariatePlot")(dataset, x, y))) -> analysisReportObject@output
+  analysisReportObject@output %>% add_row(analysis = "plotBivariate",
+                              result = list(get("getBivariatePlot")(dataset, x, y)),
+                              resultClass = ggplotClass) -> analysisReportObject@output
   return(analysisReportObject)
 }
