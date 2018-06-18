@@ -11,6 +11,8 @@
 # Packages
 #install.packages("tidyverse")
 library(tidyverse)
+library(future)
+library(promises)
 
 #' @decription This class forms the prototype of any report,
 #'              storing all operations performed on input data and the corresponding putput
@@ -18,23 +20,71 @@ library(tidyverse)
 #' @slot output A tibble which holds the name of the operations and the corresponding result
 
 .AnalysisReport <- setClass("AnalysisReport", 
-                            slots = c(input = "data.frame",
+                            slots = c( env = "environment",
+                                       #input = "data.frame",
                                        output = "tbl")
                             )
 # The constructor for the "AnalysisReport" class
 setMethod(
   f = "initialize",
   signature = "AnalysisReport",
-  definition = function(.Object, input)
+  definition = function(.Object, dataset)
   {
-    .Object@input  <- input
+    .Object@env$dataset  <- dataset
     .Object@output   <- tibble(analysis = character(), 
+                               promise = list(),
                                result = list(),
-                               resultClass = list())
+                               resultClass = character())
     return(.Object)
   }
 )
 
+setGeneric(name = "getSum", function(object){
+  standardGeneric("getSum")
+})
+
+setMethod("getSum",
+          signature = "AnalysisReport",
+          function(object){
+  
+            getSummary <- function(dataset){
+              sum <- as.tibble(summary(dataset))
+              return(sum)
+            }
+            
+          #dataset <- analysisReportObject@input
+          object@output %>% add_row(analysis = "generateSummary",
+                                          promise = list(future(get("getSummary")(object@input), 
+                                                                lazy = T)),
+                                          result = list("unfulfilled"),
+                                          resultClass = tableClass ) -> object@output
+          return(object)
+          })
+####### Reconstruct promises ###################################
+
+# Either need to reconstruct promises (OR)
+# Define the methods as method in the class -> so wrapper methods should be auto generated
+
+
+#### Collect outputs #############################################
+#' @decription This function generates outputs based on promises
+#' @param analysisReportObject An initialized object of the class 'AnalysisReport' with dataset
+#'                             on results are to be collected
+#' @return The outputs as a list
+collectOutput <- function(analysisReportObject)
+  {
+    res <- list()
+    evaluatePromise <- function(x){
+      x %>% then(.)
+      return(list(x))
+    }
+   analysisReportObject@output %>% rowwise() %>% mutate(promise = evaluatePromise(promise)) -> analysisReportObject@output
+   res <- lapply(analysisReportObject@output$promise, function(x) return(x$result$value))
+   names(res) <- analysisReportObject@output$analysis
+  return(res)
+}
+
+################# Report generation #######################################################
 # Result classes
 
 tableClass <- "table"
@@ -51,6 +101,16 @@ generateReport <- function(analysisReportObject){
 
 }
 
+######### Annotation function ############################################################
+
+#' @decription This function is to add annotations to a specific part of the report
+#' @param analysisReportObject An initialized object of the class 'AnalysisReport' with dataset
+#'                             on which analysis is to be performed
+#' @return The input object updated with annotations added
+
+annotateOutput <- function(analysisReportObject){
+  
+}
 
 
 ########## Example analysis functions######################################################
@@ -67,10 +127,12 @@ generateSummary <- function(analysisReportObject){
     return(sum)
   }
   
-  dataset <- analysisReportObject@input
+  #dataset <- analysisReportObject@input
   analysisReportObject@output %>% add_row(analysis = "generateSummary",
-                       result = list(get("getSummary")(dataset)),
-                       resultClass = tableClass ) -> analysisReportObject@output
+                                           promise = list(future(get("getSummary")(analysisReportObject@input), 
+                                                                 lazy = T)),
+                                           result = list("unfulfilled"),
+                                           resultClass = tableClass ) -> analysisReportObject@output
   return(analysisReportObject)
 }
 
@@ -89,9 +151,11 @@ plotBivariate <- function(analysisReportObject, x, y){
     return(p)
   }
   
-  dataset <- analysisReportObject@input
+  #dataset <- analysisReportObject@input
   analysisReportObject@output %>% add_row(analysis = "plotBivariate",
-                              result = list(get("getBivariatePlot")(dataset, x, y)),
-                              resultClass = ggplotClass) -> analysisReportObject@output
+                                          promise = list(future(get("getBivariatePlot")(analysisReportObject@input, x, y),
+                                                                lazy = T)),
+                                          result = list("unfulfilled"),
+                                          resultClass = ggplotClass) -> analysisReportObject@output
   return(analysisReportObject)
 }

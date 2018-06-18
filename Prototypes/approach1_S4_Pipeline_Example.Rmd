@@ -36,6 +36,7 @@ str(analysisRecipeObject)
 ## Pipelining operations and creating reports
 
 * Different reports with different sequences of analysis can be created using the '%>%' operator
+* The "collectOutput" function is used to display the results
 
 ```{r}
 analysisRecipeObject %>% generateSummary(.) -> report1
@@ -51,10 +52,38 @@ str(report3)
 ## Viewing results
 
 ```{r}
-report3@output[1,2][[1]][[1]]
-report3@output[2,2][[1]][[1]]
+report1 %>% collectOutput(.)
+report2 %>% collectOutput(.)
+report3 %>% collectOutput(.)
 
 ```
+
+# An illustration of lazy load
+
+```{r}
+analysisRecipeObjectNew <- .AnalysisReport(input = iris)
+str(analysisRecipeObjectNew)
+
+analysisRecipeObjectNew %>% generateSummary(.) %>%
+              plotBivariate(., "Sepal.Length", "Sepal.Width") -> analysisRecipeObjectNew
+
+analysisRecipeObjectNew %>% collectOutput(.) -> oldIrisReport
+
+oldIrisReport
+
+iris %>% mutate(., Sepal.Length = Sepal.Width^5) -> newIris
+newIris <- rbind(newIris, newIris, newIris, newIris, newIris)
+
+analysisRecipeObjectNew@input <- newIris
+str(analysisRecipeObjectNew)
+analysisRecipeObjectNew %>% collectOutput(.) -> newIrisReport
+
+newIrisReport
+
+
+
+```
+
 
 # Conclusion and next steps
 
