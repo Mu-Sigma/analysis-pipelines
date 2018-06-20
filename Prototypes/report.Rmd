@@ -1,0 +1,41 @@
+---
+title: "Report"
+
+output: 
+  html_document:
+    toc: false
+    toc_float: false
+    css : styles.css
+   
+params:
+  input: !r data.frame()
+  output: !r tibble(
+      operation = character(),
+      functionName = character(),
+      parameters = list()
+    )
+
+
+runtime : shiny
+---
+
+## Bivariate Plots     
+
+```{r, echo =FALSE,warnings=FALSE}
+input <- params$input
+output <- params$output
+
+source('Poc.R')
+
+lapply(1:nrow(output),function(rowNo){
+  parameters <- output[3][[1]][[rowNo]]
+  parameters <- append(list(input), parameters)
+  do.call(output[2][[1]][[rowNo]], parameters)
+})
+
+
+
+
+
+```
+

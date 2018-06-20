@@ -27,7 +27,8 @@ setMethod(
     .Object@input <- input
     .Object@output <- tibble(
       operation = character(),
-      functionName = character()
+      functionName = character(),
+      parameters = list()
     )
     .Object@wrapper <- character()
     return(.Object)
@@ -41,7 +42,8 @@ setGeneric(
   name = "updateObject",
   def = function(object,
                  operation,
-                 val)
+                 funName,
+                 parameters)
   {
     standardGeneric("updateObject")
   }
@@ -50,10 +52,11 @@ setGeneric(
 setMethod(
   f = "updateObject",
   signature = "eda",
-  definition = function(object, operation, val)
+  definition = function(object, operation, funName, parameters)
   {
     object@output %>>% add_row(operation = operation,
-                               functionName = list(val)) -> object@output
+                               functionName = list(funName),
+                               parameters = list(parameters)) -> object@output
     return(object)
   }
 )
@@ -74,10 +77,32 @@ setMethod(
   signature = "eda",
   definition = function(object, functionName, parametersList)
   {
-    wrapperGenericText <- paste0("setGeneric(name = \"",functionName,"\",def = function(object, parametersList=c(\"\")){standardGeneric(\"",functionName,"\")})")
-    wrapperMethodText <- paste0("setMethod(f = \"",functionName,"\",signature = \"eda\",definition = function(object, parametersList=c(\"\")){object@wrapper <- ssas})")
-    eval(parse(text=wrapperGenericText))
-    eval(parse(text=wrapperMethodText))
+    
+    parametersListNames <- paste0(parametersList,collapse = ",")
+    
+    registerFunText <- paste0("setGeneric(
+      name = \"gen_",functionName,"\",
+      def = function(object, ",parametersListNames,")
+      {
+        standardGeneric(\"gen_",functionName,"\")
+      }
+    )
+    
+    setMethod(
+      f = \"gen_",functionName,"\",
+      signature = \"eda\",
+      definition = function(object, ",parametersListNames,")
+      {
+        parametersList <- unlist(strsplit(parametersListNames,\",\"))
+        parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
+        
+        return(updateObject(object, \"",functionName,"\", paste0(\"",functionName,"\"), parametersPassed))
+      }
+    )")
+    
+    eval(parse(text = registerFunText))
+    object@wrapper <- c(object@wrapper,registerFunText)
+    return(object)
   }
 )
 
@@ -105,7 +130,7 @@ setMethod(
   signature = "eda",
   definition = function(object, colName)
   {
-    return(updateObject(object, "ignoreCol", ignoreColumns))
+    return(updateObject(object, "ignoreCol", "ignoreColumns",list(object@input,colName)))
   }
 )
 
@@ -113,55 +138,7 @@ setMethod(
 
 
 
-##### Univariate Categorical Plot
 
-setGeneric(
-  name = "uniCatPlots",
-  def = function(object, uniCol, priColor = "blue")
-  {
-    standardGeneric("uniCatPlots")
-  }
-)
-
-setMethod(
-  f = "uniCatPlots",
-  signature = "data.frame",
-  definition = function(object, uniCol, priColor = "blue")
-  {
-    data <- object
-    levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
-    data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
-    data <-
-      data %>>% dplyr::group_by_(.dots = c(uniCol)) %>>% dplyr::summarise(count = n())
-    y = data[[uniCol]]
-    catPlot <-
-      plotly::plot_ly(
-        y = y,
-        x = data[["count"]],
-        type = "bar",
-        orientation = 'h',
-        color = I(priColor)
-      ) %>>%
-      plotly::layout(
-        title = paste0("Frequency Histogram for ", uniCol),
-        xaxis = list(title = "Frequency"),
-        yaxis = list(title = uniCol)
-      )
-    
-    return(catPlot)
-    
-  }
-)
-
-setMethod(
-  f = "uniCatPlots",
-  signature = "eda",
-  definition = function(object, uniCol, priColor = "blue")
-  {
-    return(updateObject(object, "uniCatPlots", uniCatPlots))
-    
-  }
-)
 
 
 ###### Bivariate Plot
@@ -206,7 +183,58 @@ setMethod(
                         priColor = "blue",
                         secColor = "black")
   {
-    return(updateObject(object, "bivarPlots", bivarPlots))
+    return(updateObject(object, "bivarPlots", "bivarPlots", list(var1,var2,priColor,secColor)))
     
   }
 )
+
+###### Generate Report
+
+setGeneric(
+  name = "genReport",
+  def = function(object)
+  {
+    standardGeneric("genReport")
+  }
+)
+
+setMethod(
+  f = "genReport",
+  signature = "eda",
+  definition = function(object)
+  {
+    require(rmarkdown)
+    fileName <- "ss"
+    rmarkdown::render(
+      'report.Rmd',
+      params = list(
+        input = object@input,
+        output = object@output
+        
+      ),
+       html_document(
+          css = "styles.css" ,
+          toc = T,
+          toc_float = T
+        ),
+        
+      output_dir = "." ,
+      output_file = paste(fileName,'.html', sep = '')
+    )
+    
+  }
+)
+
+
+viewOutput <- function(edaObject,rowNo){
+  parameters <- edaObject@output[3][[1]][[rowNo]]
+  parameters <- append(list(edaObject@input),parameters)
+  do.call(edaObject@output[2][[1]][[rowNo]],parameters)
+}
+
+
+
+
+
+
+
