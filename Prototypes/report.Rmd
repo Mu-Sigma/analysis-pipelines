@@ -1,11 +1,11 @@
 ---
-title: "Report"
+title: "Exploratory Data Analysis"
+subtitle: (`r format(Sys.Date(), "%B %d, %Y")`)
+author: 
+- name: Neeraj, Anshul, Ashwin, Monika
 
 output: 
-  html_document:
-    toc: false
-    toc_float: false
-    css : styles.css
+  html_document
    
 params:
   input: !r data.frame()
@@ -15,27 +15,74 @@ params:
       parameters = list()
     )
 
-
-runtime : shiny
 ---
 
-## Bivariate Plots     
-
-```{r, echo =FALSE,warnings=FALSE}
+## Quick Peek
+```{r quick peek,echo=FALSE,warning=FALSE,results='asis'}
+source('Poc.R')
 input <- params$input
 output <- params$output
 
-source('Poc.R')
+DT::datatable(head(input))
+```
 
-lapply(1:nrow(output),function(rowNo){
-  parameters <- output[3][[1]][[rowNo]]
-  parameters <- append(list(input), parameters)
-  do.call(output[2][[1]][[rowNo]], parameters)
-})
+
+     
 
 
 
+```{r, echo =FALSE,warnings=FALSE,results='asis'}
+
+rowNo <- 1
+outputDiagram <- ""
+
+while(1) {
+    if(output[['operation']][rowNo] != output[['operation']][rowNo+1]){
+        knit_expanded <- paste0(
+            "\n```{r chunk",rowNo,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
+            \n\n
+            cat('## ",output[['heading']][rowNo]," \n')
+            \n\n
+            do.call(output[['functionName']][",rowNo,"], append(list(input), output['parameters'][[1]][[",rowNo,"]]))
+            \n```
+            \n\n"
+        )
+        outputDiagram <- paste0(outputDiagram, knit_expanded)
+        rowNo <- rowNo + 1
+
+    }
+    else
+    {
+      outputDiagram <- paste0(outputDiagram, "\n`r {\"## ",output[['heading']][rowNo]," {.tabset}\"}`\n\n")
+      tabNo=1
+      while (1){
+        knit_expanded <- paste0(
+            "\n```{r chunk",rowNo,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
+            \n\n
+            cat('### ",tabNo," \n')
+            \n\n
+            do.call(output[['functionName']][",rowNo,"], append(list(input), output['parameters'][[1]][[",rowNo,"]]))
+            \n```
+            \n\n"
+        )
+        outputDiagram <- paste0(outputDiagram, knit_expanded)
+        rowNo <- rowNo + 1
+        tabNo <- tabNo + 1
+        if(output[['operation']][rowNo] != output[['operation']][rowNo-1])
+          break
+      }
+    }
+    if(rowNo >= nrow(output))
+      break    
+
+}
 
 
 ```
+
+
+
+
+
+`r paste(knitr::knit(text = outputDiagram), collapse = '\n')`
 

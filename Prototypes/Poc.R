@@ -7,6 +7,7 @@
 
 library(tibble)
 library(pipeR)
+library(magrittr)
 
 ##### Create Object
 
@@ -27,10 +28,12 @@ setMethod(
     .Object@input <- input
     .Object@output <- tibble(
       operation = character(),
+      heading = character(),
       functionName = character(),
       parameters = list()
     )
     .Object@wrapper <- character()
+    
     return(.Object)
   }
 )
@@ -42,6 +45,7 @@ setGeneric(
   name = "updateObject",
   def = function(object,
                  operation,
+                 heading,
                  funName,
                  parameters)
   {
@@ -52,10 +56,11 @@ setGeneric(
 setMethod(
   f = "updateObject",
   signature = "eda",
-  definition = function(object, operation, funName, parameters)
+  definition = function(object, operation, heading="", funName, parameters)
   {
     object@output %>>% add_row(operation = operation,
-                               functionName = list(funName),
+                               heading = heading,
+                               functionName = funName,
                                parameters = list(parameters)) -> object@output
     return(object)
   }
@@ -106,6 +111,29 @@ setMethod(
   }
 )
 
+
+
+
+##### Quick Peek
+
+setGeneric(
+  name = "quickPeek",
+  def = function(object)
+  {
+    standardGeneric("quickPeek")
+  }
+)
+
+setMethod(
+  f = "quickPeek",
+  signature = "eda",
+  definition = function(object)
+  {
+    return(updateObject(object, "quickPeek", "Quick Peek", "ignoreColumns",list("colName")))
+  }
+)
+
+
 ##### Ignore Columns
 
 setGeneric(
@@ -124,13 +152,13 @@ setMethod(
     return(object %>>% dplyr::select(-dplyr::one_of(colName)))
   }
 )
-
+ 
 setMethod(
   f = "ignoreColumns",
   signature = "eda",
   definition = function(object, colName)
   {
-    return(updateObject(object, "ignoreCol", "ignoreColumns",list(object@input,colName)))
+    return(updateObject(object, "ignoreCol", "", "ignoreColumns",list(colName)))
   }
 )
 
@@ -183,7 +211,55 @@ setMethod(
                         priColor = "blue",
                         secColor = "black")
   {
-    return(updateObject(object, "bivarPlots", "bivarPlots", list(var1,var2,priColor,secColor)))
+    return(updateObject(object, "bivarPlots", "Bivariate Plots", "bivarPlots", list(var1,var2,priColor,secColor)))
+    
+  }
+)
+
+
+###### Univariate Distribution Categorical
+
+setGeneric(
+  name = "uniCatPlot",
+  def = function(object,
+                 uniCol,
+                 priColor = "blue")
+  {
+    standardGeneric("uniCatPlot")
+  }
+)
+
+setMethod(
+  f = "uniCatPlot",
+  signature = "data.frame",
+  definition = function(object,
+                        uniCol,
+                        priColor = "blue")
+  {
+    dataset <- object
+    levels(dataset[[uniCol]]) <- c(levels(dataset[[uniCol]]), "NA")
+    dataset[[uniCol]][is.na(dataset[[uniCol]])] <- "NA"
+    dataset <- dataset %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = n())
+    y <- dataset[[uniCol]]
+    catPlot <- plotly::plot_ly(y = y, x=dataset[["count"]],type="bar",orientation='h',color = I(priColor)) %>%
+      plotly::layout(title=paste0("Frequency Histogram for ",uniCol),
+                     xaxis=list(title = "Frequency"),
+                     yaxis=list(title = uniCol))
+      
+      
+    return(catPlot)
+
+  }
+)
+
+setMethod(
+  f = "uniCatPlot",
+  signature = "eda",
+  definition = function(object,
+                        uniCol,
+                        priColor = "blue")
+  {
+    return(updateObject(object, "uniCatPlot", "Univariate Distribution Categorical", "uniCatPlot", list(uniCol,priColor)))
     
   }
 )
@@ -204,6 +280,7 @@ setMethod(
   definition = function(object)
   {
     require(rmarkdown)
+    object <- quickPeek(object)
     fileName <- "ss"
     rmarkdown::render(
       'report.Rmd',
@@ -227,9 +304,9 @@ setMethod(
 
 
 viewOutput <- function(edaObject,rowNo){
-  parameters <- edaObject@output[3][[1]][[rowNo]]
+  parameters <- edaObject@output['parameters'][[1]][[rowNo]]
   parameters <- append(list(edaObject@input),parameters)
-  do.call(edaObject@output[2][[1]][[rowNo]],parameters)
+  do.call(edaObject@output['functionName'][[rowNo]],parameters)                     
 }
 
 
