@@ -8,12 +8,14 @@
 library(tibble)
 library(pipeR)
 library(magrittr)
+library(data.table)
 
 ##### Create Object
 
-eda <- setClass("eda",
+read_input <- setClass("brickObject",
                 slots = c(
                   input = "data.frame",
+                  filePath = "character",
                   output = "tbl",
                   wrapper = "character"
                 ))
@@ -22,15 +24,21 @@ eda <- setClass("eda",
 #### Constructor
 setMethod(
   f = "initialize",
-  signature = "eda",
-  definition = function(.Object, input)
+  signature = "brickObject",
+  definition = function(.Object, input = data.frame(), filePath = "")
   {
-    .Object@input <- input
+    if(filePath == ""){
+      .Object@input <- input
+    }
+    else{
+      .Object@input <- read.csv(filePath)
+    }
     .Object@output <- tibble(
       operation = character(),
       heading = character(),
       functionName = character(),
-      parameters = list()
+      parameters = list(),
+      outAsIn = character()
     )
     .Object@wrapper <- character()
     
@@ -45,9 +53,10 @@ setGeneric(
   name = "updateObject",
   def = function(object,
                  operation,
-                 heading,
+                 heading = "",
                  funName,
-                 parameters)
+                 parameters,
+                 outAsIn = F)
   {
     standardGeneric("updateObject")
   }
@@ -55,13 +64,14 @@ setGeneric(
 
 setMethod(
   f = "updateObject",
-  signature = "eda",
-  definition = function(object, operation, heading="", funName, parameters)
+  signature = "brickObject",
+  definition = function(object, operation, heading="", funName, parameters, outAsIn = F)
   {
     object@output %>>% add_row(operation = operation,
                                heading = heading,
                                functionName = funName,
-                               parameters = list(parameters)) -> object@output
+                               parameters = list(parameters),
+                               outAsIn = outAsIn) -> object@output
     return(object)
   }
 )
@@ -71,7 +81,7 @@ setMethod(
 
 setGeneric(
   name = "registerFunction",
-  def = function(object, functionName, parametersList)
+  def = function(object, functionName,  heading ="", outAsIn=F)
   {
     standardGeneric("registerFunction")
   }
@@ -79,29 +89,32 @@ setGeneric(
 
 setMethod(
   f = "registerFunction",
-  signature = "eda",
-  definition = function(object, functionName, parametersList)
+  signature = "brickObject",
+  definition = function(object, functionName,  heading ="", outAsIn=F)
   {
-    
-    parametersListNames <- paste0(parametersList,collapse = ",")
+    parametersName <- names(as.list(args(functionName)))
+    parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
+    parametersList <- capture.output(args(functionName))[1]
+    secondArg <- substring(capture.output(as.list(args(functionName)))[4],2)
+    parametersListNames <- paste0(secondArg,strsplit(parametersList,secondArg)[[1]][2])
     
     registerFunText <- paste0("setGeneric(
-      name = \"gen_",functionName,"\",
-      def = function(object, ",parametersListNames,")
+      name = \"udf_",functionName,"\",
+      def = function(object, ",parametersListNames,"
       {
-        standardGeneric(\"gen_",functionName,"\")
+        standardGeneric(\"udf_",functionName,"\")
       }
     )
     
     setMethod(
-      f = \"gen_",functionName,"\",
-      signature = \"eda\",
-      definition = function(object, ",parametersListNames,")
+      f = \"udf_",functionName,"\",
+      signature = \"brickObject\",
+      definition = function(object, ",parametersListNames,"
       {
-        parametersList <- unlist(strsplit(parametersListNames,\",\"))
+        parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
         parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
         
-        return(updateObject(object, \"",functionName,"\", paste0(\"",functionName,"\"), parametersPassed))
+        return(updateObject(object, \"",functionName,"\", \"",heading,"\", paste0(\"",functionName,"\"), parametersPassed ,",outAsIn,"))
       }
     )")
     
@@ -126,10 +139,10 @@ setGeneric(
 
 setMethod(
   f = "quickPeek",
-  signature = "eda",
+  signature = "brickObject",
   definition = function(object)
   {
-    return(updateObject(object, "quickPeek", "Quick Peek", "ignoreColumns",list("colName")))
+    return(updateObject(object, "quickPeek", "Quick Peek", "ignoreColumns",list("colName"),F))
   }
 )
 
@@ -155,10 +168,10 @@ setMethod(
  
 setMethod(
   f = "ignoreColumns",
-  signature = "eda",
+  signature = "brickObject",
   definition = function(object, colName)
   {
-    return(updateObject(object, "ignoreCol", "", "ignoreColumns",list(colName)))
+    return(updateObject(object, "ignoreCol", "", "ignoreColumns",list(colName),T))
   }
 )
 
@@ -204,65 +217,20 @@ setMethod(
 
 setMethod(
   f = "bivarPlots",
-  signature = "eda",
+  signature = "brickObject",
   definition = function(object,
                         var1,
                         var2,
                         priColor = "blue",
                         secColor = "black")
   {
-    return(updateObject(object, "bivarPlots", "Bivariate Plots", "bivarPlots", list(var1,var2,priColor,secColor)))
+    return(updateObject(object, "bivarPlots", "Bivariate Plots", "bivarPlots", list(var1,var2,priColor,secColor),F))
     
   }
 )
 
 
-###### Univariate Distribution Categorical
 
-setGeneric(
-  name = "uniCatPlot",
-  def = function(object,
-                 uniCol,
-                 priColor = "blue")
-  {
-    standardGeneric("uniCatPlot")
-  }
-)
-
-setMethod(
-  f = "uniCatPlot",
-  signature = "data.frame",
-  definition = function(object,
-                        uniCol,
-                        priColor = "blue")
-  {
-    dataset <- object
-    levels(dataset[[uniCol]]) <- c(levels(dataset[[uniCol]]), "NA")
-    dataset[[uniCol]][is.na(dataset[[uniCol]])] <- "NA"
-    dataset <- dataset %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = n())
-    y <- dataset[[uniCol]]
-    catPlot <- plotly::plot_ly(y = y, x=dataset[["count"]],type="bar",orientation='h',color = I(priColor)) %>%
-      plotly::layout(title=paste0("Frequency Histogram for ",uniCol),
-                     xaxis=list(title = "Frequency"),
-                     yaxis=list(title = uniCol))
-      
-      
-    return(catPlot)
-
-  }
-)
-
-setMethod(
-  f = "uniCatPlot",
-  signature = "eda",
-  definition = function(object,
-                        uniCol,
-                        priColor = "blue")
-  {
-    return(updateObject(object, "uniCatPlot", "Univariate Distribution Categorical", "uniCatPlot", list(uniCol,priColor)))
-    
-  }
-)
 
 ###### Generate Report
 
@@ -276,7 +244,7 @@ setGeneric(
 
 setMethod(
   f = "genReport",
-  signature = "eda",
+  signature = "brickObject",
   definition = function(object)
   {
     require(rmarkdown)
@@ -306,7 +274,7 @@ setMethod(
 viewOutput <- function(edaObject,rowNo){
   parameters <- edaObject@output['parameters'][[1]][[rowNo]]
   parameters <- append(list(edaObject@input),parameters)
-  do.call(edaObject@output['functionName'][[rowNo]],parameters)                     
+  do.call(edaObject@output['functionName'][[1]][rowNo],parameters)                     
 }
 
 

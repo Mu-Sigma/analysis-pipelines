@@ -37,6 +37,7 @@ rowNo <- 1
 outputDiagram <- ""
 
 while(1) {
+  if(output[['outAsIn']][rowNo] ==F){
     if(output[['operation']][rowNo] != output[['operation']][rowNo+1]){
         knit_expanded <- paste0(
             "\n```{r chunk",rowNo,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
@@ -72,6 +73,11 @@ while(1) {
           break
       }
     }
+  }
+  else{
+    input = do.call(output[['functionName']][rowNo], append(list(input), output['parameters'][[1]][[rowNo]]))
+    rowNo <- rowNo + 1
+  }
     if(rowNo >= nrow(output))
       break    
 
