@@ -9,18 +9,20 @@ output:
    
 params:
   input: !r data.frame()
-  output: !r tibble(
+  recipe: !r tibble(
       operation = character(),
       functionName = character(),
       parameters = list()
     )
+  output: !r list()
 
 ---
 
 ## Quick Peek
 ```{r quick peek,echo=FALSE,warning=FALSE,results='asis'}
 source('Poc.R')
-input <- params$input
+input <<- params$input
+recipe <- params$recipe
 output <- params$output
 
 DT::datatable(head(input))
@@ -36,15 +38,17 @@ DT::datatable(head(input))
 rowNo <- 1
 outputDiagram <- ""
 
+
+
 while(1) {
-  if(output[['outAsIn']][rowNo] ==F){
-    if(output[['operation']][rowNo] != output[['operation']][rowNo+1]){
+
+    if(recipe[['operation']][[rowNo]] != recipe[['operation']][[rowNo+1]]){
         knit_expanded <- paste0(
             "\n```{r chunk",rowNo,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
             \n\n
-            cat('## ",output[['heading']][rowNo]," \n')
+            cat('## ",recipe[['heading']][[rowNo]]," \n')
             \n\n
-            do.call(output[['functionName']][",rowNo,"], append(list(input), output['parameters'][[1]][[",rowNo,"]]))
+            output[[",rowNo,"]]
             \n```
             \n\n"
         )
@@ -54,7 +58,7 @@ while(1) {
     }
     else
     {
-      outputDiagram <- paste0(outputDiagram, "\n`r {\"## ",output[['heading']][rowNo]," {.tabset}\"}`\n\n")
+      outputDiagram <- paste0(outputDiagram, "\n`r {\"## ",recipe[['heading']][rowNo]," {.tabset}\"}`\n\n")
       tabNo=1
       while (1){
         knit_expanded <- paste0(
@@ -62,31 +66,25 @@ while(1) {
             \n\n
             cat('### ",tabNo," \n')
             \n\n
-            do.call(output[['functionName']][",rowNo,"], append(list(input), output['parameters'][[1]][[",rowNo,"]]))
+            output[[",rowNo,"]]
             \n```
             \n\n"
         )
         outputDiagram <- paste0(outputDiagram, knit_expanded)
         rowNo <- rowNo + 1
         tabNo <- tabNo + 1
-        if(output[['operation']][rowNo] != output[['operation']][rowNo-1])
+        if(recipe[['operation']][rowNo] != recipe[['operation']][rowNo-1])
           break
       }
     }
-  }
-  else{
-    input = do.call(output[['functionName']][rowNo], append(list(input), output['parameters'][[1]][[rowNo]]))
-    rowNo <- rowNo + 1
-  }
-    if(rowNo >= nrow(output))
+  
+    if(rowNo > length(output))
       break    
 
 }
 
 
 ```
-
-
 
 
 
