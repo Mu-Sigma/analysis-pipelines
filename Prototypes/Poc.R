@@ -40,11 +40,14 @@ setMethod(
       heading = character(),
       parameters = list(),
       outAsIn = logical()
+<<<<<<< HEAD
     )
     .Object@registry <- tibble(
       functionName = character(),
       heading = character(),
       outAsIn = logical()
+=======
+>>>>>>> 725c6190f2a9259597abaadfa2457a0ee4b72bcf
     )
     .Object@output <- list()
     brickFunctions <- readRDS('predefFunctions.RDS')
@@ -234,7 +237,23 @@ setMethod(
   }
 )
 
+saveRecipe <- function(object,RDSPath){
+  object@output <- list()  
+  saveRDS(object,RDSPath)
+}
 
+
+loadRecipie <- function(RDSPath,input=data.frame(),filePath=""){
+  object <- readRDS(RDSPath)
+  if(filePath == ""){
+    object@input <- input
+  }
+  else{
+    object@input <- read.csv(filePath)
+  }
+ return(object)
+  
+}
 
 
 
