@@ -39,7 +39,7 @@ setMethod(
       operation = character(),
       heading = character(),
       parameters = list(),
-      outAsIn = character()
+      outAsIn = logical()
     )
     .Object@registry <- readRDS('predefFunctions.RDS')
     .Object@output <- list()
@@ -269,7 +269,23 @@ setMethod(
   }
 )
 
+saveRecipe <- function(object,RDSPath){
+  object@output <- list()  
+  saveRDS(object,RDSPath)
+}
 
+
+loadRecipie <- function(RDSPath,input=data.frame(),filePath=""){
+  object <- readRDS(RDSPath)
+  if(filePath == ""){
+    object@input <- input
+  }
+  else{
+    object@input <- read.csv(filePath)
+  }
+ return(object)
+  
+}
 
 
 

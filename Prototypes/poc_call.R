@@ -2,22 +2,24 @@ source('Poc.R')
 
 library(magrittr)
 
-uniCatPlot = function(object = data.frame(),
-                      uniCol = 1,
-                      priColor = "blue")
+bivarPlots = function(object,
+                      select_var_name_1,
+                      select_var_name_2,
+                      priColor = "blue",secColor='black')
 {
-  dataset <- object
-  levels(dataset[[uniCol]]) <- c(levels(dataset[[uniCol]]), "NA")
-  dataset[[uniCol]][is.na(dataset[[uniCol]])] <- "NA"
-  dataset <- dataset %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = n())
-  y <- dataset[[uniCol]]
-  catPlot <- plotly::plot_ly(y = y, x=dataset[["count"]],type="bar",orientation='h',color = I(priColor)) %>%
-    plotly::layout(title=paste0("Frequency Histogram for ",uniCol),
-                   xaxis=list(title = "Frequency"),
-                   yaxis=list(title = uniCol))
+  x=object[, select_var_name_1]
+  y=object[, select_var_name_2]
+  bivarPlot <- ggplot2::ggplot(object, ggplot2::aes(x,y))+
+    ggplot2::geom_point(color=priColor,alpha=0.7) +
+    ggplot2::geom_smooth(method = lm,color=secColor)+
+    ggplot2::xlab(select_var_name_1) +
+    ggplot2::ylab(select_var_name_2) + ggplot2::theme_bw() +
+    ggplot2::ggtitle(paste('Bivariate plot for',select_var_name_1,'and',select_var_name_2,sep=' '))+
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 10),axis.text = ggplot2::element_text(size=10),
+                   axis.title=ggplot2::element_text(size=10))
   
   
-  return(catPlot)
+  return(bivarPlot)
   
 }
 
@@ -26,9 +28,9 @@ uniCatPlot = function(object = data.frame(),
 # Bivar Plot
 
 
+obj <- read_input(filePath = 'hotel_new.csv')  %>>% registerFunction('bivarPlots',"Bivariate Plots")
 
-
-obj <- read_input(filePath = 'hotel_new.csv') %>>% eda_outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 1) %>>% eda_univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1)  
+obj <- obj %>>% eda_outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 1) %>>% eda_univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1) %>>% udf_bivarPlots('Occupancy','max_rooms_capacity',priColor = "blue","black") %>>% udf_bivarPlots('Occupancy','max_rooms_capacity',priColor = "blue","black") 
 
 obj1 <- obj %>>% generateOutput()
 
