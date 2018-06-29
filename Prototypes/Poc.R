@@ -39,11 +39,18 @@ setMethod(
       operation = character(),
       heading = character(),
       parameters = list(),
-      outAsIn = character()
+      outAsIn = logical()
     )
-    .Object@registry <- readRDS('predefFunctions.RDS')
+    .Object@registry <- tibble(
+      functionName = character(),
+      heading = character(),
+      outAsIn = logical()
+    )
     .Object@output <- list()
-    .Object = createFunctions(.Object)
+    brickFunctions <- readRDS('predefFunctions.RDS')
+    for(rowNo in 1:nrow(brickFunctions)){
+      .Object %>>% registerFunction(brickFunctions[['functionName']][[rowNo]],brickFunctions[['heading']][[rowNo]],brickFunctions[['outAsIn']][[rowNo]]) -> .Object
+    }
     return(.Object)
   }
 )
@@ -79,55 +86,6 @@ setMethod(
 
 
 
-##### Create Function
-
-setGeneric(
-  name = "createFunctions",
-  def = function(object)
-  {
-    standardGeneric("createFunctions")
-  }
-)
-
-setMethod(
-  f = "createFunctions",
-  signature = "brickObject",
-  definition = function(object)
-  {
-    for(rowNo in 1:nrow(object@registry)){
-        functionName = object@registry[["functionName"]][[rowNo]]
-        heading = object@registry[["heading"]][[rowNo]]
-        outAsIn = object@registry[["outAsIn"]][[rowNo]]
-        parametersName <- names(as.list(args(functionName)))
-        parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
-
-        
-        registerFunText <- paste0("setGeneric(
-          name = \"eda_",functionName,"\",
-          def = function(object, ",parametersName,")
-          {
-            standardGeneric(\"eda_",functionName,"\")
-          }
-        )
-        
-        setMethod(
-          f = \"eda_",functionName,"\",
-          signature = \"brickObject\",
-          definition = function(object, ",parametersName,")
-          {
-            parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
-            parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
-            
-            return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
-          }
-        )")
-        
-        eval(parse(text = registerFunText))
-  }
-    return(object)
-  }
-)
-
 
 ##### Register Function
 
@@ -146,18 +104,20 @@ setMethod(
   {
     parametersName <- names(as.list(args(functionName)))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
-
-    
+    methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
+    firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
+    methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
+    methodArg <- strsplit(capture.output(args(eval(parse(text=functionName))))[1],firstArg)[[1]][2]
     registerFunText <- paste0("setGeneric(
-      name = \"udf_",functionName,"\",
+      name = \"",functionName,"\",
       def = function(object, ",parametersName,")
       {
-        standardGeneric(\"udf_",functionName,"\")
+        standardGeneric(\"",functionName,"\")
       }
     )
     
     setMethod(
-      f = \"udf_",functionName,"\",
+      f = \"",functionName,"\",
       signature = \"brickObject\",
       definition = function(object, ",parametersName,")
       {
@@ -166,10 +126,15 @@ setMethod(
         
         return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
       }
-    )")
-    
+    )
+    setMethod(
+      f = \"",functionName,"\",
+      signature = \"data.frame\",
+      definition = function(object, ",methodArg,"",methodBody,")
+    ")
+    print(registerFunText)
     eval(parse(text = registerFunText))
-    object@registry %>>% add_row(functionName = functionName,
+    object@registry %>>% add_row(functionName = paste0(functionName),
                                 heading = heading,
                                 outAsIn = outAsIn) -> object@registry
     return(object)
@@ -274,3 +239,20 @@ setMethod(
 
 
 
+saveRecipe <- function(object,RDSPath){
+  object@output <- list()  
+  saveRDS(object,RDSPath)
+}
+
+
+loadRecipie <- function(RDSPath,input=data.frame(),filePath=""){
+  object <- readRDS(RDSPath)
+  if(filePath == ""){
+    object@input <- input
+  }
+  else{
+    object@input <- read.csv(filePath)
+  }
+  return(object)
+  
+}

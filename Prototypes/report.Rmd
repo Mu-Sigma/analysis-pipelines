@@ -25,7 +25,7 @@ input <<- params$input
 recipe <- params$recipe
 output <- params$output
 
-DT::datatable(head(input))
+DT::datatable(head(input),options = list(scrollX=T))
 ```
 
 
