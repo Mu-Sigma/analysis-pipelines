@@ -28,7 +28,7 @@ uniCatPlot = function(object = data.frame(),
 
 
 
-obj <- read_input(filePath = 'hotel_new.csv') %>>% eda_outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 1) %>>% eda_univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1)  
+obj <- read_input(filePath = 'hotel_new.csv')  %>>% univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1)  
 
 obj1 <- obj %>>% generateOutput()
 
