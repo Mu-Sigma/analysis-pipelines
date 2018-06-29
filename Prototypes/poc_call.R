@@ -26,14 +26,14 @@ uniCatPlot = function(object = data.frame(),
 # Bivar Plot
 
 
-obj <- read_input(filePath = 'hotel_new.csv') %>>% registerFunction('uniCatPlot',heading = "fdd Distribution Categorical",outAsIn = F)
-
-obj <- obj %>>% bivarPlots('Occupancy','max_rooms_capacity') %>>% udf_uniCatPlot('building_type') %>>% udf_uniCatPlot('location_type') %>>% bivarPlots('Occupancy','max_rooms_capacity') %>>% genReport()
-  
 
 
+obj <- read_input(filePath = 'hotel_new.csv') %>>% eda_outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 1) %>>% eda_univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1)  
 
+obj1 <- obj %>>% generateOutput()
 
+system.time(obj2 <- obj %>>% generateReport())
 
+system.time(obj2 <- obj1 %>>% generateReport())
 
 

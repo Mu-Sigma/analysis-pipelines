@@ -7,8 +7,9 @@
 
 library(tibble)
 library(pipeR)
-library(magrittr)
 library(data.table)
+library(magrittr)
+source('EDAUtils.R')
 
 ##### Create Object
 
@@ -16,8 +17,9 @@ read_input <- setClass("brickObject",
                 slots = c(
                   input = "data.frame",
                   filePath = "character",
-                  output = "tbl",
-                  wrapper = "character"
+                  recipe = "tbl",
+                  registry = "tbl",
+                  output = "list"
                 ))
 
 
@@ -33,28 +35,27 @@ setMethod(
     else{
       .Object@input <- read.csv(filePath)
     }
-    .Object@output <- tibble(
+    .Object@recipe <- tibble(
       operation = character(),
       heading = character(),
-      functionName = character(),
       parameters = list(),
       outAsIn = character()
     )
-    .Object@wrapper <- character()
-    
+    .Object@registry <- readRDS('predefFunctions.RDS')
+    .Object@output <- list()
+    .Object = createFunctions(.Object)
     return(.Object)
   }
 )
 
 
-##### Object Update FUnction
+##### Object Update Function
 
 setGeneric(
   name = "updateObject",
   def = function(object,
                  operation,
                  heading = "",
-                 funName,
                  parameters,
                  outAsIn = F)
   {
@@ -65,13 +66,64 @@ setGeneric(
 setMethod(
   f = "updateObject",
   signature = "brickObject",
-  definition = function(object, operation, heading="", funName, parameters, outAsIn = F)
+  definition = function(object, operation, heading="", parameters, outAsIn = F)
   {
-    object@output %>>% add_row(operation = operation,
+    object@recipe %>>% add_row(operation = operation,
                                heading = heading,
-                               functionName = funName,
                                parameters = list(parameters),
-                               outAsIn = outAsIn) -> object@output
+                               outAsIn = outAsIn) -> object@recipe
+    return(object)
+  }
+)
+
+
+
+
+##### Create Function
+
+setGeneric(
+  name = "createFunctions",
+  def = function(object)
+  {
+    standardGeneric("createFunctions")
+  }
+)
+
+setMethod(
+  f = "createFunctions",
+  signature = "brickObject",
+  definition = function(object)
+  {
+    for(rowNo in 1:nrow(object@registry)){
+        functionName = object@registry[["functionName"]][[rowNo]]
+        heading = object@registry[["heading"]][[rowNo]]
+        outAsIn = object@registry[["outAsIn"]][[rowNo]]
+        parametersName <- names(as.list(args(functionName)))
+        parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
+
+        
+        registerFunText <- paste0("setGeneric(
+          name = \"eda_",functionName,"\",
+          def = function(object, ",parametersName,")
+          {
+            standardGeneric(\"eda_",functionName,"\")
+          }
+        )
+        
+        setMethod(
+          f = \"eda_",functionName,"\",
+          signature = \"brickObject\",
+          definition = function(object, ",parametersName,")
+          {
+            parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
+            parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
+            
+            return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
+          }
+        )")
+        
+        eval(parse(text = registerFunText))
+  }
     return(object)
   }
 )
@@ -94,13 +146,11 @@ setMethod(
   {
     parametersName <- names(as.list(args(functionName)))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
-    parametersList <- capture.output(args(functionName))[1]
-    secondArg <- substring(capture.output(as.list(args(functionName)))[4],2)
-    parametersListNames <- paste0(secondArg,strsplit(parametersList,secondArg)[[1]][2])
+
     
     registerFunText <- paste0("setGeneric(
       name = \"udf_",functionName,"\",
-      def = function(object, ",parametersListNames,"
+      def = function(object, ",parametersName,")
       {
         standardGeneric(\"udf_",functionName,"\")
       }
@@ -109,123 +159,20 @@ setMethod(
     setMethod(
       f = \"udf_",functionName,"\",
       signature = \"brickObject\",
-      definition = function(object, ",parametersListNames,"
+      definition = function(object, ",parametersName,")
       {
         parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
         parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
         
-        return(updateObject(object, \"",functionName,"\", \"",heading,"\", paste0(\"",functionName,"\"), parametersPassed ,",outAsIn,"))
+        return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
       }
     )")
     
     eval(parse(text = registerFunText))
-    object@wrapper <- c(object@wrapper,registerFunText)
+    object@registry %>>% add_row(functionName = functionName,
+                                heading = heading,
+                                outAsIn = outAsIn) -> object@registry
     return(object)
-  }
-)
-
-
-
-
-##### Quick Peek
-
-setGeneric(
-  name = "quickPeek",
-  def = function(object)
-  {
-    standardGeneric("quickPeek")
-  }
-)
-
-setMethod(
-  f = "quickPeek",
-  signature = "brickObject",
-  definition = function(object)
-  {
-    return(updateObject(object, "quickPeek", "Quick Peek", "ignoreColumns",list("colName"),F))
-  }
-)
-
-
-##### Ignore Columns
-
-setGeneric(
-  name = "ignoreColumns",
-  def = function(object, colName)
-  {
-    standardGeneric("ignoreColumns")
-  }
-)
-
-setMethod(
-  f = "ignoreColumns",
-  signature = "data.frame",
-  definition = function(object, colName)
-  {
-    return(object %>>% dplyr::select(-dplyr::one_of(colName)))
-  }
-)
- 
-setMethod(
-  f = "ignoreColumns",
-  signature = "brickObject",
-  definition = function(object, colName)
-  {
-    return(updateObject(object, "ignoreCol", "", "ignoreColumns",list(colName),T))
-  }
-)
-
-
-
-
-
-
-
-
-###### Bivariate Plot
-
-setGeneric(
-  name = "bivarPlots",
-  def = function(object,
-                 var1,
-                 var2,
-                 priColor = "blue",
-                 secColor = "black")
-  {
-    standardGeneric("bivarPlots")
-  }
-)
-
-setMethod(
-  f = "bivarPlots",
-  signature = "data.frame",
-  definition = function(object,
-                        var1,
-                        var2,
-                        priColor = "blue",
-                        secColor = "black")
-  {
-    dataset <- object
-    bivarPlot <-
-      ggplot2::ggplot(dataset, ggplot2::aes(dataset[, var1], dataset[, var2])) +
-      ggplot2::geom_point(color = priColor) +
-      ggplot2::geom_smooth(method = lm, color = secColor)
-    
-    return(bivarPlot)
-  }
-)
-
-setMethod(
-  f = "bivarPlots",
-  signature = "brickObject",
-  definition = function(object,
-                        var1,
-                        var2,
-                        priColor = "blue",
-                        secColor = "black")
-  {
-    return(updateObject(object, "bivarPlots", "Bivariate Plots", "bivarPlots", list(var1,var2,priColor,secColor),F))
-    
   }
 )
 
@@ -235,27 +182,32 @@ setMethod(
 ###### Generate Report
 
 setGeneric(
-  name = "genReport",
+  name = "generateReport",
   def = function(object)
   {
-    standardGeneric("genReport")
+    standardGeneric("generateReport")
   }
 )
 
 setMethod(
-  f = "genReport",
+  f = "generateReport",
   signature = "brickObject",
   definition = function(object)
   {
     require(rmarkdown)
-    object <- quickPeek(object)
+    if(length(object@output) == 0){
+      object <- generateOutput(object)
+    }
+    object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
+    
     fileName <- "ss"
+    
     rmarkdown::render(
       'report.Rmd',
       params = list(
         input = object@input,
+        recipe = object@recipe,
         output = object@output
-        
       ),
        html_document(
           css = "styles.css" ,
@@ -271,12 +223,51 @@ setMethod(
 )
 
 
-viewOutput <- function(edaObject,rowNo){
-  parameters <- edaObject@output['parameters'][[1]][[rowNo]]
-  parameters <- append(list(edaObject@input),parameters)
-  do.call(edaObject@output['functionName'][[1]][rowNo],parameters)                     
-}
 
+
+
+###### Generate Output
+
+setGeneric(
+  name = "generateOutput",
+  def = function(object)
+  {
+    standardGeneric("generateOutput")
+  }
+)
+
+setMethod(
+  f = "generateOutput",
+  signature = "brickObject",
+  definition = function(object)
+  {
+    input <- object@input
+    for(rowNo in 1:nrow(object@recipe)){
+      if(object@recipe[['outAsIn']][rowNo] == T){
+          input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+      }
+      object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+    }  
+   return(object) 
+  }
+)
+
+setMethod(
+  f = "generateOutput",
+  signature = "tbl",
+  definition = function(object)
+  {
+    input <- input
+    outList <- list()
+    for(rowNo in 1:nrow(object)){
+      if(object[['outAsIn']][rowNo] == T){
+        input <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
+      }
+      outList[[rowNo]] <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
+    }  
+    return(outList) 
+  }
+)
 
 
 
