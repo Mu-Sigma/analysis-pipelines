@@ -133,6 +133,35 @@ newIrisReport@recipe$output
 ```
 
 
+
+
+```{r}
+obj <- read_input(filePath = 'hotel_new.csv')  %>>% registerFunction('bivarPlots',"Bivariate Plots")
+
+obj <- obj %>>% eda_outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 1) %>>% eda_univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1) %>>% udf_bivarPlots('Occupancy','max_rooms_capacity',priColor = "blue","black") %>>% udf_bivarPlots('Occupancy','max_rooms_capacity',priColor = "blue","black") 
+
+obj1 <- obj %>>% generateOutput()
+
+system.time(obj %>>% generateReport())
+
+system.time(obj1 %>>% generateReport())
+
+
+
+```
+
+
+
+```{r}
+saveRecipe(obj,'obj.RDS')
+
+
+obj3 <- loadRecipie('obj.RDS',filePath = 'hotel_edited.csv')
+
+obj3 %>>% generateReport()
+
+```
+
 # Conclusion
 
 * This approach provides a consistent way to sequence analysis operations and create recipes
