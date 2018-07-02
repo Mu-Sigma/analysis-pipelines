@@ -40,14 +40,13 @@ setMethod(
       heading = character(),
       parameters = list(),
       outAsIn = logical()
-<<<<<<< HEAD
+
     )
     .Object@registry <- tibble(
       functionName = character(),
       heading = character(),
       outAsIn = logical()
-=======
->>>>>>> 725c6190f2a9259597abaadfa2457a0ee4b72bcf
+
     )
     .Object@output <- list()
     brickFunctions <- readRDS('predefFunctions.RDS')
@@ -110,7 +109,8 @@ setMethod(
     methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
     firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
     methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
-    methodArg <- strsplit(capture.output(args(eval(parse(text=functionName))))[1],firstArg)[[1]][2]
+    methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
+    methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
     registerFunText <- paste0("setGeneric(
       name = \"",functionName,"\",
       def = function(object, ",parametersName,")
@@ -133,9 +133,9 @@ setMethod(
     setMethod(
       f = \"",functionName,"\",
       signature = \"data.frame\",
-      definition = function(object, ",methodArg,"",methodBody,")
+      definition = function(object ",methodArg,"",methodBody,")
     ")
-    print(registerFunText)
+    
     eval(parse(text = registerFunText))
     object@registry %>>% add_row(functionName = paste0(functionName),
                                 heading = heading,
