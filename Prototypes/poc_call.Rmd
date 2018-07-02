@@ -1,5 +1,6 @@
 ```{r}
 source('Poc.R')
+source('EDAUtils.R')
 ```
 
 
@@ -31,7 +32,7 @@ bivarPlots = function(object,
 ```{r, warning=F}
 obj <- read_input(filePath = 'hotel_new.csv')  %>>% registerFunction('bivarPlots',"Bivariate Plots")
 
-obj <- obj %>>% eda_outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 1) %>>% eda_univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1) %>>% udf_bivarPlots('Occupancy','max_rooms_capacity',priColor = "blue","black") %>>% udf_bivarPlots('hotel_id','max_rooms_capacity',priColor = "blue","black") 
+obj <- obj %>>% outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 1) %>>% univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1) %>>% bivarPlots('Occupancy','max_rooms_capacity',priColor = "blue","black") %>>% bivarPlots('hotel_id','max_rooms_capacity',priColor = "blue","black") 
 
 
 
