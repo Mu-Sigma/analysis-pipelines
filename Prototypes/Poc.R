@@ -9,6 +9,7 @@ library(tibble)
 library(pipeR)
 library(data.table)
 library(magrittr)
+
 source('EDAUtils.R')
 
 ##### Create Object
@@ -93,7 +94,7 @@ setMethod(
 
 setGeneric(
   name = "registerFunction",
-  def = function(object, functionName,  heading ="", outAsIn=F)
+  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
   {
     standardGeneric("registerFunction")
   }
@@ -102,9 +103,9 @@ setGeneric(
 setMethod(
   f = "registerFunction",
   signature = "brickObject",
-  definition = function(object, functionName,  heading ="", outAsIn=F)
+  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
   {
-    parametersName <- names(as.list(args(functionName)))
+    parametersName <- names(as.list(args(eval(parse(text=functionName)))))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
     methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
     firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
@@ -136,10 +137,12 @@ setMethod(
       definition = function(object ",methodArg,"",methodBody,")
     ")
     
-    eval(parse(text = registerFunText))
-    object@registry %>>% add_row(functionName = paste0(functionName),
-                                heading = heading,
-                                outAsIn = outAsIn) -> object@registry
+    eval(parse(text = registerFunText), envir=.GlobalEnv)
+    if(loadRecipe==F){
+        object@registry %>>% add_row(functionName = paste0(functionName),
+                                    heading = heading,
+                                    outAsIn = outAsIn) -> object@registry
+    }
     return(object)
   }
 )
@@ -216,7 +219,7 @@ setMethod(
       }
       object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
     }  
-   return(object) 
+   return(object@output) 
   }
 )
 
@@ -237,23 +240,7 @@ setMethod(
   }
 )
 
-saveRecipe <- function(object,RDSPath){
-  object@output <- list()  
-  saveRDS(object,RDSPath)
-}
 
-
-loadRecipie <- function(RDSPath,input=data.frame(),filePath=""){
-  object <- readRDS(RDSPath)
-  if(filePath == ""){
-    object@input <- input
-  }
-  else{
-    object@input <- read.csv(filePath)
-  }
- return(object)
-  
-}
 
 
 
@@ -264,14 +251,50 @@ saveRecipe <- function(object,RDSPath){
 }
 
 
-loadRecipie <- function(RDSPath,input=data.frame(),filePath=""){
+loadRecipe <- function(RDSPath,input=data.frame(),filePath=""){
   object <- readRDS(RDSPath)
   if(filePath == ""){
     object@input <- input
   }
   else{
     object@input <- read.csv(filePath)
+  }
+  registeredFunctions <- object@registry
+  for(rowNo in 1:nrow(registeredFunctions)){
+    object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
   }
   return(object)
   
 }
+
+
+
+setGeneric(
+  name = "aa",
+  def = function(x)
+  {
+    standardGeneric("aa")
+  }
+)
+
+
+
+setMethod(
+  f = "aa",
+  signature = "numeric",
+  definition = function(x)
+  {
+    eval(parse(text = 'setGeneric(
+  name = "bb",
+  def = function(x)
+  {
+    standardGeneric("bb")
+  }
+) \n 
+         setMethod(
+  f = "bb",
+  signature = "numeric",
+  definition = function(x)
+  {return(2)})      '), envir=.GlobalEnv)
+  }
+)

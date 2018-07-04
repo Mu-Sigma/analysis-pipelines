@@ -1,61 +1,32 @@
+---
+title: "Exploratory Data Analysis"
+author: 
+ - name: Neeratyoy Mallik
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+
+---
+
+
+## Introduction
+
+
+
+
+## Sourcing Utils File
+
 ```{r}
 source('Poc.R')
 source('EDAUtils.R')
 ```
 
 
-```{r declaring a funtion}
-bivarPlots = function(object,
-                      select_var_name_1,
-                      select_var_name_2,
-                      priColor = "blue",secColor='black')
-{
-  x=object[, select_var_name_1]
-  y=object[, select_var_name_2]
-  bivarPlot <- ggplot2::ggplot(object, ggplot2::aes(x,y))+
-    ggplot2::geom_point(color=priColor,alpha=0.7) +
-    ggplot2::geom_smooth(method = lm,color=secColor)+
-    ggplot2::xlab(select_var_name_1) +
-    ggplot2::ylab(select_var_name_2) + ggplot2::theme_bw() +
-    ggplot2::ggtitle(paste('Bivariate plot for',select_var_name_1,'and',select_var_name_2,sep=' '))+
-    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 10),axis.text = ggplot2::element_text(size=10),
-                   axis.title=ggplot2::element_text(size=10))
-  
-  
-  return(bivarPlot)
-  
-}
-```
-
-
+## Creating a EDA object
 
 ```{r, warning=F}
-obj <- read_input(filePath = 'hotel_new.csv')  %>>% registerFunction('bivarPlots',"Bivariate Plots")
 
-obj <- obj %>>% outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 1) %>>% univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 1) %>>% bivarPlots('Occupancy','max_rooms_capacity',priColor = "blue","black") %>>% bivarPlots('hotel_id','max_rooms_capacity',priColor = "blue","black") 
-
-
-
-
-# without out generation
-system.time(obj %>>% generateReport())
-
-obj1 <- obj %>>% generateOutput()
-
-
-# with out generation
-system.time(obj1 %>>% generateReport())
-
-
-
-```
-
-```{r}
-saveRecipe(obj,'obj.RDS')
-
-
-obj3 <- loadRecipie('obj.RDS',filePath = 'hotel_edited.csv')
-head(obj3@input)
-obj3 %>>% generateReport()
 
 ```
