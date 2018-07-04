@@ -15,13 +15,13 @@ source('EDAUtils.R')
 ##### Create Object
 
 read_input <- setClass("brickObject",
-                slots = c(
-                  input = "data.frame",
-                  filePath = "character",
-                  recipe = "tbl",
-                  registry = "tbl",
-                  output = "list"
-                ))
+                       slots = c(
+                         input = "data.frame",
+                         filePath = "character",
+                         recipe = "tbl",
+                         registry = "tbl",
+                         output = "list"
+                       ))
 
 
 #### Constructor
@@ -41,13 +41,13 @@ setMethod(
       heading = character(),
       parameters = list(),
       outAsIn = logical()
-
+      
     )
     .Object@registry <- tibble(
       functionName = character(),
       heading = character(),
       outAsIn = logical()
-
+      
     )
     .Object@output <- list()
     brickFunctions <- readRDS('predefFunctions.RDS')
@@ -113,39 +113,39 @@ setMethod(
     methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
     methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
     registerFunText <- paste0("setGeneric(
-      name = \"",functionName,"\",
-      def = function(object, ",parametersName,")
-      {
-        standardGeneric(\"",functionName,"\")
-      }
-    )
-    
-    setMethod(
-      f = \"",functionName,"\",
-      signature = \"brickObject\",
-      definition = function(object, ",parametersName,")
-      {
-        parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
-        parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
-        
-        return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
-      }
-    )
-    setMethod(
-      f = \"",functionName,"\",
-      signature = \"data.frame\",
-      definition = function(object ",methodArg,"",methodBody,")
-    ")
+                              name = \"",functionName,"\",
+                              def = function(object, ",parametersName,")
+                              {
+                              standardGeneric(\"",functionName,"\")
+                              }
+                              )
+                              
+                              setMethod(
+                              f = \"",functionName,"\",
+                              signature = \"brickObject\",
+                              definition = function(object, ",parametersName,")
+                              {
+                              parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
+                              parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
+                              
+                              return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
+                              }
+                              )
+                              setMethod(
+                              f = \"",functionName,"\",
+                              signature = \"data.frame\",
+                              definition = function(object ",methodArg,"",methodBody,")
+                              ")
     
     eval(parse(text = registerFunText), envir=.GlobalEnv)
     if(loadRecipe==F){
-        object@registry %>>% add_row(functionName = paste0(functionName),
-                                    heading = heading,
-                                    outAsIn = outAsIn) -> object@registry
+      object@registry %>>% add_row(functionName = paste0(functionName),
+                                   heading = heading,
+                                   outAsIn = outAsIn) -> object@registry
     }
     return(object)
-  }
-)
+                              }
+                              )
 
 
 
@@ -180,12 +180,12 @@ setMethod(
         recipe = object@recipe,
         output = object@output
       ),
-       html_document(
-          css = "styles.css" ,
-          toc = T,
-          toc_float = T
-        ),
-        
+      html_document(
+        css = "styles.css" ,
+        toc = T,
+        toc_float = T
+      ),
+      
       output_dir = "." ,
       output_file = paste(fileName,'.html', sep = '')
     )
@@ -215,11 +215,11 @@ setMethod(
     input <- object@input
     for(rowNo in 1:nrow(object@recipe)){
       if(object@recipe[['outAsIn']][rowNo] == T){
-          input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+        input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
       }
       object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
     }  
-   return(object@output) 
+    return(object@output) 
   }
 )
 
@@ -269,32 +269,4 @@ loadRecipe <- function(RDSPath,input=data.frame(),filePath=""){
 
 
 
-setGeneric(
-  name = "aa",
-  def = function(x)
-  {
-    standardGeneric("aa")
-  }
-)
 
-
-
-setMethod(
-  f = "aa",
-  signature = "numeric",
-  definition = function(x)
-  {
-    eval(parse(text = 'setGeneric(
-  name = "bb",
-  def = function(x)
-  {
-    standardGeneric("bb")
-  }
-) \n 
-         setMethod(
-  f = "bb",
-  signature = "numeric",
-  definition = function(x)
-  {return(2)})      '), envir=.GlobalEnv)
-  }
-)
