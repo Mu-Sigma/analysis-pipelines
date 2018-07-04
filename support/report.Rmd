@@ -1,6 +1,6 @@
 ---
 title: "Exploratory Data Analysis"
-subtitle: (`r format(Sys.Date(), "%B %d, %Y")`)
+subtitle: v`r if (!require(rjson)) {install.packages('rjson', dependencies = T, repos = "http://cloud.r-project.org/");};version=rjson::fromJSON(file = 'Description.json')['version'];version` - (`r format(Sys.Date(), "%B %d, %Y")`)
 
 output: 
   html_document
