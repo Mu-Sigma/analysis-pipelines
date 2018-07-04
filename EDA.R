@@ -277,7 +277,7 @@ setMethod(
 #' @export
 setGeneric(
   name = "saveRecipe",
-  def = function(object,RDSPath)
+  def = function(object, RDSPath)
   {
     standardGeneric("saveRecipe")
   }
@@ -288,7 +288,8 @@ setMethod(
   signature = "brickObject",
   definition = function(object,RDSPath)
   {
-    object@output <- list()  
+    object@output <- list()
+    object@input <- data.frame()
     saveRDS(object,RDSPath)
   }
 )
@@ -302,7 +303,7 @@ setMethod(
 #' @param input The input dataset on which analysis is to be performed
 #' @param filePath Path of the input dataset to be uploaded
 #' @export
-loadRecipe <- function(RDSPath,input=data.frame(),filePath=""){
+loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
   object <- readRDS(RDSPath)
   if(filePath == ""){
     object@input <- input

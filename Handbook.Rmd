@@ -1,115 +1,249 @@
 ---
-title: "Exploratory Data Analysis"
+title: "Handbook for EDA Utility"
 author: 
- - name: Neeratyoy Mallik
+ - name: Sanjay, Naren, Neeratyoy
 output: 
   html_document:
     toc: true
     toc_float: true
-    toc_depth: 2
-    
-
+    toc_depth: 4
 ---
 
+# Objective
 
-## Introduction
+* Providing an overview of what the EDA utility offers
+* Serving as a guide in using the functionalities provided
 
+#### More details
 
+Exploratory Data Analysis (EDA) offers the first interaction with data. It, therefore, plays an important role in revealing properties and features of the data. Features that can provide a direction for the rest of the analysis. Even though EDA is a crucial initial step, it often helps if it can be done rapidly. Since the subsequent steps in an analytical flow is what often creates the bottleneck in terms of turnaround time.<br>
 
+The EDA utility that this handbook describes, attempts at making the entire EDA phase of an analytical journey - 
 
-## Sourcing Utils File
+* <i>Modular</i> through the use of an API-like off-the-shelf functions to implement common EDA techniques
+* <i>Descriptive chaining</i> by adhering to the tidyverse paradigm of piping operations in a cascading manner
+* <i>Flexibility</i> to use any custom function defined by any user, that can work in the paradigm defined above
+* <i>Light on memory</i> through lazy evaluation of the functions that have been piped, i.e., the actual execution happens selectively
+* <i>Reproducible</i> and <i>scalable</i> since recipes can be exported and reused with new data and/or standard R code
 
-```{r}
+The sections below will provide sample code and a walkthrough in using the utility. The sections should also highlight the features this utility has to offer.
+
+<br>
+
+# Loading the utility
+
+In order to leverage all the functionalities of the utility, one has to ensure that they are inside the directory of the EDA utility. That is, the working directory should be at the same level as the <i>EDA.R</i> file. <br>
+The file needs to be sourced or loaded into the R session to make use of the features.
+
+```{r sourcing}
 source('EDA.R')
 ```
 
+<br>
 
-## Creating an EDA object
+# Creating an EDA object
+
+The EDA utility has been written as per R's S4 object system standard. 
+<br>
+To work with this EDA utility, one needs to call the constructor by specifying a file as an input.
 
 ```{r creating object, warning=F}
-
 obj <- read_input(filePath = 'support/hotel_new.csv') 
-
-print(obj@registry)
-print(obj@recipe)
-
-obj <- obj %>>% outlierPlot(method = "iqr",columnName = "Occupancy",cutoffValue = 0.01,priColor = "blue",optionalPlots = 0) %>>% univarCatDistPlots(uniCol = "building_type",priColor = "blue",optionalPlots = 0) 
-print(obj@recipe)
-
-
-obj1 <- obj %>>% generateOutput()
-
-
-obj1@output[[2]]
-
+class(obj)[1]
 ```
 
+The object created is of type <i>"brickObject"</i>. The object contains the following attributes:
 
-## Register a new function
+* input - stores the data frame read by the constructor
+* recipe - stores a tibble object which can store a sequence of function calls
+* registry - stores the list of function names that are available to the object
+* output - stores the output of each operation when a recipe is evaluated 
 
-```{r register function, warning=F}
+```{r printing object contents, warning=F}
+str(obj@input)
+print(obj@registry)
+print(obj@recipe)
+```
 
-bivarPlots <- function(object,
-                      select_var_name_1,
-                      select_var_name_2,
-                      priColor = "blue",secColor='black')
-{
-  
+<br>
+
+# Chaining EDA operations
+
+The pipe(%>>%) operator used here works in a similar manner to the tidyverse paradigm where operations can be chained, and data can flow in a cascaded manner. 
+
+```{r pipe demo 1, warning=F}
+# Running univariate categorical distribution plot on the constructed object
+
+obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
+obj@recipe
+```
+
+```{r pipe demo 2, warning=F}
+# Running univariate categorical distribution plot and then 
+# outlier detection on the constructed object
+
+obj <- obj %>>% 
+  univarCatDistPlots(uniCol = "location_type", priColor = "blue", optionalPlots = 0) %>>% 
+  outlierPlot(method = "iqr", columnName = "Occupancy", 
+              cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
+obj@recipe
+```
+
+<br>
+
+# Lazy evaluation
+
+The sequence of operations is stored as metadata. It is only processed when an evaluation is exclusively triggered through a call to <i>generateOutput()</i> (available in the utility), or when generating an HTML report based on the recipe. <br>
+
+If noticed, the <i>output</i> attribute of the EDA object is empty so far.
+
+```{r lazy eval 1}
+length(obj@output)
+```
+
+However, a specific function call can generate the output of the recipe stored in the object. Which is then stored in the <i>output</i> attribute of the object.
+
+```{r lazy eval 2, warning=F}
+obj1 <- obj %>>% generateOutput()
+length(obj1@output)
+```
+
+Observe that the length of the output list of the first object (the chunk above) remains 0 since the generated output was assigned to a new object.
+
+```{r lazy eval 2.5, warning=F}
+length(obj@output)
+```
+
+The outputs can be viewed by subsetting the output list. 
+
+```{r lazy eval 3, warning=F}
+# The index can range from 1 to length(obj@output)
+obj1@output[[2]]
+```
+
+<br>
+
+# Registering a new function
+
+On invoking the constructor, i.e., creating an object of EDA, the functions defined in the list are <i>registered</i> for the said object. The list of registered functions can be viewed as <i>obj@registry</i>. The EDA utility has the option to add to this list of functions, any user-defined function. <br>
+The only <b>constraint</b> for registering an user-defined function is that the first parameter in the argument list must be a data frame.
+<br>
+Let us demonstrate this with an example.
+
+```{r current register, warning=FALSE}
+# Currently registered functions
+print(obj@registry)
+```
+
+The EDA utility hasn't got any feature to plot bivariate distributions. Let us define a function which can do it for us.
+
+```{r bivariate definition}
+bivariatePlots <- function(object, select_var_name_1, select_var_name_2, 
+                       priColor = "blue", secColor='black') {
   x=object[, select_var_name_1]
   y=object[, select_var_name_2]
-  bivarPlot <- ggplot2::ggplot(object, ggplot2::aes(x,y))+
+  bivarPlot <- ggplot2::ggplot(object, ggplot2::aes(x,y)) +
     ggplot2::geom_point(color=priColor,alpha=0.7) +
-    ggplot2::geom_smooth(method = lm,color=secColor)+
+    ggplot2::geom_smooth(method = lm,color=secColor) +
     ggplot2::xlab(select_var_name_1) +
-    ggplot2::ylab(select_var_name_2) + ggplot2::theme_bw() +
-    ggplot2::ggtitle(paste('Bivariate plot for',select_var_name_1,'and',select_var_name_2,sep=' '))+
-    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 10),axis.text = ggplot2::element_text(size=10),
+    ggplot2::ylab(select_var_name_2) + 
+    ggplot2::theme_bw() +
+    ggplot2::ggtitle(paste('Bivariate plot for', select_var_name_1, 
+                           'and', select_var_name_2, sep=' ')) +
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 10), 
+                   axis.text = ggplot2::element_text(size=10),
                    axis.title=ggplot2::element_text(size=10))
-
-
   return(bivarPlot)
-  
 }
-
-
-obj <- obj %>>% registerFunction('bivarPlots',"Bivariate Plots")
-
-print(obj@registry)
-
-obj <- obj %>>% bivarPlots('Occupancy','max_rooms_capacity',priColor = "blue","black")
-
-print(obj@recipe)
-
-obj1 <- obj %>>% generateOutput()
-
-obj1@output[[3]]
-
 ```
 
+This user-defined function can now be registered as part of the EDA object created. Following which, the updated registry will show that the object has at its disposal an additional function which was not defined in the utility.
 
-## Generate Report
+```{r register function, warning=F}
+# The first parameter provides the function name
+# The second parameter allows for a header that will feature in the report
+obj <- obj %>>% registerFunction('bivariatePlots', "Bivariate Plots")
+
+# Printing the updated registry
+print(obj@registry)
+```
+
+### Using newly registered function with lazy eval of pipeline
+
+Now that a new user-defined function is also available along with the existing functions, all the features can be leveraged in unison.
+
+```{r register function 2, warning=F}
+# Chaining the user-defined function to the object's recipe where it was registered
+obj <- obj %>>% 
+  bivariatePlots(select_var_name_1 = 'Occupancy', select_var_name_2 = 'max_rooms_capacity', 
+                 priColor = "blue", secColor = "black")
+
+# Printing the updated recipe
+print(obj@recipe)
+```
+
+The newly added function will also lazy evaluate depending on the trigger.
+
+```{r register function 3, warning=F}
+obj2 <- obj %>>% generateOutput()
+obj2@output[[4]]
+```
+
+<br>
+
+# Generate Report
+
+Object and lists stored in the memory are not consumable. Hence, the EDA utility allows the option to knit a recipe's outputs into a neat HTML file, which can serve as a report of the analysis performed.
 
 ```{r generate report and tabs, warning=F,  eval=F}
-
-obj %>>% generateReport('~/Desktop')
-
-obj <- obj %>>% bivarPlots('Occupancy','PercentTransientNights',priColor = "blue","black")
-
-obj %>>% generateReport('~/Desktop')
-
+# generateReport() needs a destination path as an argument
+# The function writes a HTML file with a name in the format 'EDA_report_[timestamp].html'
+obj2 %>>% generateReport('~/Desktop')
 ```
 
+In the above case, since the object had the output evaluated and stored in the <i>output</i> attribute, the function call only knits the output into an HTML file. <br>
+In the example below, the object has an empty output attribute. The function call, in this case, evaluates the outputs and then knits them into an HTML file.
 
-## Save and Load
+```{r generate report and tabs 2, message=FALSE, warning=FALSE, eval=FALSE}
+obj <- obj %>>% bivariatePlots('Occupancy', 'PercentTransientNights', 
+                           priColor = "blue", secColor = "black")
 
-```{r load save , warning=F}
+obj %>>% generateReport('~/Desktop')
+```
 
-saveRecipe(obj,'recipe.RDS')
+<b>NOTE</b>: A sample of the above report can be found in the <i>support/</i> folder of the utility.
 
-obj2 <- loadRecipe('recipe.RDS',filePath = 'support/hotel_new.csv') 
+<br>
+
+# Save and Load Recipes
+
+The recipes stored as an attribute in the object are effectively meta recipes which document the steps in an EDA pipeline. These can be exported and re-read by certain functions available in this EDA utility. The recipes are generic enough to work with the schema of the data that was used to invoke the constructor. Therefore, this recipe can be used on any data of the same schema.
+
+```{r save recipes, message=FALSE, warning=FALSE, eval=TRUE}
+# Saves the recipe and registry of the EDA object
+saveRecipe(obj, 'support/recipe.RDS')
+```
+
+This recipe can be loaded and re-used with any other data set.
+
+```{r load recipes, message=FALSE, warning=FALSE, eval=T}
+obj2 <- loadRecipe('support/recipe.RDS',filePath = 'support/hotel_new.csv') 
 
 print(obj2@registry)
 print(obj2@recipe)
-
-
 ```
+
+<br>
+
+# Conclusion
+
+The EDA utility described in this handbook allows - 
+
+* Seamless churning of results by invoking simple functions in an API format to perform EDA
+* To pipe/chain functions in order to create analytical data flows that persist as recipes
+* Recipes can be exported, re-used, deployed, in any environment running R
+* Write their own functions and register to be used in a recipe
+* Collate and present the analysis recipes as a compact HTML report
+* Light on memory usage since the evaluation is lazy and can be deferred
+
+This utility enables a quicker and a more standardized approach to Exploratory Data Analysis.
