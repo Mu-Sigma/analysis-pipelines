@@ -88,6 +88,8 @@ obj1[[3]]
 ```
 
 
+## Generate Report
+
 ```{r generate report and tabs, warning=F,  eval=FALSE}
 
 obj %>>% generateReport()
@@ -95,5 +97,19 @@ obj %>>% generateReport()
 obj <- obj %>>% bivarPlots('Occupancy','PercentTransientNights',priColor = "blue","black")
 
 obj %>>% generateReport()
+
+```
+
+
+## Save and Load
+
+```{r load save , warning=F}
+saveRecipe(obj,'obj.RDS')
+
+obj2 <- loadRecipe('obj.RDS',filePath = 'hotel_new.csv') 
+
+print(obj2@registry)
+print(obj2@recipe)
+
 
 ```
