@@ -1,0 +1,221 @@
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 14px;
+}
+
+td {
+    padding-left: 10px;
+    width: 50px;
+    align:left;
+}
+
+table{
+	width: 100%
+}
+
+/*h1{
+  text-align:center;
+}*/
+.level2{
+  width:77vw;
+  margin-left: 20vw;
+}
+.fluid-row{
+  position: relative; 
+  background-color: #162f47;
+  font-weight: bold;
+  color: white;
+  width:98.8vw;
+  left: -15px;
+  padding: 0.3cm 0.5cm 0.5cm 0.3cm;
+  z-index :100;
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.80);
+}
+h3{
+  font-family: Arial, Helvetica, sans-serif;
+ 
+}
+#hideGridMsg{
+  display:none;
+}
+.main-container{
+  max-width:100vw !important;
+}
+h1{
+  font-family: Arial, Helvetica, sans-serif;
+  margin-left:2%;
+  margin-top: 0px !important;
+  margin-bottom: -15px !important;
+  font-size: 34px !important;
+}
+.author{
+  font-family: Arial, Helvetica, sans-serif;
+  margin-left:2%;
+  font-size: 16px;
+}
+h2{
+  position: relative;
+  left: -1%;
+  bottom: 3px;
+  border-bottom: 2px solid #444444;
+  font-size: 24px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  color:#444444;
+}
+.subtitle{
+  margin-left: 2%;
+  font-size: 20px;
+}
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+head{
+  font-family: Arial, Helvetica, sans-serif;
+}
+.mulogo{
+  position: relative; 
+  float: right;
+  right: -20vw;
+  margin-top: -115px;
+  z-index:100;
+}
+.client{
+ position: relative; 
+ float: right;
+ right:-27vw;
+ height: 90px;
+ width: 90px;
+ margin-top: -115px;
+ z-index:100;
+}
+
+
+
+h3{
+  
+ }
+ 
+/*
+ h4{
+   text-align:center;
+   font-style:normal;
+ }
+.date, .author {
+  font-style: italic;
+}
+*/
+
+tr:nth-child(even) {background-color: #f2f2f2}
+tr:hover {background-color: #f5f5f5}
+
+th {
+    background-color: #ffffff;
+    color: black;
+    padding-left: 10px;
+    width: 100px;
+}
+
+#var_dist_table{
+  width: 100px; 
+  table-layout:fixed;
+}
+
+#post_trellis, #post_time_series, #post_pkg_details,#post_peek,#post_summ,#post_miss,#post_num_var,#post_cat_var,#post_bi_var,#post_prob_outlier,#post_corr_net,#post_corr_mat, #post_univar, #post_cluster, #post_factAnalysis,#post_cat_summ,#post_univar, #post_trellis,#post_factAnalysis,#post_cluster{
+  font-weight: bold;
+  box-shadow: 5px 5px 5px #888888;
+}
+
+/*
+#post_num_var, #post_cat_var, #post_bi_var, #post_miss{
+  position: absolute; right: 10%; 
+  position: relative; right: 10%;
+}
+
+#package_details, #post_pkg_details, #post_peek, #post_summ{
+  position: absolute; left: 300%;
+  position: relative; top: 10%;
+}
+*/
+
+#quickFilters{
+  margin-bottom:10px;
+}
+.tocify{
+ 
+  width:21vw !important;
+  margin-left: -20px;
+  background-color: white;
+  border-color: white;
+  margin: 150px 0px 20px 0px !important;
+  border-radius: 1px;
+  z-index: 1000;
+  top:40px;
+  max-width: 19vw !important;
+}
+.tocify-item{
+
+  padding: 10px 10px 10px 20px !important;
+  background-color: #424C55 !important;
+  border-bottom: 1px solid #454545 !important;
+  font-size: 14px;
+  color:#d8d8d8 !important;
+  border-radius: 1px !important;
+  transition-property: all;
+    -moz-transition-property: all;
+    -webkit-transition-property: all;
+    -o-transition-property: all;
+    
+    transition-duration: 250ms;
+    -webkit-transition-duration: 250ms;
+    
+}
+.tocify-item-hover {
+    background: #F00;
+    color: #FFF;
+}
+
+
+.tocify-subheader .tocify-item {
+  padding-left: 45px !important;
+}
+.tocify-item:hover{
+  background-color: #d8d8d8 !important;
+ 
+ 
+  border-left: 5px solid #2d6396 !important;
+  text-decoration: none !important;
+  color:#2d6396 !important;
+
+}
+
+
+.toc-content{
+  position: absolute;
+}
+
+.tocify-extend-page{
+  height: 0px !important;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover .list-group-item:hover{
+  background-color: #ffffff !important;
+  font-weight: bold !important;
+ 
+  border-left: 5px solid #2d6396 !important;
+  text-decoration: none !important;
+  color:#2d6396 !important;
+
+}
+
+.row-fluid{
+  margin-left:-26px;
+}
+
+html,body{
+   height: 100%;
+}
+.fixedToc{
+top:-100px;
+}
