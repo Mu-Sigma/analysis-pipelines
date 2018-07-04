@@ -12,8 +12,18 @@ library(magrittr)
 
 source('EDAUtils.R')
 
+
+
+
 ##### Create Object
 
+#' @decription 
+#' @slot input The input dataset on which analysis is to be performed
+#' @slot filePath Path of the input dataset to be uploaded
+#' @slot recipe A tibble which holds functions to be called
+#' @slot registry A tibble which holds all the registered functions
+#' @slot output A list which holds all the functions output
+#' @export
 read_input <- setClass("brickObject",
                        slots = c(
                          input = "data.frame",
@@ -22,7 +32,6 @@ read_input <- setClass("brickObject",
                          registry = "tbl",
                          output = "list"
                        ))
-
 
 #### Constructor
 setMethod(
@@ -59,8 +68,17 @@ setMethod(
 )
 
 
+
+
 ##### Object Update Function
 
+#' @decription 
+#' @param object object that contains input, recipe, registry and output
+#' @param operation function name to be updated in tibble
+#' @param heading heading of that section in report
+#' @param parameters parameters passed to that function
+#' @param outAsIn whether to use output of this function as input to next
+#' @export
 setGeneric(
   name = "updateObject",
   def = function(object,
@@ -72,7 +90,6 @@ setGeneric(
     standardGeneric("updateObject")
   }
 )
-
 setMethod(
   f = "updateObject",
   signature = "brickObject",
@@ -92,6 +109,14 @@ setMethod(
 
 ##### Register Function
 
+#' @description 
+#' @param object object that contains input, recipe, registry and output
+#' @param functionName name of function to be registered
+#' @param heading heading of that section in report
+#' @param outAsIn whether to use output of this function as input to next
+#' @param loadRecipe logical parameter to see if function is being used in loadRecipe or not
+#' @param session to load shiny session in the function
+#' @export
 setGeneric(
   name = "registerFunction",
   def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
@@ -149,12 +174,14 @@ setMethod(
 
 
 
-
 ###### Generate Report
 
+#' @description 
+#' @param object object that contains input, recipe, registry and output
+#' @export
 setGeneric(
   name = "generateReport",
-  def = function(object)
+  def = function(object,path)
   {
     standardGeneric("generateReport")
   }
@@ -163,7 +190,7 @@ setGeneric(
 setMethod(
   f = "generateReport",
   signature = "brickObject",
-  definition = function(object)
+  definition = function(object,path)
   {
     require(rmarkdown)
     if(length(object@output) == 0){
@@ -171,7 +198,6 @@ setMethod(
     }
     object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
     
-    fileName <- "ss"
     
     rmarkdown::render(
       'report.Rmd',
@@ -186,8 +212,8 @@ setMethod(
         toc_float = T
       ),
       
-      output_dir = "." ,
-      output_file = paste(fileName,'.html', sep = '')
+      output_dir = path ,
+      output_file = paste('EDA_report_',Sys.time(),'.html', sep = '')
     )
     
   }
@@ -195,10 +221,11 @@ setMethod(
 
 
 
-
-
 ###### Generate Output
 
+#' @description 
+#' @param object object that contains input, recipe, registry and output
+#' @export
 setGeneric(
   name = "generateOutput",
   def = function(object)
@@ -219,7 +246,7 @@ setMethod(
       }
       object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
     }  
-    return(object@output) 
+    return(object) 
   }
 )
 
@@ -242,15 +269,39 @@ setMethod(
 
 
 
+###### Save Recipe
+
+#' @description 
+#' @param object object that contains input, recipe, registry and output
+#' @param RDSPath path for saving file
+#' @export
+setGeneric(
+  name = "saveRecipe",
+  def = function(object,RDSPath)
+  {
+    standardGeneric("saveRecipe")
+  }
+)
+
+setMethod(
+  f = "saveRecipe",
+  signature = "brickObject",
+  definition = function(object,RDSPath)
+  {
+    object@output <- list()  
+    saveRDS(object,RDSPath)
+  }
+)
 
 
 
-saveRecipe <- function(object,RDSPath){
-  object@output <- list()  
-  saveRDS(object,RDSPath)
-}
+###### Load Recipe
 
-
+#' @description 
+#' @param RDSPath file path for object to be loaded
+#' @param input The input dataset on which analysis is to be performed
+#' @param filePath Path of the input dataset to be uploaded
+#' @export
 loadRecipe <- function(RDSPath,input=data.frame(),filePath=""){
   object <- readRDS(RDSPath)
   if(filePath == ""){
