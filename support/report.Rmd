@@ -20,7 +20,7 @@ params:
 
 ## Quick Peek
 ```{r quick peek,echo=FALSE,warning=FALSE,results='asis'}
-source('../Poc.R')
+source('../EDA.R')
 input <<- params$input
 recipe <- params$recipe
 output <- params$output
