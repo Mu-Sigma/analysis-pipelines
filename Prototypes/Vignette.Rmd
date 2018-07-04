@@ -41,7 +41,7 @@ print(obj@recipe)
 obj1 <- obj %>>% generateOutput()
 
 
-obj1[[2]]
+obj1@output[[2]]
 
 ```
 
@@ -55,6 +55,7 @@ bivarPlots <- function(object,
                       select_var_name_2,
                       priColor = "blue",secColor='black')
 {
+  
   x=object[, select_var_name_1]
   y=object[, select_var_name_2]
   bivarPlot <- ggplot2::ggplot(object, ggplot2::aes(x,y))+
@@ -68,7 +69,7 @@ bivarPlots <- function(object,
 
 
   return(bivarPlot)
-
+  
 }
 
 
@@ -82,8 +83,7 @@ print(obj@recipe)
 
 obj1 <- obj %>>% generateOutput()
 
-
-obj1[[3]]
+obj1@output[[3]]
 
 ```
 
@@ -92,11 +92,11 @@ obj1[[3]]
 
 ```{r generate report and tabs, warning=F,  eval=FALSE}
 
-obj %>>% generateReport()
+obj %>>% generateReport('/home/sanjay/')
 
 obj <- obj %>>% bivarPlots('Occupancy','PercentTransientNights',priColor = "blue","black")
 
-obj %>>% generateReport()
+obj %>>% generateReport('/home/sanjay/')
 
 ```
 
