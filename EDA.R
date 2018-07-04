@@ -3,17 +3,16 @@
 # Version: 18.06.01
 # Created on: June 14, 2018
 # Description: A PoC for EDA Package
+#
+# Version: 18.07.01
+# Created on: July 5, 2018
+# Description: First release to EOC
 #################################################
 
 library(tibble)
 library(pipeR)
 library(data.table)
 library(magrittr)
-
-# source('EDAUtils.R')
-
-
-
 
 ##### Create Object
 
