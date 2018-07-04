@@ -1,8 +1,6 @@
 ---
 title: "Exploratory Data Analysis"
 subtitle: (`r format(Sys.Date(), "%B %d, %Y")`)
-author: 
-- name: Neeraj, Anshul, Ashwin, Monika
 
 output: 
   html_document
