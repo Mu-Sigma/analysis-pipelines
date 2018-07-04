@@ -1,0 +1,422 @@
+#################################################
+# Title: Sample R package
+# Version: 18.06.01
+# Created on: June 14, 2018
+# Description: A PoC for EDA Package
+#################################################
+
+library(tibble)
+library(pipeR)
+library(data.table)
+library(magrittr)
+
+# source('EDAUtils.R')
+
+
+
+
+##### Create Object
+
+#' @decription 
+#' @slot input The input dataset on which analysis is to be performed
+#' @slot filePath Path of the input dataset to be uploaded
+#' @slot recipe A tibble which holds functions to be called
+#' @slot registry A tibble which holds all the registered functions
+#' @slot output A list which holds all the functions output
+#' @export
+read_input <- setClass("brickObject",
+                       slots = c(
+                         input = "data.frame",
+                         filePath = "character",
+                         recipe = "tbl",
+                         registry = "tbl",
+                         output = "list"
+                       ))
+
+#### Constructor
+setMethod(
+  f = "initialize",
+  signature = "brickObject",
+  definition = function(.Object, input = data.frame(), filePath = "")
+  {
+    if(filePath == ""){
+      .Object@input <- input
+    }
+    else{
+      .Object@input <- read.csv(filePath)
+    }
+    .Object@recipe <- tibble(
+      operation = character(),
+      heading = character(),
+      parameters = list(),
+      outAsIn = logical()
+      
+    )
+    .Object@registry <- tibble(
+      functionName = character(),
+      heading = character(),
+      outAsIn = logical()
+      
+    )
+    .Object@output <- list()
+    brickFunctions <- readRDS('support/predefFunctions.RDS')
+    for(rowNo in 1:nrow(brickFunctions)){
+      .Object %>>% registerFunction(brickFunctions[['functionName']][[rowNo]],brickFunctions[['heading']][[rowNo]],brickFunctions[['outAsIn']][[rowNo]]) -> .Object
+    }
+    return(.Object)
+  }
+)
+
+
+
+
+##### Object Update Function
+
+#' @decription 
+#' @param object object that contains input, recipe, registry and output
+#' @param operation function name to be updated in tibble
+#' @param heading heading of that section in report
+#' @param parameters parameters passed to that function
+#' @param outAsIn whether to use output of this function as input to next
+#' @export
+setGeneric(
+  name = "updateObject",
+  def = function(object,
+                 operation,
+                 heading = "",
+                 parameters,
+                 outAsIn = F)
+  {
+    standardGeneric("updateObject")
+  }
+)
+setMethod(
+  f = "updateObject",
+  signature = "brickObject",
+  definition = function(object, operation, heading="", parameters, outAsIn = F)
+  {
+    object@recipe %>>% add_row(operation = operation,
+                               heading = heading,
+                               parameters = list(parameters),
+                               outAsIn = outAsIn) -> object@recipe
+    return(object)
+  }
+)
+
+
+
+
+
+##### Register Function
+
+#' @description 
+#' @param object object that contains input, recipe, registry and output
+#' @param functionName name of function to be registered
+#' @param heading heading of that section in report
+#' @param outAsIn whether to use output of this function as input to next
+#' @param loadRecipe logical parameter to see if function is being used in loadRecipe or not
+#' @param session to load shiny session in the function
+#' @export
+setGeneric(
+  name = "registerFunction",
+  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
+  {
+    standardGeneric("registerFunction")
+  }
+)
+
+setMethod(
+  f = "registerFunction",
+  signature = "brickObject",
+  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
+  {
+    parametersName <- names(as.list(args(eval(parse(text=functionName)))))
+    parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
+    methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
+    firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
+    methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
+    methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
+    methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
+    registerFunText <- paste0("setGeneric(
+                              name = \"",functionName,"\",
+                              def = function(object, ",parametersName,")
+                              {
+                              standardGeneric(\"",functionName,"\")
+                              }
+                              )
+                              
+                              setMethod(
+                              f = \"",functionName,"\",
+                              signature = \"brickObject\",
+                              definition = function(object, ",parametersName,")
+                              {
+                              parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
+                              parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
+                              
+                              return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
+                              }
+                              )
+                              setMethod(
+                              f = \"",functionName,"\",
+                              signature = \"data.frame\",
+                              definition = function(object ",methodArg,"",methodBody,")
+                              ")
+    
+    eval(parse(text = registerFunText), envir=.GlobalEnv)
+    if(loadRecipe==F){
+      object@registry %>>% add_row(functionName = paste0(functionName),
+                                   heading = heading,
+                                   outAsIn = outAsIn) -> object@registry
+    }
+    return(object)
+                              }
+                              )
+
+
+
+###### Generate Report
+
+#' @description 
+#' @param object object that contains input, recipe, registry and output
+#' @export
+setGeneric(
+  name = "generateReport",
+  def = function(object,path)
+  {
+    standardGeneric("generateReport")
+  }
+)
+
+setMethod(
+  f = "generateReport",
+  signature = "brickObject",
+  definition = function(object,path)
+  {
+    require(rmarkdown)
+    if(length(object@output) == 0){
+      object <- generateOutput(object)
+    }
+    object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
+    
+    
+    rmarkdown::render(
+      'support/report.Rmd',
+      params = list(
+        input = object@input,
+        recipe = object@recipe,
+        output = object@output
+      ),
+      html_document(
+        css = "styles.css",
+        toc = T,
+        toc_float = T
+      ),
+      
+      output_dir = path ,
+      output_file = paste('EDA_report_',Sys.time(),'.html', sep = '')
+    )
+    
+  }
+)
+
+
+
+###### Generate Output
+
+#' @description 
+#' @param object object that contains input, recipe, registry and output
+#' @export
+setGeneric(
+  name = "generateOutput",
+  def = function(object)
+  {
+    standardGeneric("generateOutput")
+  }
+)
+
+setMethod(
+  f = "generateOutput",
+  signature = "brickObject",
+  definition = function(object)
+  {
+    input <- object@input
+    for(rowNo in 1:nrow(object@recipe)){
+      if(object@recipe[['outAsIn']][rowNo] == T){
+        input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+      }
+      object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+    }  
+    return(object) 
+  }
+)
+
+setMethod(
+  f = "generateOutput",
+  signature = "tbl",
+  definition = function(object)
+  {
+    input <- input
+    outList <- list()
+    for(rowNo in 1:nrow(object)){
+      if(object[['outAsIn']][rowNo] == T){
+        input <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
+      }
+      outList[[rowNo]] <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
+    }  
+    return(outList) 
+  }
+)
+
+
+
+###### Save Recipe
+
+#' @description 
+#' @param object object that contains input, recipe, registry and output
+#' @param RDSPath path for saving file
+#' @export
+setGeneric(
+  name = "saveRecipe",
+  def = function(object,RDSPath)
+  {
+    standardGeneric("saveRecipe")
+  }
+)
+
+setMethod(
+  f = "saveRecipe",
+  signature = "brickObject",
+  definition = function(object,RDSPath)
+  {
+    object@output <- list()  
+    saveRDS(object,RDSPath)
+  }
+)
+
+
+
+###### Load Recipe
+
+#' @description 
+#' @param RDSPath file path for object to be loaded
+#' @param input The input dataset on which analysis is to be performed
+#' @param filePath Path of the input dataset to be uploaded
+#' @export
+loadRecipe <- function(RDSPath,input=data.frame(),filePath=""){
+  object <- readRDS(RDSPath)
+  if(filePath == ""){
+    object@input <- input
+  }
+  else{
+    object@input <- read.csv(filePath)
+  }
+  registeredFunctions <- object@registry
+  for(rowNo in 1:nrow(registeredFunctions)){
+    object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
+  }
+  return(object)
+  
+}
+
+
+########################
+# FUNCTION DEFINITIONS #
+########################
+
+# Univariate Categoric Distribution function
+univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
+  levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
+  data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
+  data <- data %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = n())
+  y=data[[uniCol]]
+  catPlot <- ggplot2::ggplot(data,
+                             ggplot2::aes(x = reorder(y, count), y=count)) +
+    ggplot2::geom_bar(stat = "identity",  fill = priColor,alpha=0.7) +
+    ggplot2::xlab(uniCol) +
+    ggplot2::ylab("Frequency") + ggplot2::theme_bw() + 
+    ggplot2::theme(
+      axis.title = ggplot2::element_text(size = 16),panel.grid.major.y=ggplot2::element_blank(),panel.border=ggplot2::element_rect(size=0.1)
+    ) +
+    ggplot2::coord_flip()
+  if(optionalPlots){
+    catPlot <- plotly::plot_ly(y = y, x=data[["count"]],type="bar",orientation='h',color = I(priColor)) %>%
+      plotly::layout(title=paste0("Frequency Histogram for ",uniCol),
+                     xaxis=list(title = "Frequency"),
+                     yaxis=list(title = uniCol))
+    
+    
+  }
+  return(catPlot)
+}
+
+#Outlier Plot Function 
+outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlots){
+  if(method == "iqr"){
+    outlierPlotObj <- ggplot2::ggplot(data, ggplot2::aes(x="", y = data[,columnName])) +
+      ggplot2::geom_boxplot(fill = priColor,alpha=0.7) + 
+      ggplot2::theme_bw() + 
+      ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),panel.grid.major.x=ggplot2::element_blank(),legend.position = "bottom") +ggplot2::ylab(columnName) + ggplot2::xlab("")
+    
+  }
+  if(method == "percentile"){
+    Outlier<-data$Outlier
+    Value<-data[,columnName]
+    outlierPlotObj <- ggplot2::ggplot(data) + 
+      ggplot2::geom_histogram(ggplot2::aes(x = Value, fill = Outlier),bins=30,alpha=0.7) +
+      ggplot2::scale_fill_manual(values = c(priColor, "red"),breaks=c("FALSE", "TRUE"),
+                                 labels=c("Normal", "Outlier"),name = "Status") +
+      ggplot2::theme_bw() + 
+      ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),panel.grid.major.x=ggplot2::element_blank(),legend.position = "bottom") +
+      ggplot2::xlab(columnName)
+    
+  }
+  if(method == "z_score"){
+    data$zScore <- scale(data[,columnName],center = T, scale = T)
+    Zscore<-as.vector(data$zScore)
+    y<-data[,columnName]
+    outlierPlotObj <- 
+      ggplot2::ggplot(data, ggplot2::aes(x = Zscore, y = y)) +
+      ggplot2::geom_point(ggplot2::aes(color = Outlier),alpha=0.7)+     
+      ggplot2::scale_color_manual("Status", values = c("TRUE" = "red","FALSE" =priColor))+
+      ggplot2::ylab(columnName)+
+      ggplot2::theme_bw() + 
+      ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),panel.grid.major.x=ggplot2::element_blank(),legend.position = "bottom") +
+      ggplot2::xlab("Z-score")+
+      ggplot2::geom_vline(xintercept = (cutoffValue),linetype = "dashed")+
+      ggplot2::geom_vline(xintercept = -(cutoffValue), linetype = "dashed") 
+    
+  }
+  #conditionToBe
+  if(optionalPlots)
+  {
+    outlierPlotObj <- plotly::ggplotly(outlierPlotObj)
+    outlierPlotObj$x$layout$margin$l <- outlierPlotObj$x$layout$margin$l + 30
+    outlierPlotObj$x$layout$margin$b <- outlierPlotObj$x$layout$margin$b + 3
+    
+  }
+  
+  return(outlierPlotObj)
+  
+}
+
+#Mutlivariate Outlier Plot Function
+multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalPlots){
+  x<-data[,indepCol]
+  y<-data[,depCol]
+  size<-data[,sizeCol]
+  outlierPlot <- ggplot2::ggplot(data,ggplot2::aes(x = x,y = y),alpha=0.6)+
+    ggplot2::geom_point(ggplot2::aes(color = Outlier, size = size),alpha=0.7)+
+    ggplot2::scale_color_manual("",values = c("Outlier" = "red", "Normal" = priColor))+
+    ggplot2::labs(title = paste(depCol,"vs",indepCol)) +  ggplot2::theme_bw() + 
+    ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),legend.position = "bottom") +
+    ggplot2::ylab(depCol) +
+    ggplot2::xlab(indepCol)
+  #conditionToBe
+  if(optionalPlots)
+  {
+    outlierPlot <- plotly::ggplotly(outlierPlot,tooltip=c("all"))
+    outlierPlot$x$layout$margin$l <- outlierPlot$x$layout$margin$l + 30
+    outlierPlot$x$layout$margin$b <- outlierPlot$x$layout$margin$b + 3
+  }
+  return(outlierPlot)
+}
