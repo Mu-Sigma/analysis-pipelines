@@ -323,6 +323,48 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
 # FUNCTION DEFINITIONS #
 ########################
 
+
+# This function can assist developers to register new functions that they want to add to the package
+updatePackageRegistry <- function(functionName, functionHeader, flag){
+  #
+  # 'functionName' is the name of the function
+  # 'functionHeader' is the header caption that will feature in the report for this function's output
+  # 'flag' is a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
+  # example usage: updatePackageRegistry('ignoreCols', '', TRUE)
+  #
+  tryCatch({
+    functionsDefined <- readRDS("support/predefFunctions.RDS")
+    invisible(source("EDA.R"))
+    functionList <- ls(envir = .GlobalEnv)
+    if(functionName %in% functionList){
+      functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
+      print(functionsDefined)
+      saveRDS(functionsDefined, "support/predefFunctions.RDS")
+      print("Successfully Registered function into package!")
+    }else
+      print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))  
+  }, error = function(e){
+     stop(e)
+  }, warning = function(e){
+     warning(e)
+  })
+}  
+
+ignoreCols <- function(data, columns){
+  tryCatch({
+    if(all(columns %in% colnames(data))){
+      return(data[, setdiff(colnames(data), columns), drop = F])
+    }else{
+      mismatch <- colnames(data)[!all(columns %in% colnames(data))]
+      stop(paste0("Columns ", paste0(mismatch, collapse = ", "), " are not present in the dataset"))
+    }
+  }, error = function(e){
+    stop(e)
+  }, warning = function(e){
+    warning(e)
+  })
+}
+
 # Univariate Categoric Distribution function
 univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
   levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
