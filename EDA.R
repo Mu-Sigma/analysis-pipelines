@@ -9,6 +9,81 @@
 # Description: First release to EOC
 #################################################
 
+########################
+## PREPARING PACKAGES ##
+########################
+
+# Expands the package list into a dependency tree of its base packages
+packageDependencyList <- function(packageList){
+  if(class(packageList) != "character"){
+    packageList <- as.character(packageList)
+  }
+  if(length(packageList) == 0){
+    stop('input parameter is empty')
+  }
+  # Create a graph object to containing package dependency hierarchy
+  dependency.check <- miniCRAN::makeDepGraph(packageList, suggests = FALSE, includeBasePkgs = FALSE)
+  
+  # Iterates over each element of the object packageList and gives out the individual package dependencies for each of these
+  # Elements of packageList 
+  result <- list()
+  for(i in 1:length(packageList)){
+    result[[i]] <- (igraph::topo_sort(dependency.check))}
+  
+  # For each element in the list, numbers are replaced with package names, remove NAs and reverse the order to get the correct order
+  result <- lapply(result, function(x){
+    x <- igraph::as_ids(x)
+  })
+  result <- Reduce(c, result) #append all the lists into one list
+  result <- result[!duplicated(result)] #remove duplicates
+  
+  return(result) 
+}
+
+
+# Function to install packages if they don't exist and return a list of packages that failed to install
+installPackages <- function(packageList){
+  lapply(packageList, function(x){
+    if(!(x %in% installed.packages()[,1]))
+      install.packages(x, dependencies = T, repos = "http://cloud.r-project.org/")
+  })
+  failedList <- NULL
+  lapply(packageList, function(x){
+    if(!(x %in% installed.packages()[,1]))
+      failedList <<- c(failedList, x)
+  })
+  return(failedList)
+}
+
+# Function that installs the basic packages required to run the package
+installBaseDependencies <- function(){
+  packageList <- c("tibble", "pipeR", "data.table", "magrittr")
+  packageListBig <- packageDependencyList(packageList)
+  failedList <- installPackages(packageListBig)
+  failedList <- NULL
+  if(!is.null(failedList))
+    stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
+  print("Success!")
+}
+# Calling the function at source to ready the use of the package
+installBaseDependencies()
+
+# Function that maintains a list of packages required per function and installs them when called
+installRequiredPackages <- function(){
+  packageList <- c('univarCatDistPlots' = c('ggplot2', 'plotly', 'dplyr'),
+                   'outlierPlot' = c('ggplot2', 'plotly'),
+                   'multiVarOutlierPlot' = c('ggplot2', 'plotly')
+  )
+  packageList <- unique(unlist(packageList))
+  failedList <- installPackages(packageList)
+  failedList <- NULL
+  if(!is.null(failedList))
+    stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
+  print("Success!")
+}
+
+##################################################
+
 library(tibble)
 library(pipeR)
 library(data.table)
@@ -65,7 +140,6 @@ setMethod(
     return(.Object)
   }
 )
-
 
 
 
@@ -323,33 +397,6 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
 # FUNCTION DEFINITIONS #
 ########################
 
-
-# This function can assist developers to register new functions that they want to add to the package
-updatePackageRegistry <- function(functionName, functionHeader, flag){
-  #
-  # 'functionName' is the name of the function
-  # 'functionHeader' is the header caption that will feature in the report for this function's output
-  # 'flag' is a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
-  # example usage: updatePackageRegistry('ignoreCols', '', TRUE)
-  #
-  tryCatch({
-    functionsDefined <- readRDS("support/predefFunctions.RDS")
-    invisible(source("EDA.R"))
-    functionList <- ls(envir = .GlobalEnv)
-    if(functionName %in% functionList){
-      functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
-      print(functionsDefined)
-      saveRDS(functionsDefined, "support/predefFunctions.RDS")
-      print("Successfully Registered function into package!")
-    }else
-      print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))  
-  }, error = function(e){
-     stop(e)
-  }, warning = function(e){
-     warning(e)
-  })
-}  
-
 ignoreCols <- function(data, columns){
   tryCatch({
     if(all(columns %in% colnames(data))){
@@ -462,3 +509,34 @@ multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalP
   }
   return(outlierPlot)
 }
+
+
+##################
+# MISC FUNCTIONS #
+##################
+
+# This function can assist developers to register new functions that they want to add to the package
+updatePackageRegistry <- function(functionName, functionHeader, flag){
+  #
+  # 'functionName' is the name of the function
+  # 'functionHeader' is the header caption that will feature in the report for this function's output
+  # 'flag' is a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
+  # example usage: updatePackageRegistry('ignoreCols', '', TRUE)
+  #
+  tryCatch({
+    functionsDefined <- readRDS("support/predefFunctions.RDS")
+    invisible(source("EDA.R"))
+    functionList <- ls(envir = .GlobalEnv)
+    if(functionName %in% functionList){
+      functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
+      print(functionsDefined)
+      saveRDS(functionsDefined, "support/predefFunctions.RDS")
+      print("Successfully Registered function into package!")
+    }else
+      print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))  
+  }, error = function(e){
+    stop(e)
+  }, warning = function(e){
+    warning(e)
+  })
+}  
