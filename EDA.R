@@ -319,6 +319,9 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
 }
 
 
+
+##### Install packages
+
 ########################
 # FUNCTION DEFINITIONS #
 ########################
@@ -420,3 +423,139 @@ multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalP
   }
   return(outlierPlot)
 }
+
+
+
+
+## Return the column type 
+CheckColumnType <- function(dataVector) {
+  #Check if the column type is "numeric" or "character" & decide type accordDingly
+  if (class(dataVector) == "integer" || class(dataVector) == "numeric") {
+    columnType <- "numeric"
+  } else { columnType <- "character" }
+  #Return the result
+  return(columnType)
+}
+
+
+## Get numeric and categoric
+
+getDatatype <- function(dataset){
+  numeric_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){ CheckColumnType(x) == "numeric"}))]
+  cat_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){CheckColumnType(x) == "character"|| CheckColumnType(x) == "factor"}))]
+  return(list("numeric_cols"=numeric_cols , "cat_cols"=cat_cols))
+}
+
+## Correlation Matrix
+
+correlationMatPlot <- function(dataset, methodused = "everything"){
+  numeric_cols <- getDatatype(dataset)['numeric_cols']
+  cormatrix <- base::round(cor(dataset[,unlist(numeric_cols),drop=F], use = methodused),3)
+  return(corrplot::corrplot(cormatrix, 
+                            method = "color", 
+                            outline = T, 
+                            addgrid.col = "darkgray",
+                            # order="hclust", 
+                            addrect = 4,
+                            rect.col = "black",
+                            rect.lwd = 5,
+                            cl.pos = "b",
+                            tl.col = "black", 
+                            tl.cex = 1, 
+                            cl.cex = 1.5,
+                            addCoef.col = "black",
+                            number.digits = 2, 
+                            number.cex = 0.75, 
+                            type = "lower",
+                            col = grDevices::colorRampPalette(c("red","white","green"))(200)))
+}
+
+
+
+
+## Bivariate Plots
+bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
+ 
+  numeric_cols <- unlist(getDatatype(dataset)['numeric_cols'])
+  cat_cols <- unlist(getDatatype(dataset)['cat_cols'])
+  
+  if (select_var_name_1 %in% numeric_cols && select_var_name_2 %in% numeric_cols) {
+    x = dataset[, select_var_name_1]
+    y = dataset[, select_var_name_2]
+    bivarPlot <-
+      ggplot2::ggplot(dataset, ggplot2::aes(x, y)) +
+      ggplot2::geom_point(color = priColor, alpha = 0.7) +
+      ggplot2::geom_smooth(method = lm, color = secColor) +
+      ggplot2::xlab(select_var_name_1) +
+      ggplot2::ylab(select_var_name_2) + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste(
+        'Bivariate plot for',
+        select_var_name_1,
+        'and',
+        select_var_name_2,
+        sep = ' '
+      )) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 10),
+        axis.text = ggplot2::element_text(size = 10),
+        axis.title = ggplot2::element_text(size = 10)
+      )
+  
+    
+    
+  } else if (select_var_name_1 %in% cat_cols &&
+             select_var_name_2 %in% cat_cols) {
+    new_df <- dataset %>% dplyr::group_by_(.dots=c(select_var_name_1,select_var_name_2)) %>% dplyr::summarise(n = n())
+    colfunc <- grDevices::colorRampPalette(c(priColor, "white" , secColor))
+    colorvar <- length(unique(new_df[[select_var_name_2]]))
+    a=as.vector(as.character(unique(new_df[[select_var_name_1]])))
+    y=new_df[[select_var_name_1]]
+    label=new_df[[select_var_name_2]]
+    bivarPlot <-ggplot2::ggplot(new_df, ggplot2::aes(x = y, y= n, fill = label)) +
+      ggplot2::geom_bar(position = "dodge", stat = "identity",alpha=0.9) +
+      ggplot2::guides(fill=ggplot2::guide_legend(title=select_var_name_2)) +
+      ggplot2::coord_flip()+
+      ggplot2::xlab(select_var_name_1) +
+      ggplot2::ylab("count") + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste('Bivariate plot for',select_var_name_1,'and',select_var_name_2,sep=' '))+
+      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 10),axis.text = ggplot2::element_text(size=10),
+                     axis.title=ggplot2::element_text(size=10),legend.position="bottom",axis.text.x=ggplot2::element_text(angle=45, hjust=1))+ ggplot2::scale_fill_manual(values = colfunc(colorvar))
+    
+    
+  } else {
+    cols <- c(select_var_name_1, select_var_name_2)
+    cat_col <- cols[which(cols %in% cat_cols)]
+    num_col <- cols[which(cols %in% numeric_cols)]
+    a = as.vector(as.character(unique(dataset[[cat_col]])))
+    y = dataset[[cat_col]]
+    x = dataset[[num_col]]
+    bivarPlot <-
+      ggplot2::ggplot(dataset, ggplot2::aes(x = y, y = x)) +
+      ggplot2::geom_point(color = priColor, alpha = 0.7) +
+      ggplot2::coord_flip() +
+      ggplot2::xlab(cat_col) +
+      ggplot2::ylab(num_col) + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste(
+        'Bivariate plot for',
+        select_var_name_1,
+        'and',
+        select_var_name_2,
+        sep = ' '
+      )) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 10),
+        axis.text = ggplot2::element_text(size = 10),
+        axis.title = ggplot2::element_text(size = 10)
+      )
+  }
+  
+  return(bivarPlot)
+}
+
+
+
+
+
+
+
+
