@@ -1,19 +1,24 @@
 #################################################
 # Title: Reusable recipes for generating analysis reports
 # Version: 18.07.01
-# Created on: June 14, 2018
+# Created on: July 12, 2018
 # Description: An R package version
 
 
-#' @decription The class which holds the metadata including the recipe of available functions,
+#' @name read_input
+#' @title Function to initialize \code{AnalysisRecipe} class with the input data frame
+#' @details The class which holds the metadata including the recipe of available functions,
 #' the data on which the recipe is to be applied, as well as the recipe itself
+#' @details More details of how the object of this class should be initialized is provided in the
+#' constructor - \link{initialize}
 #' @slot input The input dataset on which analysis is to be performed
 #' @slot filePath Path of the input dataset to be uploaded
 #' @slot recipe A tibble which holds functions to be called
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
+#' @family Package core functions
 #' @export
-read_input <- setClass("brickObject",
+read_input <- setClass("AnalysisRecipe",
                        slots = c(
                          input = "data.frame",
                          filePath = "character",
@@ -22,10 +27,19 @@ read_input <- setClass("brickObject",
                          output = "list"
                        ))
 
-#### Constructor
+#' @name initialize
+#' @title Constructor for the \code{AnalysisRecipe} object
+#' @param .Object The \code{AnalysisRecipe} object
+#' @param input The data frame on which operations need to be performed
+#' @param filePath File path for a .csv file to directly read in the dataset from
+#' @details
+#'      Either one of \code{input} or \code{filePath} need to be provided i.e. either the
+#'      data frame or the file path to a csv file
+#' @return an object of class "\code{AnalysisRecipe}", initialized with the input data frame provided
+#' @family Package core functions
 setMethod(
   f = "initialize",
-  signature = "brickObject",
+  signature = "AnalysisRecipe",
   definition = function(.Object, input = data.frame(), filePath = "")
   {
     if(filePath == ""){
@@ -56,16 +70,20 @@ setMethod(
   }
 )
 
-
-
 ##### Object Update Function
 
-#' @decription
+#' @name updateObject
+#' @title Update the \code{AnalysisRecipe} object by adding an operation to the recipe
+#' @details
+#'       The specified operation along with the heading and parameters is updated in the recipe slot
+#'       of the AnalysisRecipe object, where the sequence of operations to be performed is stored
 #' @param object object that contains input, recipe, registry and output
 #' @param operation function name to be updated in tibble
 #' @param heading heading of that section in report
 #' @param parameters parameters passed to that function
 #' @param outAsIn whether to use output of this function as input to next
+#' @return Updated \code{AnalysisRecipe} object
+#' @family Package core functions
 #' @export
 setGeneric(
   name = "updateObject",
@@ -80,7 +98,7 @@ setGeneric(
 )
 setMethod(
   f = "updateObject",
-  signature = "brickObject",
+  signature = "AnalysisRecipe",
   definition = function(object, operation, heading="", parameters, outAsIn = F)
   {
     object@recipe %>>% add_row(operation = operation,
@@ -90,9 +108,6 @@ setMethod(
     return(object)
   }
 )
-
-
-
 
 
 ##### Register Function
@@ -115,7 +130,7 @@ setGeneric(
 
 setMethod(
   f = "registerFunction",
-  signature = "brickObject",
+  signature = "AnalysisRecipe",
   definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
@@ -135,7 +150,7 @@ setMethod(
 
                               setMethod(
                               f = \"",functionName,"\",
-                              signature = \"brickObject\",
+                              signature = \"AnalysisRecipe\",
                               definition = function(object, ",parametersName,")
                               {
                               parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
@@ -177,7 +192,7 @@ setGeneric(
 
 setMethod(
   f = "generateReport",
-  signature = "brickObject",
+  signature = "AnalysisRecipe",
   definition = function(object,path)
   {
     require(rmarkdown)
@@ -224,7 +239,7 @@ setGeneric(
 
 setMethod(
   f = "generateOutput",
-  signature = "brickObject",
+  signature = "AnalysisRecipe",
   definition = function(object)
   {
     input <- object@input
@@ -273,7 +288,7 @@ setGeneric(
 
 setMethod(
   f = "saveRecipe",
-  signature = "brickObject",
+  signature = "AnalysisRecipe",
   definition = function(object,RDSPath)
   {
     object@output <- list()
