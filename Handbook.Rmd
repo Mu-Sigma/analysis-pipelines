@@ -74,6 +74,7 @@ The pipe(%>>%) operator used here works in a similar manner to the tidyverse par
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
 
+
 obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
 obj@recipe
 ```
