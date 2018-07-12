@@ -447,7 +447,8 @@ obj %&gt;&gt;% generateReport('~/Desktop')</code></pre>
 <pre class="r"><code># Saves the recipe and registry of the EDA object
 saveRecipe(obj, 'support/recipe.RDS')</code></pre>
 <p>This recipe can be loaded and re-used with any other data set.</p>
-<pre class="r"><code>obj2 &lt;- loadRecipe('support/recipe.RDS',filePath = 'support/hotel_new.csv') 
+<pre class="r"><code># Note the new data set of the similar schema
+obj2 &lt;- loadRecipe('support/recipe.RDS',filePath = 'support/hotel_new_reload.csv')  
 
 print(obj2@registry)</code></pre>
 <pre><code>## # A tibble: 7 x 3

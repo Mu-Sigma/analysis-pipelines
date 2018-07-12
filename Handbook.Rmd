@@ -228,7 +228,8 @@ saveRecipe(obj, 'support/recipe.RDS')
 This recipe can be loaded and re-used with any other data set.
 
 ```{r load recipes, message=FALSE, warning=FALSE, eval=T}
-obj2 <- loadRecipe('support/recipe.RDS',filePath = 'support/hotel_new.csv') 
+# Note the new data set of the similar schema
+obj2 <- loadRecipe('support/recipe.RDS',filePath = 'support/hotel_new_reload.csv')  
 
 print(obj2@registry)
 print(obj2@recipe)
