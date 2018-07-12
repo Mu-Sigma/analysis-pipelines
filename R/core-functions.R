@@ -5,7 +5,8 @@
 # Description: An R package version
 
 
-#' @decription
+#' @decription The class which holds the metadata including the recipe of available functions,
+#' the data on which the recipe is to be applied, as well as the recipe itself
 #' @slot input The input dataset on which analysis is to be performed
 #' @slot filePath Path of the input dataset to be uploaded
 #' @slot recipe A tibble which holds functions to be called
