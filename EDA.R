@@ -7,6 +7,10 @@
 # Version: 18.07.01
 # Created on: July 5, 2018
 # Description: First release to EOC
+
+# Version: 18.07.02
+# Created on: July 5, 2018
+# Description: Added handlers for package installation
 #################################################
 
 ########################
@@ -64,6 +68,7 @@ installBaseDependencies <- function(){
   if(!is.null(failedList))
     stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
   print("Success!")
+  print("Please run the command 'installRequiredPackages()' to download all the packages required to leverage all utilities.")
 }
 # Calling the function at source to ready the use of the package
 installBaseDependencies()
@@ -79,15 +84,17 @@ installRequiredPackages <- function(){
   failedList <- NULL
   if(!is.null(failedList))
     stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
-  print("Success!")
+  print("Success! All required packages installed...")
 }
 
 ##################################################
 
-library(tibble)
-library(pipeR)
-library(data.table)
-library(magrittr)
+invisible({
+  library(tibble)
+  library(pipeR)
+  library(data.table)
+  library(magrittr)  
+})
 
 ##### Create Object
 
