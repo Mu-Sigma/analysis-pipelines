@@ -1,97 +1,11 @@
 #################################################
-# Title: Sample R package
-# Version: 18.06.01
-# Created on: June 14, 2018
-# Description: A PoC for EDA Package
-#
+# Title: Reusable recipes for generating analysis reports
 # Version: 18.07.01
-# Created on: July 5, 2018
-# Description: First release to EOC
-#################################################
-
-########################
-## PREPARING PACKAGES ##
-########################
-
-# Expands the package list into a dependency tree of its base packages
-packageDependencyList <- function(packageList){
-  if(class(packageList) != "character"){
-    packageList <- as.character(packageList)
-  }
-  if(length(packageList) == 0){
-    stop('input parameter is empty')
-  }
-  # Create a graph object to containing package dependency hierarchy
-  dependency.check <- miniCRAN::makeDepGraph(packageList, suggests = FALSE, includeBasePkgs = FALSE)
-  
-  # Iterates over each element of the object packageList and gives out the individual package dependencies for each of these
-  # Elements of packageList 
-  result <- list()
-  for(i in 1:length(packageList)){
-    result[[i]] <- (igraph::topo_sort(dependency.check))}
-  
-  # For each element in the list, numbers are replaced with package names, remove NAs and reverse the order to get the correct order
-  result <- lapply(result, function(x){
-    x <- igraph::as_ids(x)
-  })
-  result <- Reduce(c, result) #append all the lists into one list
-  result <- result[!duplicated(result)] #remove duplicates
-  
-  return(result) 
-}
+# Created on: June 14, 2018
+# Description: An R package version
 
 
-# Function to install packages if they don't exist and return a list of packages that failed to install
-installPackages <- function(packageList){
-  lapply(packageList, function(x){
-    if(!(x %in% installed.packages()[,1]))
-      install.packages(x, dependencies = T, repos = "http://cloud.r-project.org/")
-  })
-  failedList <- NULL
-  lapply(packageList, function(x){
-    if(!(x %in% installed.packages()[,1]))
-      failedList <<- c(failedList, x)
-  })
-  return(failedList)
-}
-
-# Function that installs the basic packages required to run the package
-installBaseDependencies <- function(){
-  packageList <- c("tibble", "pipeR", "data.table", "magrittr")
-  packageListBig <- packageDependencyList(packageList)
-  failedList <- installPackages(packageListBig)
-  failedList <- NULL
-  if(!is.null(failedList))
-    stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
-  print("Success!")
-}
-# Calling the function at source to ready the use of the package
-installBaseDependencies()
-
-# Function that maintains a list of packages required per function and installs them when called
-installRequiredPackages <- function(){
-  packageList <- c('univarCatDistPlots' = c('ggplot2', 'plotly', 'dplyr'),
-                   'outlierPlot' = c('ggplot2', 'plotly'),
-                   'multiVarOutlierPlot' = c('ggplot2', 'plotly')
-  )
-  packageList <- unique(unlist(packageList))
-  failedList <- installPackages(packageList)
-  failedList <- NULL
-  if(!is.null(failedList))
-    stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
-  print("Success!")
-}
-
-##################################################
-
-library(tibble)
-library(pipeR)
-library(data.table)
-library(magrittr)
-
-##### Create Object
-
-#' @decription 
+#' @decription
 #' @slot input The input dataset on which analysis is to be performed
 #' @slot filePath Path of the input dataset to be uploaded
 #' @slot recipe A tibble which holds functions to be called
@@ -124,13 +38,13 @@ setMethod(
       heading = character(),
       parameters = list(),
       outAsIn = logical()
-      
+
     )
     .Object@registry <- tibble(
       functionName = character(),
       heading = character(),
       outAsIn = logical()
-      
+
     )
     .Object@output <- list()
     brickFunctions <- readRDS('support/predefFunctions.RDS')
@@ -145,7 +59,7 @@ setMethod(
 
 ##### Object Update Function
 
-#' @decription 
+#' @decription
 #' @param object object that contains input, recipe, registry and output
 #' @param operation function name to be updated in tibble
 #' @param heading heading of that section in report
@@ -182,7 +96,7 @@ setMethod(
 
 ##### Register Function
 
-#' @description 
+#' @description
 #' @param object object that contains input, recipe, registry and output
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
@@ -217,7 +131,7 @@ setMethod(
                               standardGeneric(\"",functionName,"\")
                               }
                               )
-                              
+
                               setMethod(
                               f = \"",functionName,"\",
                               signature = \"brickObject\",
@@ -225,7 +139,7 @@ setMethod(
                               {
                               parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
                               parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
-                              
+
                               return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
                               }
                               )
@@ -234,7 +148,7 @@ setMethod(
                               signature = \"data.frame\",
                               definition = function(object ",methodArg,"",methodBody,")
                               ")
-    
+
     eval(parse(text = registerFunText), envir=.GlobalEnv)
     if(loadRecipe==F){
       object@registry %>>% add_row(functionName = paste0(functionName),
@@ -249,7 +163,7 @@ setMethod(
 
 ###### Generate Report
 
-#' @description 
+#' @description
 #' @param object object that contains input, recipe, registry and output
 #' @export
 setGeneric(
@@ -270,8 +184,8 @@ setMethod(
       object <- generateOutput(object)
     }
     object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
-    
-    
+
+
     rmarkdown::render(
       'support/report.Rmd',
       params = list(
@@ -284,11 +198,11 @@ setMethod(
         toc = T,
         toc_float = T
       ),
-      
+
       output_dir = path ,
       output_file = paste('EDA_report_',Sys.time(),'.html', sep = '')
     )
-    
+
   }
 )
 
@@ -296,7 +210,7 @@ setMethod(
 
 ###### Generate Output
 
-#' @description 
+#' @description
 #' @param object object that contains input, recipe, registry and output
 #' @export
 setGeneric(
@@ -318,8 +232,8 @@ setMethod(
         input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
       }
       object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
-    }  
-    return(object) 
+    }
+    return(object)
   }
 )
 
@@ -335,8 +249,8 @@ setMethod(
         input <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
       }
       outList[[rowNo]] <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
-    }  
-    return(outList) 
+    }
+    return(outList)
   }
 )
 
@@ -344,7 +258,7 @@ setMethod(
 
 ###### Save Recipe
 
-#' @description 
+#' @description
 #' @param object object that contains input, recipe, registry and output
 #' @param RDSPath path for saving file
 #' @export
@@ -371,7 +285,7 @@ setMethod(
 
 ###### Load Recipe
 
-#' @description 
+#' @description
 #' @param RDSPath file path for object to be loaded
 #' @param input The input dataset on which analysis is to be performed
 #' @param filePath Path of the input dataset to be uploaded
@@ -389,127 +303,8 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
     object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
   }
   return(object)
-  
+
 }
-
-
-########################
-# FUNCTION DEFINITIONS #
-########################
-
-ignoreCols <- function(data, columns){
-  tryCatch({
-    if(all(columns %in% colnames(data))){
-      return(data[, setdiff(colnames(data), columns), drop = F])
-    }else{
-      mismatch <- colnames(data)[!all(columns %in% colnames(data))]
-      stop(paste0("Columns ", paste0(mismatch, collapse = ", "), " are not present in the dataset"))
-    }
-  }, error = function(e){
-    stop(e)
-  }, warning = function(e){
-    warning(e)
-  })
-}
-
-# Univariate Categoric Distribution function
-univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
-  levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
-  data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
-  data <- data %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = n())
-  y=data[[uniCol]]
-  catPlot <- ggplot2::ggplot(data,
-                             ggplot2::aes(x = reorder(y, count), y=count)) +
-    ggplot2::geom_bar(stat = "identity",  fill = priColor,alpha=0.7) +
-    ggplot2::xlab(uniCol) +
-    ggplot2::ylab("Frequency") + ggplot2::theme_bw() + 
-    ggplot2::theme(
-      axis.title = ggplot2::element_text(size = 16),panel.grid.major.y=ggplot2::element_blank(),panel.border=ggplot2::element_rect(size=0.1)
-    ) +
-    ggplot2::coord_flip()
-  if(optionalPlots){
-    catPlot <- plotly::plot_ly(y = y, x=data[["count"]],type="bar",orientation='h',color = I(priColor)) %>%
-      plotly::layout(title=paste0("Frequency Histogram for ",uniCol),
-                     xaxis=list(title = "Frequency"),
-                     yaxis=list(title = uniCol))
-    
-    
-  }
-  return(catPlot)
-}
-
-#Outlier Plot Function 
-outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlots){
-  if(method == "iqr"){
-    outlierPlotObj <- ggplot2::ggplot(data, ggplot2::aes(x="", y = data[,columnName])) +
-      ggplot2::geom_boxplot(fill = priColor,alpha=0.7) + 
-      ggplot2::theme_bw() + 
-      ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),panel.grid.major.x=ggplot2::element_blank(),legend.position = "bottom") +ggplot2::ylab(columnName) + ggplot2::xlab("")
-    
-  }
-  if(method == "percentile"){
-    Outlier<-data$Outlier
-    Value<-data[,columnName]
-    outlierPlotObj <- ggplot2::ggplot(data) + 
-      ggplot2::geom_histogram(ggplot2::aes(x = Value, fill = Outlier),bins=30,alpha=0.7) +
-      ggplot2::scale_fill_manual(values = c(priColor, "red"),breaks=c("FALSE", "TRUE"),
-                                 labels=c("Normal", "Outlier"),name = "Status") +
-      ggplot2::theme_bw() + 
-      ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),panel.grid.major.x=ggplot2::element_blank(),legend.position = "bottom") +
-      ggplot2::xlab(columnName)
-    
-  }
-  if(method == "z_score"){
-    data$zScore <- scale(data[,columnName],center = T, scale = T)
-    Zscore<-as.vector(data$zScore)
-    y<-data[,columnName]
-    outlierPlotObj <- 
-      ggplot2::ggplot(data, ggplot2::aes(x = Zscore, y = y)) +
-      ggplot2::geom_point(ggplot2::aes(color = Outlier),alpha=0.7)+     
-      ggplot2::scale_color_manual("Status", values = c("TRUE" = "red","FALSE" =priColor))+
-      ggplot2::ylab(columnName)+
-      ggplot2::theme_bw() + 
-      ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),panel.grid.major.x=ggplot2::element_blank(),legend.position = "bottom") +
-      ggplot2::xlab("Z-score")+
-      ggplot2::geom_vline(xintercept = (cutoffValue),linetype = "dashed")+
-      ggplot2::geom_vline(xintercept = -(cutoffValue), linetype = "dashed") 
-    
-  }
-  #conditionToBe
-  if(optionalPlots)
-  {
-    outlierPlotObj <- plotly::ggplotly(outlierPlotObj)
-    outlierPlotObj$x$layout$margin$l <- outlierPlotObj$x$layout$margin$l + 30
-    outlierPlotObj$x$layout$margin$b <- outlierPlotObj$x$layout$margin$b + 3
-    
-  }
-  
-  return(outlierPlotObj)
-  
-}
-
-#Mutlivariate Outlier Plot Function
-multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalPlots){
-  x<-data[,indepCol]
-  y<-data[,depCol]
-  size<-data[,sizeCol]
-  outlierPlot <- ggplot2::ggplot(data,ggplot2::aes(x = x,y = y),alpha=0.6)+
-    ggplot2::geom_point(ggplot2::aes(color = Outlier, size = size),alpha=0.7)+
-    ggplot2::scale_color_manual("",values = c("Outlier" = "red", "Normal" = priColor))+
-    ggplot2::labs(title = paste(depCol,"vs",indepCol)) +  ggplot2::theme_bw() + 
-    ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),legend.position = "bottom") +
-    ggplot2::ylab(depCol) +
-    ggplot2::xlab(indepCol)
-  #conditionToBe
-  if(optionalPlots)
-  {
-    outlierPlot <- plotly::ggplotly(outlierPlot,tooltip=c("all"))
-    outlierPlot$x$layout$margin$l <- outlierPlot$x$layout$margin$l + 30
-    outlierPlot$x$layout$margin$b <- outlierPlot$x$layout$margin$b + 3
-  }
-  return(outlierPlot)
-}
-
 
 ##################
 # MISC FUNCTIONS #
@@ -533,10 +328,93 @@ updatePackageRegistry <- function(functionName, functionHeader, flag){
       saveRDS(functionsDefined, "support/predefFunctions.RDS")
       print("Successfully Registered function into package!")
     }else
-      print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))  
+      print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))
   }, error = function(e){
     stop(e)
   }, warning = function(e){
     warning(e)
   })
-}  
+}
+
+
+
+
+########################
+## PREPARING PACKAGES ##
+########################
+
+# # Expands the package list into a dependency tree of its base packages
+# packageDependencyList <- function(packageList){
+#   if(class(packageList) != "character"){
+#     packageList <- as.character(packageList)
+#   }
+#   if(length(packageList) == 0){
+#     stop('input parameter is empty')
+#   }
+#   # Create a graph object to containing package dependency hierarchy
+#   dependency.check <- miniCRAN::makeDepGraph(packageList, suggests = FALSE, includeBasePkgs = FALSE)
+#
+#   # Iterates over each element of the object packageList and gives out the individual package dependencies for each of these
+#   # Elements of packageList
+#   result <- list()
+#   for(i in 1:length(packageList)){
+#     result[[i]] <- (igraph::topo_sort(dependency.check))}
+#
+#   # For each element in the list, numbers are replaced with package names, remove NAs and reverse the order to get the correct order
+#   result <- lapply(result, function(x){
+#     x <- igraph::as_ids(x)
+#   })
+#   result <- Reduce(c, result) #append all the lists into one list
+#   result <- result[!duplicated(result)] #remove duplicates
+#
+#   return(result)
+# }
+#
+#
+# # Function to install packages if they don't exist and return a list of packages that failed to install
+# installPackages <- function(packageList){
+#   lapply(packageList, function(x){
+#     if(!(x %in% installed.packages()[,1]))
+#       install.packages(x, dependencies = T, repos = "http://cloud.r-project.org/")
+#   })
+#   failedList <- NULL
+#   lapply(packageList, function(x){
+#     if(!(x %in% installed.packages()[,1]))
+#       failedList <<- c(failedList, x)
+#   })
+#   return(failedList)
+# }
+#
+# # Function that installs the basic packages required to run the package
+# installBaseDependencies <- function(){
+#   packageList <- c("tibble", "pipeR", "data.table", "magrittr")
+#   packageListBig <- packageDependencyList(packageList)
+#   failedList <- installPackages(packageListBig)
+#   failedList <- NULL
+#   if(!is.null(failedList))
+#     stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
+#   print("Success!")
+# }
+# # Calling the function at source to ready the use of the package
+# installBaseDependencies()
+#
+# # Function that maintains a list of packages required per function and installs them when called
+# installRequiredPackages <- function(){
+#   packageList <- c('univarCatDistPlots' = c('ggplot2', 'plotly', 'dplyr'),
+#                    'outlierPlot' = c('ggplot2', 'plotly'),
+#                    'multiVarOutlierPlot' = c('ggplot2', 'plotly')
+#   )
+#   packageList <- unique(unlist(packageList))
+#   failedList <- installPackages(packageList)
+#   failedList <- NULL
+#   if(!is.null(failedList))
+#     stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
+#   print("Success!")
+# }
+
+##################################################
+#
+# library(tibble)
+# library(pipeR)
+# library(data.table)
+# library(magrittr)
