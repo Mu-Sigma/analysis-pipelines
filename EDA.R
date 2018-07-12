@@ -7,10 +7,6 @@
 # Version: 18.07.01
 # Created on: July 5, 2018
 # Description: First release to EOC
-
-# Version: 18.07.02
-# Created on: July 5, 2018
-# Description: Added handlers for package installation
 #################################################
 
 ########################
@@ -75,11 +71,8 @@ installBaseDependencies()
 
 # Function that maintains a list of packages required per function and installs them when called
 installRequiredPackages <- function(){
-  packageList <- c('univarCatDistPlots' = c('ggplot2', 'plotly', 'dplyr'),
-                   'outlierPlot' = c('ggplot2', 'plotly'),
-                   'multiVarOutlierPlot' = c('ggplot2', 'plotly')
-  )
-  packageList <- unique(unlist(packageList))
+  packageList <- readRDS("support/predefFunctions.RDS")
+  packageList <- unique(unlist(packageList$packages))
   failedList <- installPackages(packageList)
   failedList <- NULL
   if(!is.null(failedList))
@@ -89,7 +82,7 @@ installRequiredPackages <- function(){
 
 ##################################################
 
-invisible({
+suppressPackageStartupMessages({
   library(tibble)
   library(pipeR)
   library(data.table)
@@ -147,6 +140,7 @@ setMethod(
     return(.Object)
   }
 )
+
 
 
 
@@ -396,9 +390,7 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
     object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
   }
   return(object)
-  
 }
-
 
 ########################
 # FUNCTION DEFINITIONS #
@@ -464,7 +456,6 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
       ggplot2::theme_bw() + 
       ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),panel.grid.major.x=ggplot2::element_blank(),legend.position = "bottom") +
       ggplot2::xlab(columnName)
-    
   }
   if(method == "z_score"){
     data$zScore <- scale(data[,columnName],center = T, scale = T)
@@ -480,15 +471,12 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
       ggplot2::xlab("Z-score")+
       ggplot2::geom_vline(xintercept = (cutoffValue),linetype = "dashed")+
       ggplot2::geom_vline(xintercept = -(cutoffValue), linetype = "dashed") 
-    
   }
   #conditionToBe
-  if(optionalPlots)
-  {
+  if(optionalPlots) {
     outlierPlotObj <- plotly::ggplotly(outlierPlotObj)
     outlierPlotObj$x$layout$margin$l <- outlierPlotObj$x$layout$margin$l + 30
     outlierPlotObj$x$layout$margin$b <- outlierPlotObj$x$layout$margin$b + 3
-    
   }
   
   return(outlierPlotObj)
@@ -517,28 +505,141 @@ multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalP
   return(outlierPlot)
 }
 
+## Correlation Matrix
+correlationMatPlot <- function(dataset, methodused = "everything"){
+  numeric_cols <- getDatatype(dataset)['numeric_cols']
+  cormatrix <- base::round(stats::cor(dataset[,unlist(numeric_cols),drop=F], use = methodused),3)
+  return(corrplot::corrplot(cormatrix, 
+                            method = "color", 
+                            outline = T, 
+                            addgrid.col = "darkgray",
+                            # order="hclust", 
+                            addrect = 4,
+                            rect.col = "black",
+                            rect.lwd = 5,
+                            cl.pos = "b",
+                            tl.col = "black", 
+                            tl.cex = 1, 
+                            cl.cex = 1.5,
+                            addCoef.col = "black",
+                            number.digits = 2, 
+                            number.cex = 0.75, 
+                            type = "lower",
+                            col = grDevices::colorRampPalette(c("red","white","green"))(200)))
+}
+
+
+
+
+## Bivariate Plots
+bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
+ 
+  numeric_cols <- unlist(getDatatype(dataset)['numeric_cols'])
+  cat_cols <- unlist(getDatatype(dataset)['cat_cols'])
+  
+  if (select_var_name_1 %in% numeric_cols && select_var_name_2 %in% numeric_cols) {
+    x = dataset[, select_var_name_1]
+    y = dataset[, select_var_name_2]
+    bivarPlot <-
+      ggplot2::ggplot(dataset, ggplot2::aes(x, y)) +
+      ggplot2::geom_point(color = priColor, alpha = 0.7) +
+      ggplot2::geom_smooth(method = lm, color = secColor) +
+      ggplot2::xlab(select_var_name_1) +
+      ggplot2::ylab(select_var_name_2) + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste(
+        'Bivariate plot for',
+        select_var_name_1,
+        'and',
+        select_var_name_2,
+        sep = ' '
+      )) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 10),
+        axis.text = ggplot2::element_text(size = 10),
+        axis.title = ggplot2::element_text(size = 10)
+      )
+  
+    
+    
+  } else if (select_var_name_1 %in% cat_cols &&
+             select_var_name_2 %in% cat_cols) {
+    new_df <- dataset %>% dplyr::group_by_(.dots=c(select_var_name_1,select_var_name_2)) %>% dplyr::summarise(n = n())
+    colfunc <- grDevices::colorRampPalette(c(priColor, "white" , secColor))
+    colorvar <- length(unique(new_df[[select_var_name_2]]))
+    a=as.vector(as.character(unique(new_df[[select_var_name_1]])))
+    y=new_df[[select_var_name_1]]
+    label=new_df[[select_var_name_2]]
+    bivarPlot <-ggplot2::ggplot(new_df, ggplot2::aes(x = y, y= n, fill = label)) +
+      ggplot2::geom_bar(position = "dodge", stat = "identity",alpha=0.9) +
+      ggplot2::guides(fill=ggplot2::guide_legend(title=select_var_name_2)) +
+      ggplot2::coord_flip()+
+      ggplot2::xlab(select_var_name_1) +
+      ggplot2::ylab("count") + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste('Bivariate plot for',select_var_name_1,'and',select_var_name_2,sep=' '))+
+      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 10),axis.text = ggplot2::element_text(size=10),
+                     axis.title=ggplot2::element_text(size=10),legend.position="bottom",axis.text.x=ggplot2::element_text(angle=45, hjust=1))+ ggplot2::scale_fill_manual(values = colfunc(colorvar))
+    
+    
+  } else {
+    cols <- c(select_var_name_1, select_var_name_2)
+    cat_col <- cols[which(cols %in% cat_cols)]
+    num_col <- cols[which(cols %in% numeric_cols)]
+    a = as.vector(as.character(unique(dataset[[cat_col]])))
+    y = dataset[[cat_col]]
+    x = dataset[[num_col]]
+    bivarPlot <-
+      ggplot2::ggplot(dataset, ggplot2::aes(x = y, y = x)) +
+      ggplot2::geom_point(color = priColor, alpha = 0.7) +
+      ggplot2::coord_flip() +
+      ggplot2::xlab(cat_col) +
+      ggplot2::ylab(num_col) + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste(
+        'Bivariate plot for',
+        select_var_name_1,
+        'and',
+        select_var_name_2,
+        sep = ' '
+      )) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 10),
+        axis.text = ggplot2::element_text(size = 10),
+        axis.title = ggplot2::element_text(size = 10)
+      )
+  }
+  
+  return(bivarPlot)
+}
+
+
 
 ##################
 # MISC FUNCTIONS #
 ##################
 
 # This function can assist developers to register new functions that they want to add to the package
-updatePackageRegistry <- function(functionName, functionHeader, flag){
+updatePackageRegistry <- function(functionName, functionHeader, packageList, flag = F){
   #
   # 'functionName' is the name of the function
   # 'functionHeader' is the header caption that will feature in the report for this function's output
+  # 'packageList' is a vector of packages required by 'functionName'
   # 'flag' is a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
-  # example usage: updatePackageRegistry('ignoreCols', '', TRUE)
+  # example usage: updatePackageRegistry('ignoreCols', '', NULL, TRUE)
+  # example usage: updatePackageRegistry('bivarPlots', 'Bivariate Distribution', list(c("ggplot2", "dplyr")))
   #
   tryCatch({
     functionsDefined <- readRDS("support/predefFunctions.RDS")
+    origSize <- nrow(functionsDefined)
     invisible(source("EDA.R"))
     functionList <- ls(envir = .GlobalEnv)
     if(functionName %in% functionList){
-      functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
+      functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag, packages = packageList)
       print(functionsDefined)
-      saveRDS(functionsDefined, "support/predefFunctions.RDS")
-      print("Successfully Registered function into package!")
+      if((nrow(functionsDefined) - origSize) > 1){
+        stop("Seems like more than one functions are being added or package list format is incorrect. Aborting!!!")
+      }else{
+        saveRDS(functionsDefined, "support/predefFunctions.RDS") 
+        print("Successfully Registered function into package!")
+      }
     }else
       print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))  
   }, error = function(e){
@@ -546,4 +647,22 @@ updatePackageRegistry <- function(functionName, functionHeader, flag){
   }, warning = function(e){
     warning(e)
   })
-}  
+}
+
+## Return the column type 
+CheckColumnType <- function(dataVector) {
+  #Check if the column type is "numeric" or "character" & decide type accordDingly
+  if (class(dataVector) == "integer" || class(dataVector) == "numeric") {
+    columnType <- "numeric"
+  } else { columnType <- "character" }
+  #Return the result
+  return(columnType)
+}
+
+## Get numeric and categoric
+getDatatype <- function(dataset){
+  numeric_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){ CheckColumnType(x) == "numeric"}))]
+  cat_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){CheckColumnType(x) == "character"|| CheckColumnType(x) == "factor"}))]
+  return(list("numeric_cols"=numeric_cols , "cat_cols"=cat_cols))
+}
+
