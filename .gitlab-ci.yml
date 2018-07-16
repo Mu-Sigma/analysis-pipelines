@@ -20,7 +20,6 @@ runUpdateVersion:
     - python3 UpdateBricksVersion.py
     - version=`cat Description.json | jq '.version' | sed 's/"//g'`
     - filename=$EOC_FILE_NAME
-    - #`cat Description.json | jq '.filename' | sed 's/"//g'`
     - fullnameOrig=$filename"_v"$version".zip"
     - newTag="v"$version
     - echo "$fullNameOrig"
