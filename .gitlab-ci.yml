@@ -2,6 +2,14 @@ image:
   name: foundationbricks/foundation_brick_test
   entrypoint: [""]
 
+variables:
+  GITLAB_BASE_URL: 'https://mugitlab.mu-sigma.com'
+  WORKFLOW_URL: 'https://eoc.mu-sigma.com/alfresco/s/foundationBricksAPI?format=json'
+  EOC_FILE_NAME: '16_Foundation_Brick_EDA_Package'
+  GIT_GROUP_NAME: 'eoc_foundation'
+  GIT_PROJECT_NAME: '16_FoundationBrick_EDA_Package'
+  SOURCE: 'FoundationBrick'
+
 stages:
   - updateVersion
   - pushFiles
@@ -15,4 +23,6 @@ runUpdateVersion:
 runPushFiles:
   stage: pushFiles
   script: 
-    - ls -al
+    - cd support
+    - version=`cat Description.json | jq '.version' | sed 's/"//g'`
+    - filename=`cat Description.json | jq '.filename' | sed 's/"//g'`
