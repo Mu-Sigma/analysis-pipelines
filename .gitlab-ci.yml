@@ -1,0 +1,18 @@
+image:
+  name: foundationbricks/foundation_brick_test
+  entrypoint: [""]
+
+stages:
+  - updateVersion
+  - pushFiles
+
+runUpdateVersion:
+  stage: updateVersion
+  script:
+    - cd support
+    - python UpdateBricksVersion.py
+    
+runPushFiles:
+  stage: pushFiles
+  script: 
+    - ls -al
