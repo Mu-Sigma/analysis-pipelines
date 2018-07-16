@@ -5,7 +5,7 @@ image:
 variables:
   GITLAB_BASE_URL: 'https://mugitlab.mu-sigma.com'
   WORKFLOW_URL: 'https://eoc.mu-sigma.com/alfresco/s/foundationBricksAPI?format=json'
-  EOC_FILE_NAME: '16_Foundation_Brick_EDA_Package'
+  : '16_Foundation_Brick_EDA_Package'
   GIT_GROUP_NAME: 'eoc_foundation'
   GIT_PROJECT_NAME: '16_FoundationBrick_EDA_Package'
   SOURCE: 'FoundationBrick'
@@ -20,8 +20,10 @@ runUpdateVersion:
     - python3 UpdateBricksVersion.py
     - version=`cat Description.json | jq '.version' | sed 's/"//g'`
     - fullnameOrig=$EOC_FILE_NAME"_v"$version".zip"
+    - echo $EOC_FILE_NAME
     - newTag="v"$version
     - echo "$fullNameOrig"
+    - echo $fullNameOrig
     - echo "$newTag"
     - cd ..
     - rm -rf .gitlab-ci.yml .gitignore .git
