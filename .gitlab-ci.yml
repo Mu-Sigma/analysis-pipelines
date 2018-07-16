@@ -12,21 +12,30 @@ variables:
 
 stages:
   - updateVersion
-  - pushFiles
 
 runUpdateVersion:
   stage: updateVersion
   script:
     - cd support
     - python3 UpdateBricksVersion.py
-    
-runPushFiles:
-  stage: pushFiles
-  script: 
-    - cd support
     - version=`cat Description.json | jq '.version' | sed 's/"//g'`
-    - filename=`cat Description.json | jq '.filename' | sed 's/"//g'`
+    - filename=$EOC_FILE_NAME
+    - #`cat Description.json | jq '.filename' | sed 's/"//g'`
     - fullnameOrig=$filename"_v"$version".zip"
-    - echo '$fullNameOrig'
-    - echo '$filename'
-    - echo "$version"
+    - newTag="v"$version
+    - echo "$fullNameOrig"
+    - echo "$newTag"
+    - cd ..
+    - rm -rf .gitlab-ci.yml .gitignore .git
+    - zip -r $fullnameOrig ./* -x support/UpdateBricksVersion.py
+    - >-
+      curl -v
+      -X POST $WORKFLOW_URL
+      -H "Authorization: $AUTH_HEADER"
+      -H 'content-type: multipart/form-data'
+      -F file=@$fullNameOrig
+      -F filename=$EOC_FILE_NAME
+      -F groupname=$GIT_GROUP_NAME
+      -F projectname=$GIT_PROJECT_NAME
+      -F versioncode=$newTag
+      -F source=$SOURCE
