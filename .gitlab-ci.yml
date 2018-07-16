@@ -27,6 +27,7 @@ runUpdateVersion:
     - cd ..
     - rm -rf .gitlab-ci.yml .gitignore .git
     - zip -r $fullnameOrig ./* -x support/UpdateBricksVersion.py
+    - ls -al
     - >-
       curl -v
       -X POST $WORKFLOW_URL
