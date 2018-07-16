@@ -27,4 +27,4 @@ runPushFiles:
     - version=`cat Description.json | jq '.version' | sed 's/"//g'`
     - filename=`cat Description.json | jq '.filename' | sed 's/"//g'`
     - fullnameOrig=$filename"_v"$version".zip"
-    - echo $fullNameOrig
+    - echo '$fullNameOrig'
