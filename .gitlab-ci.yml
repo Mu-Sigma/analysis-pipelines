@@ -23,8 +23,8 @@ runUpdateVersion:
     - echo $EOC_FILE_NAME
     - newTag="v"$version
     - echo "$fullNameOrig"
-    - echo $fullNameOrig
     - echo "$newTag"
+    - echo $fullNameOrig
     - cd ..
     - rm -rf .gitlab-ci.yml .gitignore .git
     - zip -r $fullnameOrig ./* -x support/UpdateBricksVersion.py
