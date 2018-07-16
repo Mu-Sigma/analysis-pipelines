@@ -10,7 +10,7 @@ runUpdateVersion:
   stage: updateVersion
   script:
     - cd support
-    - python UpdateBricksVersion.py
+    - python3 UpdateBricksVersion.py
     
 runPushFiles:
   stage: pushFiles
