@@ -27,7 +27,7 @@ runUpdateVersion:
     - echo $EOC_FILE_NAME"_v"$version".zip"
     - cd ..
     - rm -rf .gitlab-ci.yml .gitignore .git
-    - zip -r abc.zip" ./* -x support/UpdateBricksVersion.py
+    - zip -r abc.zip ./* -x support/UpdateBricksVersion.py
     - ls -al
     - >-
       curl -v
