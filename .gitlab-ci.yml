@@ -34,7 +34,7 @@ runUpdateVersion:
       -X POST $WORKFLOW_URL
       -H "Authorization: $AUTH_HEADER"
       -H 'content-type: multipart/form-data'
-      -F file=abc.zip
+      -F file="abc.zip"
       -F filename=$EOC_FILE_NAME
       -F groupname=$GIT_GROUP_NAME
       -F projectname=$GIT_PROJECT_NAME
