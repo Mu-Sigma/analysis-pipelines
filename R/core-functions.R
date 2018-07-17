@@ -7,9 +7,9 @@
 
 #' @name read_input
 #' @title Function to initialize \code{AnalysisRecipe} class with the input data frame
-#' @details The class which holds the metadata including the recipe of available functions,
+#' @details The class which holds the metadata including the registry of available functions,
 #' the data on which the recipe is to be applied, as well as the recipe itself
-#' @details More details of how the object of this class should be initialized is provided in the
+#' @details More details of how an object of this class should be initialized is provided in the
 #' constructor - \link{initialize}
 #' @slot input The input dataset on which analysis is to be performed
 #' @slot filePath Path of the input dataset to be uploaded
