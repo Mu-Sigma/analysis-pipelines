@@ -27,14 +27,14 @@ runUpdateVersion:
     - echo $EOC_FILE_NAME"_v"$version".zip"
     - cd ..
     - rm -rf .gitlab-ci.yml .gitignore .git
-    - zip -r $EOC_FILE_NAME"_v"$version".zip" ./* -x support/UpdateBricksVersion.py
+    - zip -r abc.zip" ./* -x support/UpdateBricksVersion.py
     - ls -al
     - >-
       curl -v
       -X POST $WORKFLOW_URL
       -H "Authorization: $AUTH_HEADER"
       -H 'content-type: multipart/form-data'
-      -F file=$EOC_FILE_NAME"_v"$version".zip"
+      -F file=abc.zip
       -F filename=$EOC_FILE_NAME
       -F groupname=$GIT_GROUP_NAME
       -F projectname=$GIT_PROJECT_NAME
