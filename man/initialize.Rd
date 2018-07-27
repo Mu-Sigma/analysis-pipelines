@@ -24,7 +24,8 @@ Either one of \code{input} or \code{filePath} need to be provided i.e. either th
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{read_input}},
-  \code{\link{registerFunction}},
-  \code{\link{updateObject}}
+  \code{\link{generateReport}}, \code{\link{loadRecipe}},
+  \code{\link{readInput}}, \code{\link{registerFunction}},
+  \code{\link{saveRecipe}}, \code{\link{updateObject}},
+  \code{\link{updatePackageRegistry}}
 }

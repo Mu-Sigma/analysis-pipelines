@@ -36,7 +36,7 @@ In order to leverage all the functionalities of the utility, one has to ensure t
 The file needs to be sourced or loaded into the R session to make use of the features.
 
 ```{r sourcing}
-source('EDA.R')
+library(analysisRecipes)
 ```
 
 <br>
@@ -48,7 +48,7 @@ The EDA utility has been written as per R's S4 object system standard.
 To work with this EDA utility, one needs to call the constructor by specifying a file as an input.
 
 ```{r creating object, warning=F}
-obj <- read_input(filePath = 'support/hotel_new.csv') 
+obj <- readInput(filePath = 'support/hotel_new.csv') 
 class(obj)[1]
 ```
 
