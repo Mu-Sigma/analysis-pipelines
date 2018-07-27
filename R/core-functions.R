@@ -5,7 +5,7 @@
 # Description: An R package version
 
 
-#' @name read_input
+#' @name readInput
 #' @title Function to initialize \code{AnalysisRecipe} class with the input data frame
 #' @details The class which holds the metadata including the registry of available functions,
 #' the data on which the recipe is to be applied, as well as the recipe itself
@@ -18,7 +18,7 @@
 #' @slot output A list which holds all the functions output
 #' @family Package core functions
 #' @export
-read_input <- setClass("AnalysisRecipe",
+readInput <- setClass("AnalysisRecipe",
                        slots = c(
                          input = "data.frame",
                          filePath = "character",
@@ -281,13 +281,16 @@ setMethod(
 )
 
 
-
-###### Save Recipe
-
-#' @description
+#' @name saveRecipe
+#' @title Saves the \code{AnalysisRecipe} object to the file system
+#' @details
+#'       The \code{AnalysisRecipe} object is saved to the file system in the paths specified
 #' @param object object that contains input, recipe, registry and output
-#' @param RDSPath path for saving file
+#' @param RDSPath the path at which the .RDS file containing the recipe should be stored
+#' @return Does not return a value
+#' @family Package core functions
 #' @export
+
 setGeneric(
   name = "saveRecipe",
   def = function(object, RDSPath)
@@ -308,14 +311,23 @@ setMethod(
 )
 
 
-
-###### Load Recipe
-
-#' @description
-#' @param RDSPath file path for object to be loaded
-#' @param input The input dataset on which analysis is to be performed
-#' @param filePath Path of the input dataset to be uploaded
+#' @name loadRecipe
+#' @title Loads the \code{AnalysisRecipe} object from the file system
+#' @details
+#'       The \code{AnalysisRecipe} object is loaded into the file system from the file system
+#'       based on the path specified.
+#' @details Optionally, the \code{input} parameter can be provided to
+#'       initialize the \code{AnalysisRecipe} object with a data frame present in the R session.
+#'       Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
+#'       and the object will be initialized with this data frame. The \code{filePath} parameter takes precedence over
+#'       \code{input} parameter
+#' @param RDSPath the path at which the .RDS file containing the recipe is located
+#' @param input (optional) data frame with which the recipe object should be initialized
+#' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
+#' @return An \code{AnalysisRecipe} object, optinally initialized with the data frame provided
+#' @family Package core functions
 #' @export
+
 loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
   object <- readRDS(RDSPath)
   if(filePath == ""){
@@ -333,14 +345,18 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
 }
 
 
-# This function can assist developers to register new functions that they want to add to the package
+#' @name updatePackageRegistry
+#' @title Updates the package registry
+#' @details
+#'       Updates the registry of predefined functions available in the package (For developer use)
+#' @param functionName the name of the function
+#' @param functionHeader the header caption that will feature in the report for this function's output
+#' @param flag a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
+#' @return An \code{AnalysisRecipe} object, optinally initialized with the data frame provided
+#' @family Package core functions
+#' @keywords internal
+#'
 updatePackageRegistry <- function(functionName, functionHeader, flag){
-  #
-  # 'functionName' is the name of the function
-  # 'functionHeader' is the header caption that will feature in the report for this function's output
-  # 'flag' is a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
-  # example usage: updatePackageRegistry('ignoreCols', '', TRUE)
-  #
   tryCatch({
     functionsDefined <- readRDS("support/predefFunctions.RDS")
     invisible(source("EDA.R"))
