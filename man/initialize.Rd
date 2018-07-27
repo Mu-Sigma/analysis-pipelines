@@ -23,6 +23,8 @@ Either one of \code{input} or \code{filePath} need to be provided i.e. either th
      data frame or the file path to a csv file
 }
 \seealso{
-Other Package core functions: \code{\link{read_input}},
+Other Package core functions: \code{\link{generateOutput}},
+  \code{\link{generateReport}}, \code{\link{read_input}},
+  \code{\link{registerFunction}},
   \code{\link{updateObject}}
 }
