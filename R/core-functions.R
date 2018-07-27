@@ -70,8 +70,6 @@ setMethod(
   }
 )
 
-##### Object Update Function
-
 #' @name updateObject
 #' @title Update the \code{AnalysisRecipe} object by adding an operation to the recipe
 #' @details
@@ -109,17 +107,21 @@ setMethod(
   }
 )
 
-
-##### Register Function
-
-#' @description
+#' @name registerFunction
+#' @title Register a user-defined function to be used with \code{AnalysisRecipe} objects
+#' @details
+#'       The specified operation along with the heading and parameters is updated in the recipe slot
+#'       of the AnalysisRecipe object, where the sequence of operations to be performed is stored
 #' @param object object that contains input, recipe, registry and output
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
 #' @param outAsIn whether to use output of this function as input to next
 #' @param loadRecipe logical parameter to see if function is being used in loadRecipe or not
 #' @param session to load shiny session in the function
+#' @return Updated \code{AnalysisRecipe} object
+#' @family Package core functions
 #' @export
+
 setGeneric(
   name = "registerFunction",
   def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
@@ -176,12 +178,17 @@ setMethod(
                               )
 
 
-
-###### Generate Report
-
-#' @description
+#' @name generateReport
+#' @title Generate a HTML report from an \code{AnalysisRecipe} object
+#' @details
+#'       The sequence of operations stored in the \code{AnalysisRecipe} object are run, outputs generated,
+#'       and a HTML report is generated with outputs in the same sequence as the pipeline created by the user
 #' @param object object that contains input, recipe, registry and output
+#' @param path path on the file system, where the generated html report should be stored
+#' @return Updated \code{AnalysisRecipe} object
+#' @family Package core functions
 #' @export
+
 setGeneric(
   name = "generateReport",
   def = function(object,path)
@@ -222,13 +229,16 @@ setMethod(
   }
 )
 
-
-
-###### Generate Output
-
-#' @description
+#' @name generateOutput
+#' @title Generate a list of outputs from an \code{AnalysisRecipe} object
+#' @details
+#'       The sequence of operations stored in the \code{AnalysisRecipe} object are run and outputs generated,
+#'       stored in a list
 #' @param object object that contains input, recipe, registry and output
+#' @return A list of the outputs in the sequence in which the recipe was created
+#' @family Package core functions
 #' @export
+
 setGeneric(
   name = "generateOutput",
   def = function(object)
@@ -322,9 +332,6 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
 
 }
 
-##################
-# MISC FUNCTIONS #
-##################
 
 # This function can assist developers to register new functions that they want to add to the package
 updatePackageRegistry <- function(functionName, functionHeader, flag){
@@ -352,85 +359,11 @@ updatePackageRegistry <- function(functionName, functionHeader, flag){
   })
 }
 
+#' @name explainFunction
+#' @title Explain the parameters, and outputs of a specific predefined package function
+#' @details
+#' @param
+#' @family Package core functions
+#' @export
 
 
-
-########################
-## PREPARING PACKAGES ##
-########################
-
-# # Expands the package list into a dependency tree of its base packages
-# packageDependencyList <- function(packageList){
-#   if(class(packageList) != "character"){
-#     packageList <- as.character(packageList)
-#   }
-#   if(length(packageList) == 0){
-#     stop('input parameter is empty')
-#   }
-#   # Create a graph object to containing package dependency hierarchy
-#   dependency.check <- miniCRAN::makeDepGraph(packageList, suggests = FALSE, includeBasePkgs = FALSE)
-#
-#   # Iterates over each element of the object packageList and gives out the individual package dependencies for each of these
-#   # Elements of packageList
-#   result <- list()
-#   for(i in 1:length(packageList)){
-#     result[[i]] <- (igraph::topo_sort(dependency.check))}
-#
-#   # For each element in the list, numbers are replaced with package names, remove NAs and reverse the order to get the correct order
-#   result <- lapply(result, function(x){
-#     x <- igraph::as_ids(x)
-#   })
-#   result <- Reduce(c, result) #append all the lists into one list
-#   result <- result[!duplicated(result)] #remove duplicates
-#
-#   return(result)
-# }
-#
-#
-# # Function to install packages if they don't exist and return a list of packages that failed to install
-# installPackages <- function(packageList){
-#   lapply(packageList, function(x){
-#     if(!(x %in% installed.packages()[,1]))
-#       install.packages(x, dependencies = T, repos = "http://cloud.r-project.org/")
-#   })
-#   failedList <- NULL
-#   lapply(packageList, function(x){
-#     if(!(x %in% installed.packages()[,1]))
-#       failedList <<- c(failedList, x)
-#   })
-#   return(failedList)
-# }
-#
-# # Function that installs the basic packages required to run the package
-# installBaseDependencies <- function(){
-#   packageList <- c("tibble", "pipeR", "data.table", "magrittr")
-#   packageListBig <- packageDependencyList(packageList)
-#   failedList <- installPackages(packageListBig)
-#   failedList <- NULL
-#   if(!is.null(failedList))
-#     stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
-#   print("Success!")
-# }
-# # Calling the function at source to ready the use of the package
-# installBaseDependencies()
-#
-# # Function that maintains a list of packages required per function and installs them when called
-# installRequiredPackages <- function(){
-#   packageList <- c('univarCatDistPlots' = c('ggplot2', 'plotly', 'dplyr'),
-#                    'outlierPlot' = c('ggplot2', 'plotly'),
-#                    'multiVarOutlierPlot' = c('ggplot2', 'plotly')
-#   )
-#   packageList <- unique(unlist(packageList))
-#   failedList <- installPackages(packageList)
-#   failedList <- NULL
-#   if(!is.null(failedList))
-#     stop(paste0("The following packages failed to install: ", paste0(failedList, collapse = ", ")))
-#   print("Success!")
-# }
-
-##################################################
-#
-# library(tibble)
-# library(pipeR)
-# library(data.table)
-# library(magrittr)

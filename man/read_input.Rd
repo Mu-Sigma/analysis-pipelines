@@ -5,10 +5,10 @@
 \alias{read_input}
 \title{Function to initialize \code{AnalysisRecipe} class with the input data frame}
 \details{
-The class which holds the metadata including the recipe of available functions,
+The class which holds the metadata including the registry of available functions,
 the data on which the recipe is to be applied, as well as the recipe itself
 
-More details of how the object of this class should be initialized is provided in the
+More details of how an object of this class should be initialized is provided in the
 constructor - \link{initialize}
 }
 \section{Slots}{
@@ -26,6 +26,8 @@ constructor - \link{initialize}
 }}
 
 \seealso{
-Other Package core functions: \code{\link{initialize}},
+Other Package core functions: \code{\link{generateOutput}},
+  \code{\link{generateReport}}, \code{\link{initialize}},
+  \code{\link{registerFunction}},
   \code{\link{updateObject}}
 }
