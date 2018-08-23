@@ -4,16 +4,15 @@
 \name{initialize}
 \alias{initialize}
 \alias{initialize}
-\title{Constructor for the \code{AnalysisRecipe} object}
+\title{Constructor for the \code{SparkAnalysisRecipe} object}
 \usage{
-\S4method{initialize}{AnalysisRecipe}(.Object, input = data.frame(),
-  filePath = "")
+\S4method{initialize}{SparkAnalysisRecipe}(.Object, input)
 
 \S4method{initialize}{AnalysisRecipe}(.Object, input = data.frame(),
   filePath = "")
 }
 \arguments{
-\item{.Object}{The \code{AnalysisRecipe} object}
+\item{.Object}{The \code{SparkAnalysisRecipe} object}
 
 \item{input}{The data frame on which operations need to be performed}
 
@@ -26,7 +25,7 @@
 \item{filePath}{File path for a .csv file to directly read in the dataset from}
 }
 \value{
-an object of class "\code{AnalysisRecipe}", initialized with the input data frame provided
+an object of class "\code{SparkAnalysisRecipe}", initialized with the input data frame provided
 
 an object of class "\code{AnalysisRecipe}", initialized with the input data frame provided
 }
@@ -40,7 +39,7 @@ Either one of \code{input} or \code{filePath} need to be provided i.e. either th
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{loadRecipe}},
-  \code{\link{readInput}},
+  \code{\link{readInputSpark}}, \code{\link{readInput}},
   \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}}, \code{\link{saveRecipe}},
   \code{\link{sparkRSessionCreateIfNotPresent}},
@@ -48,7 +47,7 @@ Other Package core functions: \code{\link{generateOutput}},
 
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{loadRecipe}},
-  \code{\link{readInput}},
+  \code{\link{readInputSpark}}, \code{\link{readInput}},
   \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}}, \code{\link{saveRecipe}},
   \code{\link{sparkRSessionCreateIfNotPresent}},

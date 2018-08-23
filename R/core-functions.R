@@ -94,17 +94,26 @@ setGeneric(
     standardGeneric("updateObject")
   }
 )
+
+.updateObject = function(object, operation, heading="", parameters, outAsIn = F)
+{
+  object@recipe %>>% add_row(operation = operation,
+                             heading = heading,
+                             parameters = list(parameters),
+                             outAsIn = outAsIn) -> object@recipe
+  return(object)
+}
+
 setMethod(
   f = "updateObject",
   signature = "AnalysisRecipe",
-  definition = function(object, operation, heading="", parameters, outAsIn = F)
-  {
-    object@recipe %>>% add_row(operation = operation,
-                               heading = heading,
-                               parameters = list(parameters),
-                               outAsIn = outAsIn) -> object@recipe
-    return(object)
-  }
+  definition = .updateObject
+)
+
+setMethod(
+  f = "updateObject",
+  signature = "SparkAnalysisRecipe",
+  definition = .updateObject
 )
 
 #' @name registerFunction
@@ -158,7 +167,7 @@ setMethod(
                               signature = \"AnalysisRecipe\",
                               definition = function(object",parametersName,")
                               {
-                              parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
+                              parametersList <- unlist(strsplit(\"",sub(", ", "", parametersName),"\",\",\"))
                               parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
 
                               return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
@@ -202,7 +211,7 @@ setGeneric(
 
 setMethod(
   f = "generateReport",
-  signature = "AnalysisRecipe",
+  signature = c("AnalysisRecipe", "SparkAnalysisRecipe"),
   definition = function(object,path)
   {
     require(rmarkdown)
@@ -250,20 +259,28 @@ setGeneric(
   }
 )
 
+.generateOutput = function(object)
+{
+  input <- object@input
+  for(rowNo in 1:nrow(object@recipe)){
+    if(object@recipe[['outAsIn']][rowNo] == T){
+      input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+    }
+    object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+  }
+  return(object)
+}
+
 setMethod(
   f = "generateOutput",
   signature = "AnalysisRecipe",
-  definition = function(object)
-  {
-    input <- object@input
-    for(rowNo in 1:nrow(object@recipe)){
-      if(object@recipe[['outAsIn']][rowNo] == T){
-        input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
-      }
-      object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
-    }
-    return(object)
-  }
+  definition = .generateOutput
+)
+
+setMethod(
+  f = "generateOutput",
+  signature = "SparkAnalysisRecipe",
+  definition = .generateOutput
 )
 
 setMethod(
@@ -302,15 +319,22 @@ setGeneric(
   }
 )
 
+.saveRecipe = function(object,RDSPath){
+  object@output <- list()
+  object@input <- data.frame()
+  saveRDS(object,RDSPath)
+}
+
 setMethod(
   f = "saveRecipe",
   signature = "AnalysisRecipe",
-  definition = function(object,RDSPath)
-  {
-    object@output <- list()
-    object@input <- data.frame()
-    saveRDS(object,RDSPath)
-  }
+  definition = .saveRecipe
+)
+
+setMethod(
+  f = "saveRecipe",
+  signature = "SparkAnalysisRecipe",
+  definition = .saveRecipe
 )
 
 
@@ -344,7 +368,6 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
     object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
   }
   return(object)
-
 }
 
 
