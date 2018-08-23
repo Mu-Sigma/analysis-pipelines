@@ -21,7 +21,8 @@ The \code{AnalysisRecipe} object is saved to the file system in the paths specif
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
   \code{\link{loadRecipe}}, \code{\link{readInput}},
+  \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}},
-  \code{\link{updateObject}},
-  \code{\link{updatePackageRegistry}}
+  \code{\link{sparkRSessionCreateIfNotPresent}},
+  \code{\link{updateObject}}
 }
