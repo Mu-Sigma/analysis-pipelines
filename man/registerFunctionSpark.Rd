@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions-spark.R
 \name{registerFunctionSpark}
 \alias{registerFunctionSpark}
-\title{Register a user-defined function to be used with \code{AnalysisRecipe} objects specifically for Spark
+\title{Register a user-defined function to be used with \code{SparkAnalysisRecipe} objects specifically for Spark
        DataFrames}
 \usage{
 registerFunctionSpark(object, functionName, heading = "", outAsIn = F,
@@ -32,8 +32,9 @@ The specified operation along with the heading and parameters is updated in the 
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
-  \code{\link{loadRecipe}}, \code{\link{readInput}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}},
+  \code{\link{loadRecipe}}, \code{\link{readInputSpark}},
+  \code{\link{readInput}}, \code{\link{registerFunction}},
+  \code{\link{saveRecipe}},
   \code{\link{sparkRSessionCreateIfNotPresent}},
   \code{\link{updateObject}}
 }

@@ -30,8 +30,8 @@ sparkRSessionCreateIfNotPresent <- function(...){
   sparkR.session(...)
 }
 
-#' @name readInput
-#' @title Function to initialize \code{AnalysisRecipe} class with the input data frame
+#' @name readInputSpark
+#' @title Function to initialize \code{SparkAnalysisRecipe} class with the input data frame
 #' @details The class which holds the metadata including the registry of available functions,
 #' the data on which the recipe is to be applied, as well as the recipe itself. Overloads the initialization function
 #' for Spark DataFrames
@@ -44,7 +44,7 @@ sparkRSessionCreateIfNotPresent <- function(...){
 #' @slot output A list which holds all the functions output
 #' @family Package core functions
 #' @export
-readInputSpark <- setClass("AnalysisRecipe",
+readInputSpark <- setClass("SparkAnalysisRecipe",
                            slots = c(
                              input = "SparkDataFrame",
                              recipe = "tbl",
@@ -53,18 +53,18 @@ readInputSpark <- setClass("AnalysisRecipe",
                            ))
 
 #' @name initialize
-#' @title Constructor for the \code{AnalysisRecipe} object
-#' @param .Object The \code{AnalysisRecipe} object
+#' @title Constructor for the \code{SparkAnalysisRecipe} object
+#' @param .Object The \code{SparkAnalysisRecipe} object
 #' @param input The data frame on which operations need to be performed
 #' @param filePath File path for a .csv file to directly read in the dataset from
 #' @details
 #'      Either one of \code{input} or \code{filePath} need to be provided i.e. either the
 #'      data frame or the file path to a csv file
-#' @return an object of class "\code{AnalysisRecipe}", initialized with the input data frame provided
+#' @return an object of class "\code{SparkAnalysisRecipe}", initialized with the input data frame provided
 #' @family Package core functions
 setMethod(
   f = "initialize",
-  signature = "AnalysisRecipe",
+  signature = "SparkAnalysisRecipe",
   definition = function(.Object, input)
   {
     .Object@input <- input
@@ -87,7 +87,7 @@ setMethod(
 
 
 #' @name registerFunctionSpark
-#' @title Register a user-defined function to be used with \code{AnalysisRecipe} objects specifically for Spark
+#' @title Register a user-defined function to be used with \code{SparkAnalysisRecipe} objects specifically for Spark
 #'        DataFrames
 #' @details
 #'       The specified operation along with the heading and parameters is updated in the recipe slot
@@ -113,7 +113,7 @@ setGeneric(
 
 setMethod(
   f = "registerFunctionSpark",
-  signature = "AnalysisRecipe",
+  signature = "SparkAnalysisRecipe",
   definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
@@ -136,10 +136,10 @@ setMethod(
 
                               setMethod(
                               f = \"",functionName,"\",
-                              signature = \"AnalysisRecipe\",
+                              signature = \"SparkAnalysisRecipe\",
                               definition = function(object",parametersName,")
                               {
-                              parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
+                              parametersList <- unlist(strsplit(\"",sub(", ", "", parametersName),"\",\",\"))
                               parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
 
                               return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
@@ -160,3 +160,31 @@ setMethod(
     return(object)
   }
 )
+
+
+#' @name loadRecipe
+#' @title Loads the \code{AnalysisRecipe} object from the file system
+#' @details
+#'       The \code{AnalysisRecipe} object is loaded into the file system from the file system
+#'       based on the path specified.
+#' @details Optionally, the \code{input} parameter can be provided to
+#'       initialize the \code{AnalysisRecipe} object with a data frame present in the R session.
+#'       Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
+#'       and the object will be initialized with this data frame. The \code{filePath} parameter takes precedence over
+#'       \code{input} parameter
+#' @param RDSPath the path at which the .RDS file containing the recipe is located
+#' @param input (optional) data frame with which the recipe object should be initialized
+#' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
+#' @return An \code{AnalysisRecipe} object, optinally initialized with the data frame provided
+#' @family Package core functions
+#' @export
+
+loadRecipeSpark <- function(RDSPath, input){
+  object <- readRDS(RDSPath)
+    object@input <- input
+  registeredFunctions <- object@registry
+  for(rowNo in 1:nrow(registeredFunctions)){
+    object %>>% registerFunctionSpark(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
+  }
+  return(object)
+}
