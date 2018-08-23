@@ -3,7 +3,7 @@
 # Version: 18.07.01
 # Created on: July 12, 2018
 # Description: An R package version
-
+#################################################
 
 #' @name readInput
 #' @title Function to initialize \code{AnalysisRecipe} class with the input data frame
@@ -62,7 +62,7 @@ setMethod(
 
     )
     .Object@output <- list()
-    brickFunctions <- readRDS('support/predefFunctions.RDS')
+    #brickFunctions <- readRDS('support/predefFunctions.RDS')
     for(rowNo in 1:nrow(brickFunctions)){
       .Object %>>% registerFunction(brickFunctions[['functionName']][[rowNo]],brickFunctions[['heading']][[rowNo]],brickFunctions[['outAsIn']][[rowNo]]) -> .Object
     }
@@ -137,6 +137,9 @@ setMethod(
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
+    if(parametersName != ""){
+      parametersName <- paste0(", ", parametersName)
+    }
     methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
     firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
     methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
@@ -144,7 +147,7 @@ setMethod(
     methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
     registerFunText <- paste0("setGeneric(
                               name = \"",functionName,"\",
-                              def = function(object, ",parametersName,")
+                              def = function(object",parametersName,")
                               {
                               standardGeneric(\"",functionName,"\")
                               }
@@ -153,7 +156,7 @@ setMethod(
                               setMethod(
                               f = \"",functionName,"\",
                               signature = \"AnalysisRecipe\",
-                              definition = function(object, ",parametersName,")
+                              definition = function(object",parametersName,")
                               {
                               parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
                               parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
@@ -356,24 +359,27 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
 #' @family Package core functions
 #' @keywords internal
 #'
-updatePackageRegistry <- function(functionName, functionHeader, flag){
-  tryCatch({
-    functionsDefined <- readRDS("support/predefFunctions.RDS")
-    invisible(source("EDA.R"))
-    functionList <- ls(envir = .GlobalEnv)
-    if(functionName %in% functionList){
-      functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
-      print(functionsDefined)
-      saveRDS(functionsDefined, "support/predefFunctions.RDS")
-      print("Successfully Registered function into package!")
-    }else
-      print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))
-  }, error = function(e){
-    stop(e)
-  }, warning = function(e){
-    warning(e)
-  })
-}
+#' ####TODO - This function needs rework to comply with R package structures and mechanisms. Currently, the name of
+#' the function needs to be manually added in the data-raw
+#'
+# updatePackageRegistry <- function(functionName, functionHeader, flag){
+#   tryCatch({
+#     functionsDefined <- readRDS("support/predefFunctions.RDS")
+#     invisible(source("EDA.R"))
+#     functionList <- ls(envir = .GlobalEnv)
+#     if(functionName %in% functionList){
+#       functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
+#       print(functionsDefined)
+#       saveRDS(functionsDefined, "support/predefFunctions.RDS")
+#       print("Successfully Registered function into package!")
+#     }else
+#       print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))
+#   }, error = function(e){
+#     stop(e)
+#   }, warning = function(e){
+#     warning(e)
+#   })
+# }
 
 #' @name explainFunction
 #' @title Explain the parameters, and outputs of a specific predefined package function
