@@ -14,7 +14,7 @@ registerFunction(object, functionName, heading = "", outAsIn = F,
 
 \item{heading}{heading of that section in report}
 
-\item{outAsIn}{whether to use output of this function as input to next}
+\item{outAsIn}{whether to use original input or output from previous function}
 
 \item{loadRecipe}{logical parameter to see if function is being used in loadRecipe or not}
 
@@ -30,10 +30,6 @@ The specified operation along with the heading and parameters is updated in the 
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
-  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
-  \code{\link{readInputSpark}}, \code{\link{readInput}},
-  \code{\link{registerFunctionSpark}},
-  \code{\link{saveRecipe}},
-  \code{\link{sparkRSessionCreateIfNotPresent}},
-  \code{\link{updateObject}}
+  \code{\link{loadRecipe}}, \code{\link{readInput}},
+  \code{\link{saveRecipe}}, \code{\link{updateObject}}
 }

@@ -1,6 +1,6 @@
 ---
-title: "Exploratory Data Analysis"
-subtitle: v`r if (!require(rjson)) {install.packages('rjson', dependencies = T, repos = "http://cloud.r-project.org/");};version=rjson::fromJSON(file = 'Description.json')['version'];version` - (`r format(Sys.Date(), "%B %d, %Y")`)
+title: "Analysis results"
+subtitle: v`r if (!require(rjson)) {install.packages('rjson', dependencies = T, repos = "http://cloud.r-project.org/");};date=(`r format(Sys.Date(), "%B %d, %Y")`)
 
 output: 
   html_document
@@ -18,7 +18,7 @@ params:
 
 ## Quick Peek
 ```{r quick peek,echo=FALSE,warning=FALSE,results='asis'}
-source('../EDA.R')
+library(analysisRecipes)
 input <<- params$input
 recipe <- params$recipe
 output <- params$output

@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{saveRecipe}
 \alias{saveRecipe}
-\title{Saves the \code{AnalysisRecipe} object to the file system}
+\title{Saves the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object to the file system without outputs}
 \usage{
 saveRecipe(object, RDSPath)
 }
@@ -20,10 +20,7 @@ The \code{AnalysisRecipe} object is saved to the file system in the paths specif
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
-  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
-  \code{\link{readInputSpark}}, \code{\link{readInput}},
-  \code{\link{registerFunctionSpark}},
+  \code{\link{loadRecipe}}, \code{\link{readInput}},
   \code{\link{registerFunction}},
-  \code{\link{sparkRSessionCreateIfNotPresent}},
   \code{\link{updateObject}}
 }

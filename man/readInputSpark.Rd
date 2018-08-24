@@ -3,11 +3,10 @@
 \docType{class}
 \name{readInputSpark}
 \alias{readInputSpark}
-\title{Function to initialize \code{SparkAnalysisRecipe} class with the input data frame}
+\title{Function to initialize \code{SparkAnalysisRecipe} class with the input Spark DataFrame}
 \details{
 The class which holds the metadata including the registry of available functions,
-the data on which the recipe is to be applied, as well as the recipe itself. Overloads the initialization function
-for Spark DataFrames
+the data on which the recipe is to be applied, as well as the recipe itself
 
 More details of how an object of this class should be initialized is provided in the
 constructor - \link{initialize}
@@ -15,9 +14,9 @@ constructor - \link{initialize}
 \section{Slots}{
 
 \describe{
-\item{\code{input}}{The input dataset on which analysis is to be performed}
+\item{\code{input}}{The input Spark DataFrame on which analysis is to be performed}
 
-\item{\code{filePath}}{Path of the input dataset to be uploaded}
+\item{\code{workingInput}}{Internal slot for having a working version of the input}
 
 \item{\code{recipe}}{A tibble which holds functions to be called}
 
@@ -27,12 +26,7 @@ constructor - \link{initialize}
 }}
 
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{initialize}},
-  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
-  \code{\link{readInput}},
-  \code{\link{registerFunctionSpark}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}},
-  \code{\link{sparkRSessionCreateIfNotPresent}},
-  \code{\link{updateObject}}
+Other Package core functions for Spark: \code{\link{initialize}},
+  \code{\link{loadRecipeSpark}},
+  \code{\link{registerFunctionSpark}}
 }

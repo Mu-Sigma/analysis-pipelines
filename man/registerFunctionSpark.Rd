@@ -15,26 +15,22 @@ registerFunctionSpark(object, functionName, heading = "", outAsIn = F,
 
 \item{heading}{heading of that section in report}
 
-\item{outAsIn}{whether to use output of this function as input to next}
+\item{outAsIn}{whether to use original input or output from previous function}
 
 \item{loadRecipe}{logical parameter to see if function is being used in loadRecipe or not}
 
-\item{session}{to load shiny session in the function}
+\item{session}{to load shiny session in the function (Currently not implemented)}
 }
 \value{
-Updated \code{AnalysisRecipe} object
+Updated \code{SparkAnalysisRecipe} object
 }
 \details{
 The specified operation along with the heading and parameters is updated in the recipe slot
-      of the AnalysisRecipe object, where the sequence of operations to be performed is stored. This function
+      of the \code{SparkAnalysisRecipe} object, where the sequence of operations to be performed is stored. This function
       is used to register functions which are designed to operate on Spark DataFrames
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{initialize}},
-  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
-  \code{\link{readInputSpark}}, \code{\link{readInput}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}},
-  \code{\link{sparkRSessionCreateIfNotPresent}},
-  \code{\link{updateObject}}
+Other Package core functions for Spark: \code{\link{initialize}},
+  \code{\link{loadRecipeSpark}},
+  \code{\link{readInputSpark}}
 }

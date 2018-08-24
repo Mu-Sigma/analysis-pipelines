@@ -1,6 +1,6 @@
 ##################################################################################################
 # Title: Predefined functions as part of package
-# Version: 18.07.01
+# Version: 18.08.01
 # Created on: August 23, 2018
 # Description: Reproducible code to generate list of predefined functions
 ##################################################################################################

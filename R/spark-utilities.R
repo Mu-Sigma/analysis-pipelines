@@ -5,17 +5,13 @@
 # Description: Functions to work with Spark, incuding Structured Streaming
 ######################################################################################################
 
-##TODO - Documentation pending for this file
-
 #' @import SparkR
 
 #' @name sparkRSessionCreateIfNotPresent
-#' @title
-#' @details
-#' @details
-#' @slot input The input dataset on which analysis is to be performed
-#' @slot
-#' @family Package core functions
+#' @title Connect to a Spark session
+#' @details Loads the SparkR package and intializes a Spark session from R
+#' @slot ... Arguments to sparkR.session
+#' @family Spark utilities
 #' @export
 
 sparkRSessionCreateIfNotPresent <- function(...){
@@ -39,11 +35,31 @@ sparkRSessionCreateIfNotPresent <- function(...){
   sparkR.session(...)
 }
 
+#' @name castKafkaStreamAsString
+#' @title Connect to a Spark session
+#' @details Takes in a Structured Stream from Kafka created from \code{read.stream(source = 'kafka', ...)} and returns
+#' a Structured Streaming DataFrame where the \code{key} and \code{value} from the Kafka stream are cast to string
+#' @slot streamObj Spark Structured Streaming DataFrame returned by \code{read.stream} function with \code{source = 'kafka'}
+#' @return Updated Spark Structured Streaming DataFrame with key, value, topic and timestamp from the Kafka stream
+#' @family Spark utilities
+#' @export
 
 castKafkaStreamAsString <- function(streamObj){
   streamObj <- selectExpr(streamObj, "CAST(key AS STRING)", "CAST(value AS STRING)","topic","timestamp")
   return(streamObj)
 }
+
+#' @name convertKafkaValueFromJson
+#' @title Connect to a Spark session
+#' @details Takes in a Structured Stream from Kafka created from \code{read.stream(source = 'kafka', ...)} and returns
+#' a Structured Streaming DataFrame where the \code{key} and \code{value} from the Kafka stream are cast to string
+#' @slot streamObj Spark Structured Streaming DataFrame which is returned by the \code{castKafkaStreamAsString} function
+#' @slot schema A structType object created from SparkR specifying the schema of the json data present in the \code{value}
+#' attribute of the incoming Kafka stream
+#' @return Spark Structured Streaming DataFrame with the json data in the \code{value} attribute of the Kafka stream parsed
+#' into a DataFrame format
+#' @family Spark utilities
+#' @export
 
 convertKafkaValueFromJson <- function(streamObj, schema){
   streamObj <- select(streamObj, from_json(streamObj$value,

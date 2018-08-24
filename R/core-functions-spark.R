@@ -1,17 +1,24 @@
+##################################################################################################
+# Title: Reusable recipes for generating analysis reports
+# Version: 18.08.01
+# Created on: July 12, 2018
+# Description: An R package version
+##################################################################################################
+
 ##TODO - Documentation pending for this file
+
 #' @name readInputSpark
-#' @title Function to initialize \code{SparkAnalysisRecipe} class with the input data frame
+#' @title Function to initialize \code{SparkAnalysisRecipe} class with the input Spark DataFrame
 #' @details The class which holds the metadata including the registry of available functions,
-#' the data on which the recipe is to be applied, as well as the recipe itself. Overloads the initialization function
-#' for Spark DataFrames
+#' the data on which the recipe is to be applied, as well as the recipe itself
 #' @details More details of how an object of this class should be initialized is provided in the
 #' constructor - \link{initialize}
-#' @slot input The input dataset on which analysis is to be performed
-#' @slot filePath Path of the input dataset to be uploaded
+#' @slot input The input Spark DataFrame on which analysis is to be performed
+#' @slot workingInput Internal slot for having a working version of the input
 #' @slot recipe A tibble which holds functions to be called
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
-#' @family Package core functions
+#' @family Package core functions for Spark
 #' @export
 readInputSpark <- setClass("SparkAnalysisRecipe",
                            slots = c(
@@ -25,13 +32,13 @@ readInputSpark <- setClass("SparkAnalysisRecipe",
 #' @name initialize
 #' @title Constructor for the \code{SparkAnalysisRecipe} object
 #' @param .Object The \code{SparkAnalysisRecipe} object
-#' @param input The data frame on which operations need to be performed
-#' @param filePath File path for a .csv file to directly read in the dataset from
+#' @param input The Spark DataFrame on which operations need to be performed
 #' @details
-#'      Either one of \code{input} or \code{filePath} need to be provided i.e. either the
-#'      data frame or the file path to a csv file
-#' @return an object of class "\code{SparkAnalysisRecipe}", initialized with the input data frame provided
-#' @family Package core functions
+#'      \code{input} needs to be provded and the argument needs to be of class \code{SparkDataFrame}, which is
+#'      generally created through operations using SparkR
+#' @return an object of class "\code{SparkAnalysisRecipe}", initialized with the input Spark DataFrame provided
+#' @family Package core functions for Spark
+#'
 setMethod(
   f = "initialize",
   signature = "SparkAnalysisRecipe",
@@ -65,16 +72,16 @@ setMethod(
 #'        DataFrames
 #' @details
 #'       The specified operation along with the heading and parameters is updated in the recipe slot
-#'       of the AnalysisRecipe object, where the sequence of operations to be performed is stored. This function
+#'       of the \code{SparkAnalysisRecipe} object, where the sequence of operations to be performed is stored. This function
 #'       is used to register functions which are designed to operate on Spark DataFrames
 #' @param object object that contains input, recipe, registry and output
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
-#' @param outAsIn whether to use output of this function as input to next
+#' @param outAsIn whether to use original input or output from previous function
 #' @param loadRecipe logical parameter to see if function is being used in loadRecipe or not
-#' @param session to load shiny session in the function
-#' @return Updated \code{AnalysisRecipe} object
-#' @family Package core functions
+#' @param session to load shiny session in the function (Currently not implemented)
+#' @return Updated \code{SparkAnalysisRecipe} object
+#' @family Package core functions for Spark
 #' @export
 
 setGeneric(
@@ -144,10 +151,9 @@ setMethod(
 #'       based on the path specified.
 #' @details
 #' @param RDSPath the path at which the .RDS file containing the recipe is located
-#' @param input (optional) data frame with which the recipe object should be initialized
-#' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
-#' @return An \code{AnalysisRecipe} object, optinally initialized with the data frame provided
-#' @family Package core functions
+#' @param input Spark DataFrame with which the recipe object should be initialized
+#' @return An \code{SparkAnalysisRecipe} object, optinally initialized with the data frame provided
+#' @family Package core functions for Spark
 #' @export
 loadRecipeSpark <- function(RDSPath, input){
   object <- readRDS(RDSPath)

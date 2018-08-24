@@ -14,44 +14,33 @@
 \arguments{
 \item{.Object}{The \code{SparkAnalysisRecipe} object}
 
-\item{input}{The data frame on which operations need to be performed}
+\item{input}{The Spark DataFrame on which operations need to be performed}
 
 \item{filePath}{File path for a .csv file to directly read in the dataset from}
 
 \item{.Object}{The \code{AnalysisRecipe} object}
 
 \item{input}{The data frame on which operations need to be performed}
-
-\item{filePath}{File path for a .csv file to directly read in the dataset from}
 }
 \value{
-an object of class "\code{SparkAnalysisRecipe}", initialized with the input data frame provided
+an object of class "\code{SparkAnalysisRecipe}", initialized with the input Spark DataFrame provided
 
 an object of class "\code{AnalysisRecipe}", initialized with the input data frame provided
 }
 \details{
-Either one of \code{input} or \code{filePath} need to be provided i.e. either the
-     data frame or the file path to a csv file
+\code{input} needs to be provded and the argument needs to be of class \code{SparkDataFrame}, which is
+     generally created through operations using SparkR
 
 Either one of \code{input} or \code{filePath} need to be provided i.e. either the
      data frame or the file path to a csv file
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}},
-  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
-  \code{\link{readInputSpark}}, \code{\link{readInput}},
-  \code{\link{registerFunctionSpark}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}},
-  \code{\link{sparkRSessionCreateIfNotPresent}},
-  \code{\link{updateObject}}
+Other Package core functions for Spark: \code{\link{loadRecipeSpark}},
+  \code{\link{readInputSpark}},
+  \code{\link{registerFunctionSpark}}
 
 Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}},
-  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
-  \code{\link{readInputSpark}}, \code{\link{readInput}},
-  \code{\link{registerFunctionSpark}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}},
-  \code{\link{sparkRSessionCreateIfNotPresent}},
-  \code{\link{updateObject}}
+  \code{\link{generateReport}}, \code{\link{loadRecipe}},
+  \code{\link{readInput}}, \code{\link{registerFunction}},
+  \code{\link{saveRecipe}}, \code{\link{updateObject}}
 }
