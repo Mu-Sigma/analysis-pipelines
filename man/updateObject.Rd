@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{updateObject}
 \alias{updateObject}
-\title{Update the \code{AnalysisRecipe} object by adding an operation to the recipe}
+\title{Update the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object by adding an operation to the recipe}
 \usage{
 updateObject(object, operation, heading = "", parameters, outAsIn = F)
 }
@@ -15,19 +15,19 @@ updateObject(object, operation, heading = "", parameters, outAsIn = F)
 
 \item{parameters}{parameters passed to that function}
 
-\item{outAsIn}{whether to use output of this function as input to next}
+\item{outAsIn}{whether to use original input or output from previous function}
 }
 \value{
 Updated \code{AnalysisRecipe} object
 }
 \details{
 The specified operation along with the heading and parameters is updated in the recipe slot
-      of the AnalysisRecipe object, where the sequence of operations to be performed is stored
+      of the  \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object, where the sequence of operations
+     to be performed is stored
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
   \code{\link{loadRecipe}}, \code{\link{readInput}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}},
-  \code{\link{updatePackageRegistry}}
+  \code{\link{registerFunction}}, \code{\link{saveRecipe}}
 }

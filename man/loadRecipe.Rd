@@ -30,6 +30,5 @@ Optionally, the \code{input} parameter can be provided to
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
   \code{\link{readInput}}, \code{\link{registerFunction}},
-  \code{\link{saveRecipe}}, \code{\link{updateObject}},
-  \code{\link{updatePackageRegistry}}
+  \code{\link{saveRecipe}}, \code{\link{updateObject}}
 }

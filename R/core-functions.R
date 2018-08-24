@@ -1,9 +1,10 @@
-#################################################
-# Title: Reusable recipes for generating analysis reports
-# Version: 18.07.01
+##################################################################################################
+# Title: Reusable recipes for generating analyses outputs and reports
+# Version: 18.08.01
 # Created on: July 12, 2018
-# Description: An R package version
-
+# Description: An R package version which works both on R data frames, and a Spark environment i.e.
+#              Spark DataFrames including Structured Streaming
+##################################################################################################
 
 #' @name readInput
 #' @title Function to initialize \code{AnalysisRecipe} class with the input data frame
@@ -12,6 +13,7 @@
 #' @details More details of how an object of this class should be initialized is provided in the
 #' constructor - \link{initialize}
 #' @slot input The input dataset on which analysis is to be performed
+#' @slot workingInput Internal slot for having a working version of the input
 #' @slot filePath Path of the input dataset to be uploaded
 #' @slot recipe A tibble which holds functions to be called
 #' @slot registry A tibble which holds all the registered functions
@@ -22,6 +24,7 @@ readInput <- setClass("AnalysisRecipe",
                        slots = c(
                          input = "data.frame",
                          filePath = "character",
+                         workingInput = "data.frame",
                          recipe = "tbl",
                          registry = "tbl",
                          output = "list"
@@ -40,7 +43,7 @@ readInput <- setClass("AnalysisRecipe",
 setMethod(
   f = "initialize",
   signature = "AnalysisRecipe",
-  definition = function(.Object, input = data.frame(), filePath = "")
+  definition = function(.Object, input = data.frame(), filePath = "", workingInput = data.frame())
   {
     if(filePath == ""){
       .Object@input <- input
@@ -62,24 +65,25 @@ setMethod(
 
     )
     .Object@output <- list()
-    brickFunctions <- readRDS('support/predefFunctions.RDS')
-    for(rowNo in 1:nrow(brickFunctions)){
-      .Object %>>% registerFunction(brickFunctions[['functionName']][[rowNo]],brickFunctions[['heading']][[rowNo]],brickFunctions[['outAsIn']][[rowNo]]) -> .Object
+
+    for(rowNo in 1:nrow(dfPredefFunctions)){
+      .Object %>>% registerFunction(dfPredefFunctions[['functionName']][[rowNo]],dfPredefFunctions[['heading']][[rowNo]],dfPredefFunctions[['outAsIn']][[rowNo]]) -> .Object
     }
     return(.Object)
   }
 )
 
 #' @name updateObject
-#' @title Update the \code{AnalysisRecipe} object by adding an operation to the recipe
+#' @title Update the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object by adding an operation to the recipe
 #' @details
 #'       The specified operation along with the heading and parameters is updated in the recipe slot
-#'       of the AnalysisRecipe object, where the sequence of operations to be performed is stored
+#'       of the  \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object, where the sequence of operations
+#'      to be performed is stored
 #' @param object object that contains input, recipe, registry and output
 #' @param operation function name to be updated in tibble
 #' @param heading heading of that section in report
 #' @param parameters parameters passed to that function
-#' @param outAsIn whether to use output of this function as input to next
+#' @param outAsIn whether to use original input or output from previous function
 #' @return Updated \code{AnalysisRecipe} object
 #' @family Package core functions
 #' @export
@@ -94,17 +98,26 @@ setGeneric(
     standardGeneric("updateObject")
   }
 )
+
+.updateObject = function(object, operation, heading="", parameters, outAsIn = F)
+{
+  object@recipe %>>% add_row(operation = operation,
+                             heading = heading,
+                             parameters = list(parameters),
+                             outAsIn = outAsIn) -> object@recipe
+  return(object)
+}
+
 setMethod(
   f = "updateObject",
   signature = "AnalysisRecipe",
-  definition = function(object, operation, heading="", parameters, outAsIn = F)
-  {
-    object@recipe %>>% add_row(operation = operation,
-                               heading = heading,
-                               parameters = list(parameters),
-                               outAsIn = outAsIn) -> object@recipe
-    return(object)
-  }
+  definition = .updateObject
+)
+
+setMethod(
+  f = "updateObject",
+  signature = "SparkAnalysisRecipe",
+  definition = .updateObject
 )
 
 #' @name registerFunction
@@ -115,7 +128,7 @@ setMethod(
 #' @param object object that contains input, recipe, registry and output
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
-#' @param outAsIn whether to use output of this function as input to next
+#' @param outAsIn whether to use original input or output from previous function
 #' @param loadRecipe logical parameter to see if function is being used in loadRecipe or not
 #' @param session to load shiny session in the function
 #' @return Updated \code{AnalysisRecipe} object
@@ -137,6 +150,9 @@ setMethod(
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
+    if(parametersName != ""){
+      parametersName <- paste0(", ", parametersName)
+    }
     methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
     firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
     methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
@@ -144,7 +160,7 @@ setMethod(
     methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
     registerFunText <- paste0("setGeneric(
                               name = \"",functionName,"\",
-                              def = function(object, ",parametersName,")
+                              def = function(object",parametersName,")
                               {
                               standardGeneric(\"",functionName,"\")
                               }
@@ -153,9 +169,9 @@ setMethod(
                               setMethod(
                               f = \"",functionName,"\",
                               signature = \"AnalysisRecipe\",
-                              definition = function(object, ",parametersName,")
+                              definition = function(object",parametersName,")
                               {
-                              parametersList <- unlist(strsplit(\"",parametersName,"\",\",\"))
+                              parametersList <- unlist(strsplit(\"",sub(", ", "", parametersName),"\",\",\"))
                               parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
 
                               return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
@@ -199,7 +215,7 @@ setGeneric(
 
 setMethod(
   f = "generateReport",
-  signature = "AnalysisRecipe",
+  signature = c("AnalysisRecipe", "character"),
   definition = function(object,path)
   {
     require(rmarkdown)
@@ -210,14 +226,14 @@ setMethod(
 
 
     rmarkdown::render(
-      'support/report.Rmd',
+      system.file("report.Rmd", package = "analysisRecipes"),
       params = list(
         input = object@input,
         recipe = object@recipe,
         output = object@output
       ),
       html_document(
-        css = "styles.css",
+        css = system.file("styles.css", package = "analysisRecipes"),
         toc = T,
         toc_float = T
       ),
@@ -230,10 +246,10 @@ setMethod(
 )
 
 #' @name generateOutput
-#' @title Generate a list of outputs from an \code{AnalysisRecipe} object
+#' @title Generate a list of outputs from an \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
 #' @details
-#'       The sequence of operations stored in the \code{AnalysisRecipe} object are run and outputs generated,
-#'       stored in a list
+#'       The sequence of operations stored in the\code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
+#'       are run and outputs generated, stored in a list
 #' @param object object that contains input, recipe, registry and output
 #' @return A list of the outputs in the sequence in which the recipe was created
 #' @family Package core functions
@@ -247,20 +263,31 @@ setGeneric(
   }
 )
 
+.generateOutput = function(object)
+{
+  input <- object@input
+  for(rowNo in 1:nrow(object@recipe)){
+    if(object@recipe[['outAsIn']][rowNo] == T && rowNo > 1){
+      #object@workingInput <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+      object@workingInput <- object@output[[rowNo-1]]
+    }else{
+      object@workingInput <- input
+    }
+    object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(object@workingInput), object@recipe[['parameters']][[rowNo]]))
+  }
+  return(object)
+}
+
 setMethod(
   f = "generateOutput",
   signature = "AnalysisRecipe",
-  definition = function(object)
-  {
-    input <- object@input
-    for(rowNo in 1:nrow(object@recipe)){
-      if(object@recipe[['outAsIn']][rowNo] == T){
-        input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
-      }
-      object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
-    }
-    return(object)
-  }
+  definition = .generateOutput
+)
+
+setMethod(
+  f = "generateOutput",
+  signature = "SparkAnalysisRecipe",
+  definition = .generateOutput
 )
 
 setMethod(
@@ -282,7 +309,7 @@ setMethod(
 
 
 #' @name saveRecipe
-#' @title Saves the \code{AnalysisRecipe} object to the file system
+#' @title Saves the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object to the file system without outputs
 #' @details
 #'       The \code{AnalysisRecipe} object is saved to the file system in the paths specified
 #' @param object object that contains input, recipe, registry and output
@@ -299,15 +326,22 @@ setGeneric(
   }
 )
 
+.saveRecipe = function(object,RDSPath){
+  object@output <- list()
+  object@input <- data.frame()
+  saveRDS(object,RDSPath)
+}
+
 setMethod(
   f = "saveRecipe",
   signature = "AnalysisRecipe",
-  definition = function(object,RDSPath)
-  {
-    object@output <- list()
-    object@input <- data.frame()
-    saveRDS(object,RDSPath)
-  }
+  definition = .saveRecipe
+)
+
+setMethod(
+  f = "saveRecipe",
+  signature = "SparkAnalysisRecipe",
+  definition = .saveRecipe
 )
 
 
@@ -341,7 +375,6 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
     object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
   }
   return(object)
-
 }
 
 
@@ -356,24 +389,27 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
 #' @family Package core functions
 #' @keywords internal
 #'
-updatePackageRegistry <- function(functionName, functionHeader, flag){
-  tryCatch({
-    functionsDefined <- readRDS("support/predefFunctions.RDS")
-    invisible(source("EDA.R"))
-    functionList <- ls(envir = .GlobalEnv)
-    if(functionName %in% functionList){
-      functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
-      print(functionsDefined)
-      saveRDS(functionsDefined, "support/predefFunctions.RDS")
-      print("Successfully Registered function into package!")
-    }else
-      print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))
-  }, error = function(e){
-    stop(e)
-  }, warning = function(e){
-    warning(e)
-  })
-}
+#' ####TODO - This function needs rework to comply with R package structures and mechanisms. Currently, the name of
+#' the function needs to be manually added in the data-raw
+#'
+# updatePackageRegistry <- function(functionName, functionHeader, flag){
+#   tryCatch({
+#     functionsDefined <- readRDS("support/predefFunctions.RDS")
+#     invisible(source("EDA.R"))
+#     functionList <- ls(envir = .GlobalEnv)
+#     if(functionName %in% functionList){
+#       functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
+#       print(functionsDefined)
+#       saveRDS(functionsDefined, "support/predefFunctions.RDS")
+#       print("Successfully Registered function into package!")
+#     }else
+#       print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))
+#   }, error = function(e){
+#     stop(e)
+#   }, warning = function(e){
+#     warning(e)
+#   })
+# }
 
 #' @name explainFunction
 #' @title Explain the parameters, and outputs of a specific predefined package function

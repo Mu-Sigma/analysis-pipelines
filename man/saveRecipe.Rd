@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{saveRecipe}
 \alias{saveRecipe}
-\title{Saves the \code{AnalysisRecipe} object to the file system}
+\title{Saves the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object to the file system without outputs}
 \usage{
 saveRecipe(object, RDSPath)
 }
@@ -22,6 +22,5 @@ Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
   \code{\link{loadRecipe}}, \code{\link{readInput}},
   \code{\link{registerFunction}},
-  \code{\link{updateObject}},
-  \code{\link{updatePackageRegistry}}
+  \code{\link{updateObject}}
 }
