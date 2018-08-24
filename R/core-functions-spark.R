@@ -1,34 +1,3 @@
-#' @import SparkR
-
-#' @name sparkRSessionCreateIfNotPresent
-#' @title
-#' @details
-#' @details
-#' @slot input The input dataset on which analysis is to be performed
-#' @slot
-#' @family Package core functions
-#' @export
-
-sparkRSessionCreateIfNotPresent <- function(...){
-
-  if(Sys.getenv("SPARK_HOME") == "" && sparkHome == ""){
-    stop("SPARK_HOME environment variable is not set on the system, and sparkHome argument is empty")
-  }
-
-  if(!("SparkR" %in% installed.packages())){
-    stop("SparkR package not installed. Please install from the $SPARK_HOME folder")
-  }
-
-  if(sparkHome == ""){
-    .libPaths(c(file.path(Sys.getenv("SPARK_HOME"), "R", "lib"), .libPaths()))
-    sparkHome <- Sys.getenv("SPARK_HOME")
-  }else{
-    .libPaths(c(file.path(sparkHome, "R", "lib"), .libPaths()))
-  }
-
-  library(SparkR)
-  sparkR.session(...)
-}
 
 #' @name readInputSpark
 #' @title Function to initialize \code{SparkAnalysisRecipe} class with the input data frame
@@ -47,6 +16,7 @@ sparkRSessionCreateIfNotPresent <- function(...){
 readInputSpark <- setClass("SparkAnalysisRecipe",
                            slots = c(
                              input = "SparkDataFrame",
+                             workingInput = "SparkDataFrame",
                              recipe = "tbl",
                              registry = "tbl",
                              output = "list"
@@ -81,6 +51,10 @@ setMethod(
       outAsIn = logical()
 
     )
+
+    for(rowNo in 1:nrow(sparkPredefFunctions)){
+      .Object %>>% registerFunctionSpark(sparkPredefFunctions[['functionName']][[rowNo]],sparkPredefFunctions[['heading']][[rowNo]],sparkPredefFunctions[['outAsIn']][[rowNo]]) -> .Object
+    }
     return(.Object)
   }
 )
@@ -162,23 +136,19 @@ setMethod(
 )
 
 
-#' @name loadRecipe
-#' @title Loads the \code{AnalysisRecipe} object from the file system
+#'### TODO
+#'  @name loadRecipeSpark
+#' @title Loads the \code{SparkAnalysisRecipe} object from the file system
 #' @details
-#'       The \code{AnalysisRecipe} object is loaded into the file system from the file system
+#'       The \code{SparkAnalysisRecipe} object is loaded into the file system from the file system
 #'       based on the path specified.
-#' @details Optionally, the \code{input} parameter can be provided to
-#'       initialize the \code{AnalysisRecipe} object with a data frame present in the R session.
-#'       Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
-#'       and the object will be initialized with this data frame. The \code{filePath} parameter takes precedence over
-#'       \code{input} parameter
+#' @details
 #' @param RDSPath the path at which the .RDS file containing the recipe is located
 #' @param input (optional) data frame with which the recipe object should be initialized
 #' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
 #' @return An \code{AnalysisRecipe} object, optinally initialized with the data frame provided
 #' @family Package core functions
 #' @export
-
 loadRecipeSpark <- function(RDSPath, input){
   object <- readRDS(RDSPath)
     object@input <- input

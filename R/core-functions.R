@@ -22,6 +22,7 @@ readInput <- setClass("AnalysisRecipe",
                        slots = c(
                          input = "data.frame",
                          filePath = "character",
+                         workingInput = "data.frame",
                          recipe = "tbl",
                          registry = "tbl",
                          output = "list"
@@ -40,7 +41,7 @@ readInput <- setClass("AnalysisRecipe",
 setMethod(
   f = "initialize",
   signature = "AnalysisRecipe",
-  definition = function(.Object, input = data.frame(), filePath = "")
+  definition = function(.Object, input = data.frame(), filePath = "", workingInput = data.frame())
   {
     if(filePath == ""){
       .Object@input <- input
@@ -62,9 +63,9 @@ setMethod(
 
     )
     .Object@output <- list()
-    #brickFunctions <- readRDS('support/predefFunctions.RDS')
-    for(rowNo in 1:nrow(brickFunctions)){
-      .Object %>>% registerFunction(brickFunctions[['functionName']][[rowNo]],brickFunctions[['heading']][[rowNo]],brickFunctions[['outAsIn']][[rowNo]]) -> .Object
+
+    for(rowNo in 1:nrow(dfPredefFunctions)){
+      .Object %>>% registerFunction(dfPredefFunctions[['functionName']][[rowNo]],dfPredefFunctions[['heading']][[rowNo]],dfPredefFunctions[['outAsIn']][[rowNo]]) -> .Object
     }
     return(.Object)
   }
@@ -242,10 +243,10 @@ setMethod(
 )
 
 #' @name generateOutput
-#' @title Generate a list of outputs from an \code{AnalysisRecipe} object
+#' @title Generate a list of outputs from an \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
 #' @details
-#'       The sequence of operations stored in the \code{AnalysisRecipe} object are run and outputs generated,
-#'       stored in a list
+#'       The sequence of operations stored in the\code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
+#'       are run and outputs generated, stored in a list
 #' @param object object that contains input, recipe, registry and output
 #' @return A list of the outputs in the sequence in which the recipe was created
 #' @family Package core functions
@@ -263,10 +264,13 @@ setGeneric(
 {
   input <- object@input
   for(rowNo in 1:nrow(object@recipe)){
-    if(object@recipe[['outAsIn']][rowNo] == T){
-      input <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+    if(object@recipe[['outAsIn']][rowNo] == T && rowNo > 1){
+      #object@workingInput <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+      object@workingInput <- object@output[[rowNo-1]]
+    }else{
+      object@workingInput <- input
     }
-    object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+    object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(object@workingInput), object@recipe[['parameters']][[rowNo]]))
   }
   return(object)
 }

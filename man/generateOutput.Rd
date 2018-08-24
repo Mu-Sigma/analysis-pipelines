@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{generateOutput}
 \alias{generateOutput}
-\title{Generate a list of outputs from an \code{AnalysisRecipe} object}
+\title{Generate a list of outputs from an \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object}
 \usage{
 generateOutput(object)
 }
@@ -13,13 +13,14 @@ generateOutput(object)
 A list of the outputs in the sequence in which the recipe was created
 }
 \details{
-The sequence of operations stored in the \code{AnalysisRecipe} object are run and outputs generated,
-      stored in a list
+The sequence of operations stored in the\code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
+      are run and outputs generated, stored in a list
 }
 \seealso{
 Other Package core functions: \code{\link{generateReport}},
-  \code{\link{initialize}}, \code{\link{loadRecipe}},
-  \code{\link{readInputSpark}}, \code{\link{readInput}},
+  \code{\link{initialize}}, \code{\link{loadRecipeSpark}},
+  \code{\link{loadRecipe}}, \code{\link{readInputSpark}},
+  \code{\link{readInput}},
   \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}}, \code{\link{saveRecipe}},
   \code{\link{sparkRSessionCreateIfNotPresent}},
