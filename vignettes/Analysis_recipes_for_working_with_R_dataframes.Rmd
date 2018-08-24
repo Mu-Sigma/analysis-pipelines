@@ -2,10 +2,11 @@
 title: "Analysis recipes for working with R data frames"
 author: "Sanjay, Neeratyoy Mallik, Naren Srinivasan"
 date: "8/24/2018"
-output: html_document:
-    toc: true
-    toc_float: true
-    toc_depth: 4
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analysis recipes for working with R data frames}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 <!-- ###TODO: Improve language and description -->

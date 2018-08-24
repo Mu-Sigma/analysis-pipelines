@@ -1,20 +1,4 @@
----
-title: "Analysis recipes for working with Spark Structured Streaming"
-author: "Naren Srinivasan"
-date: "8/24/2018"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Analysis recipes for working with Spark Structured Streaming}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-# Objective
-
-* Implement a recipe using SparkR structured streaming functionss
-
-# Define analysis recipe based on Structured Streaming functions using SparkR
-
-```{r}
+## ------------------------------------------------------------------------
 
 library(analysisRecipes)
 library(SparkR)
@@ -51,4 +35,4 @@ printSchema(streamObj)
 
 write.stream(streamObj, 'console')
 
-```
+
