@@ -20,8 +20,9 @@ The sequence of operations stored in the \code{AnalysisRecipe} object are run, o
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{initialize}}, \code{\link{loadRecipe}},
-  \code{\link{readInputSpark}}, \code{\link{readInput}},
+  \code{\link{initialize}}, \code{\link{loadRecipeSpark}},
+  \code{\link{loadRecipe}}, \code{\link{readInputSpark}},
+  \code{\link{readInput}},
   \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}}, \code{\link{saveRecipe}},
   \code{\link{sparkRSessionCreateIfNotPresent}},

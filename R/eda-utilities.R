@@ -1,12 +1,11 @@
-###################################################
-# Title: Functions for various EDA operations
+######################################################################################################
+# Title: Functions for various EDA operationson data frames
 # Version: 18.07.01
 # Created on: June 14, 2018
 # Description: Consolidated file for all functions
 #                to be used for EDA out of the box
-###################################################
+######################################################################################################
 
-# source("core-functions.R")
 
 ########################
 # FUNCTION DEFINITIONS #

@@ -9,7 +9,7 @@
 \S4method{initialize}{SparkAnalysisRecipe}(.Object, input)
 
 \S4method{initialize}{AnalysisRecipe}(.Object, input = data.frame(),
-  filePath = "")
+  filePath = "", workingInput = data.frame())
 }
 \arguments{
 \item{.Object}{The \code{SparkAnalysisRecipe} object}
@@ -38,7 +38,8 @@ Either one of \code{input} or \code{filePath} need to be provided i.e. either th
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{loadRecipe}},
+  \code{\link{generateReport}},
+  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
   \code{\link{readInputSpark}}, \code{\link{readInput}},
   \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}}, \code{\link{saveRecipe}},
@@ -46,7 +47,8 @@ Other Package core functions: \code{\link{generateOutput}},
   \code{\link{updateObject}}
 
 Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{loadRecipe}},
+  \code{\link{generateReport}},
+  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
   \code{\link{readInputSpark}}, \code{\link{readInput}},
   \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}}, \code{\link{saveRecipe}},

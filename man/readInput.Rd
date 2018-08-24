@@ -28,7 +28,8 @@ constructor - \link{initialize}
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
-  \code{\link{loadRecipe}}, \code{\link{readInputSpark}},
+  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
+  \code{\link{readInputSpark}},
   \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}}, \code{\link{saveRecipe}},
   \code{\link{sparkRSessionCreateIfNotPresent}},

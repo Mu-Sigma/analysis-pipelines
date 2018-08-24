@@ -27,8 +27,8 @@ The specified operation along with the heading and parameters is updated in the 
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{initialize}},
-  \code{\link{loadRecipe}}, \code{\link{readInputSpark}},
-  \code{\link{readInput}},
+  \code{\link{loadRecipeSpark}}, \code{\link{loadRecipe}},
+  \code{\link{readInputSpark}}, \code{\link{readInput}},
   \code{\link{registerFunctionSpark}},
   \code{\link{registerFunction}}, \code{\link{saveRecipe}},
   \code{\link{sparkRSessionCreateIfNotPresent}}
