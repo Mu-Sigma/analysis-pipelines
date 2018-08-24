@@ -9,12 +9,10 @@ loadRecipeSpark(RDSPath, input)
 \arguments{
 \item{RDSPath}{the path at which the .RDS file containing the recipe is located}
 
-\item{input}{(optional) data frame with which the recipe object should be initialized}
-
-\item{filePath}{(optional) path where a dataset in .CSV format is present which is to be loaded}
+\item{input}{Spark DataFrame with which the recipe object should be initialized}
 }
 \value{
-An \code{AnalysisRecipe} object, optinally initialized with the data frame provided
+An \code{SparkAnalysisRecipe} object, optinally initialized with the data frame provided
 }
 \description{
 ### TODO
@@ -25,12 +23,7 @@ The \code{SparkAnalysisRecipe} object is loaded into the file system from the fi
       based on the path specified.
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{initialize}},
-  \code{\link{loadRecipe}}, \code{\link{readInputSpark}},
-  \code{\link{readInput}},
-  \code{\link{registerFunctionSpark}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}},
-  \code{\link{sparkRSessionCreateIfNotPresent}},
-  \code{\link{updateObject}}
+Other Package core functions for Spark: \code{\link{initialize}},
+  \code{\link{readInputSpark}},
+  \code{\link{registerFunctionSpark}}
 }

@@ -1,9 +1,10 @@
-#################################################
-# Title: Reusable recipes for generating analysis reports
-# Version: 18.07.01
+##################################################################################################
+# Title: Reusable recipes for generating analyses outputs and reports
+# Version: 18.08.01
 # Created on: July 12, 2018
-# Description: An R package version
-#################################################
+# Description: An R package version which works both on R data frames, and a Spark environment i.e.
+#              Spark DataFrames including Structured Streaming
+##################################################################################################
 
 #' @name readInput
 #' @title Function to initialize \code{AnalysisRecipe} class with the input data frame
@@ -12,6 +13,7 @@
 #' @details More details of how an object of this class should be initialized is provided in the
 #' constructor - \link{initialize}
 #' @slot input The input dataset on which analysis is to be performed
+#' @slot workingInput Internal slot for having a working version of the input
 #' @slot filePath Path of the input dataset to be uploaded
 #' @slot recipe A tibble which holds functions to be called
 #' @slot registry A tibble which holds all the registered functions
@@ -72,15 +74,16 @@ setMethod(
 )
 
 #' @name updateObject
-#' @title Update the \code{AnalysisRecipe} object by adding an operation to the recipe
+#' @title Update the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object by adding an operation to the recipe
 #' @details
 #'       The specified operation along with the heading and parameters is updated in the recipe slot
-#'       of the AnalysisRecipe object, where the sequence of operations to be performed is stored
+#'       of the  \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object, where the sequence of operations
+#'      to be performed is stored
 #' @param object object that contains input, recipe, registry and output
 #' @param operation function name to be updated in tibble
 #' @param heading heading of that section in report
 #' @param parameters parameters passed to that function
-#' @param outAsIn whether to use output of this function as input to next
+#' @param outAsIn whether to use original input or output from previous function
 #' @return Updated \code{AnalysisRecipe} object
 #' @family Package core functions
 #' @export
@@ -125,7 +128,7 @@ setMethod(
 #' @param object object that contains input, recipe, registry and output
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
-#' @param outAsIn whether to use output of this function as input to next
+#' @param outAsIn whether to use original input or output from previous function
 #' @param loadRecipe logical parameter to see if function is being used in loadRecipe or not
 #' @param session to load shiny session in the function
 #' @return Updated \code{AnalysisRecipe} object
@@ -212,7 +215,7 @@ setGeneric(
 
 setMethod(
   f = "generateReport",
-  signature = c("AnalysisRecipe", "SparkAnalysisRecipe"),
+  signature = c("AnalysisRecipe", "character"),
   definition = function(object,path)
   {
     require(rmarkdown)
@@ -223,14 +226,14 @@ setMethod(
 
 
     rmarkdown::render(
-      'support/report.Rmd',
+      system.file("report.Rmd", package = "analysisRecipes"),
       params = list(
         input = object@input,
         recipe = object@recipe,
         output = object@output
       ),
       html_document(
-        css = "styles.css",
+        css = system.file("styles.css", package = "analysisRecipes"),
         toc = T,
         toc_float = T
       ),
@@ -306,7 +309,7 @@ setMethod(
 
 
 #' @name saveRecipe
-#' @title Saves the \code{AnalysisRecipe} object to the file system
+#' @title Saves the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object to the file system without outputs
 #' @details
 #'       The \code{AnalysisRecipe} object is saved to the file system in the paths specified
 #' @param object object that contains input, recipe, registry and output

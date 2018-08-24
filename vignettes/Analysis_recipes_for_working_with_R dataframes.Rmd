@@ -1,20 +1,20 @@
 ---
-title: "Handbook for EDA Utility"
-author: 
- - name: Sanjay, Naren, Neeratyoy
-output: 
-  html_document:
+title: "Analysis recipes for working with R data frames"
+author: "Sanjay, Neeratyoy Mallik, Naren Srinivasan"
+date: "8/24/2018"
+output: html_document:
     toc: true
     toc_float: true
     toc_depth: 4
 ---
 
+<!-- ###TODO: Improve language and description -->
+
 # Objective
 
-* Providing an overview of what the EDA utility offers
-* Serving as a guide in using the functionalities provided
+* Providing an overview of what the analysisRecipes package offers
 
-#### More details
+# Introduction
 
 Exploratory Data Analysis (EDA) offers the first interaction with data. It, therefore, plays an important role in revealing properties and features of the data. Features that can provide a direction for the rest of the analysis. Even though EDA is a crucial initial step, it often helps if it can be done rapidly. Since the subsequent steps in an analytical flow is what often creates the bottleneck in terms of turnaround time.<br>
 
@@ -30,10 +30,7 @@ The sections below will provide sample code and a walkthrough in using the utili
 
 <br>
 
-# Loading the utility
-
-In order to leverage all the functionalities of the utility, one has to ensure that they are inside the directory of the EDA utility. That is, the working directory should be at the same level as the <i>EDA.R</i> file. <br>
-The file needs to be sourced or loaded into the R session to make use of the features.
+# Loading the package
 
 ```{r sourcing}
 library(analysisRecipes)
@@ -41,20 +38,21 @@ library(analysisRecipes)
 
 <br>
 
-# Creating an EDA object
+# Creating an analysisRecipe object
 
-The EDA utility has been written as per R's S4 object system standard. 
+The analysisRecipes package has been written as per R's S4 object system standard. 
 <br>
-To work with this EDA utility, one needs to call the constructor by specifying a file as an input.
+To work with the package, one needs to call the constructor by specifying a file as an input.
 
 ```{r creating object, warning=F}
-obj <- readInput(filePath = 'support/hotel_new.csv') 
+obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
 class(obj)[1]
 ```
 
-The object created is of type <i>"brickObject"</i>. The object contains the following attributes:
+The object created is of type <i>"AnalysisRecipe"</i>. The object contains the following attributes:
 
 * input - stores the data frame read by the constructor
+* workingInput - Internal
 * recipe - stores a tibble object which can store a sequence of function calls
 * registry - stores the list of function names that are available to the object
 * output - stores the output of each operation when a recipe is evaluated 
@@ -67,9 +65,9 @@ print(obj@recipe)
 
 <br>
 
-# Chaining EDA operations
+# Chaining operations
 
-The pipe(%>>%) operator used here works in a similar manner to the tidyverse paradigm where operations can be chained, and data can flow in a cascaded manner. 
+The pipe (%>>%) operator used here works in a similar manner to the tidyverse paradigm where operations can be chained, and data can flow in a cascaded manner. The package comes with some predefined functions, [currently mostly for generating exploratory analysis plots], which can be directly used in the chaining operation. Take a look at the registry of the object to see what functions are available. Every function, by default takes in the input data frame as the first input (need not be specified explicitly)
 
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
@@ -125,7 +123,7 @@ obj1@output[[2]]
 
 # Registering a new function
 
-On invoking the constructor, i.e., creating an object of EDA, the functions defined in the list are <i>registered</i> for the said object. The list of registered functions can be viewed as <i>obj@registry</i>. The EDA utility has the option to add to this list of functions, any user-defined function. <br>
+On invoking the constructor, i.e., creating an object of type AnalysisRecipe, the functions defined in the list are <i>registered</i> for the said object. The list of registered functions can be viewed as <i>obj@registry</i>. The package has the option to add any user-defined function to this list of functions,  <br>
 The only <b>constraint</b> for registering an user-defined function is that the first parameter in the argument list must be a data frame.
 <br>
 Let us demonstrate this with an example.
@@ -135,7 +133,7 @@ Let us demonstrate this with an example.
 print(obj@registry)
 ```
 
-The EDA utility hasn't got any feature to plot bivariate distributions. Let us define a function which can do it for us.
+Currently, the package does not have a function to plot bivariate distributions. Let us define a function which can do it for us.
 
 ```{r bivariate definition}
 bivariatePlots <- function(object, select_var_name_1, select_var_name_2, 
@@ -157,7 +155,7 @@ bivariatePlots <- function(object, select_var_name_1, select_var_name_2,
 }
 ```
 
-This user-defined function can now be registered as part of the EDA object created. Following which, the updated registry will show that the object has at its disposal an additional function which was not defined in the utility.
+This user-defined function can now be registered as part of the AnalysisRecipe object created. Following which, the updated registry will show that the object has at its disposal an additional function which was not defined in the utility.
 
 ```{r register function, warning=F}
 # The first parameter provides the function name
@@ -193,7 +191,7 @@ obj2@output[[4]]
 
 # Generate Report
 
-Object and lists stored in the memory are not consumable. Hence, the EDA utility allows the option to knit a recipe's outputs into a neat HTML file, which can serve as a report of the analysis performed.
+Object and lists stored in the memory are not consumable. Hence, the package allows for the option to knit a recipe's outputs into a neat HTML file, which can serve as a report of the analysis performed.
 
 ```{r generate report and tabs, warning=F,  eval=F}
 # generateReport() needs a destination path as an argument
@@ -221,13 +219,13 @@ The recipes stored as an attribute in the object are effectively meta recipes wh
 
 ```{r save recipes, message=FALSE, warning=FALSE, eval=TRUE}
 # Saves the recipe and registry of the EDA object
-saveRecipe(obj, 'support/recipe.RDS')
+saveRecipe(obj, 'recipe.RDS')
 ```
 
 This recipe can be loaded and re-used with any other data set.
 
 ```{r load recipes, message=FALSE, warning=FALSE, eval=T}
-obj2 <- loadRecipe('support/recipe.RDS',filePath = 'support/hotel_new.csv') 
+obj2 <- loadRecipe('recipe.RDS',filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
 
 print(obj2@registry)
 print(obj2@recipe)
@@ -235,15 +233,3 @@ print(obj2@recipe)
 
 <br>
 
-# Conclusion
-
-The EDA utility described in this handbook allows - 
-
-* Seamless churning of results by invoking simple functions in an API format to perform EDA
-* To pipe/chain functions in order to create analytical data flows that persist as recipes
-* Recipes can be exported, re-used, deployed, in any environment running R
-* Write their own functions and register to be used in a recipe
-* Collate and present the analysis recipes as a compact HTML report
-* Light on memory usage since the evaluation is lazy and can be deferred
-
-This utility enables a quicker and a more standardized approach to Exploratory Data Analysis.
