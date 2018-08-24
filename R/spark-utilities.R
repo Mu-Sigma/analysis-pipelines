@@ -5,6 +5,8 @@
 # Description: Functions to work with Spark, incuding Structured Streaming
 ######################################################################################################
 
+##TODO - Documentation pending for this file
+
 #' @import SparkR
 
 #' @name sparkRSessionCreateIfNotPresent
