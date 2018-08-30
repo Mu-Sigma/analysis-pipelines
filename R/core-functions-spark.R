@@ -147,7 +147,6 @@ setMethod(
 #' @details
 #'       The \code{SparkAnalysisRecipe} object is loaded into the file system from the file system
 #'       based on the path specified.
-#' @details
 #' @param RDSPath the path at which the .RDS file containing the recipe is located
 #' @param input Spark DataFrame with which the recipe object should be initialized
 #' @return An \code{SparkAnalysisRecipe} object, optinally initialized with the data frame provided
