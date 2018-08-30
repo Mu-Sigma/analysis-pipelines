@@ -36,7 +36,7 @@ readInputSpark <- setClass("SparkAnalysisRecipe",
 #'      generally created through operations using SparkR
 #' @return an object of class "\code{SparkAnalysisRecipe}", initialized with the input Spark DataFrame provided
 #' @family Package core functions for Spark
-#'
+#' @export
 setMethod(
   f = "initialize",
   signature = "SparkAnalysisRecipe",
