@@ -6,15 +6,12 @@
 \usage{
 sparkRSessionCreateIfNotPresent(...)
 }
+\arguments{
+\item{...}{Arguments to sparkR.session}
+}
 \details{
 Loads the SparkR package and intializes a Spark session from R
 }
-\section{Slots}{
-
-\describe{
-\item{\code{...}}{Arguments to sparkR.session}
-}}
-
 \seealso{
 Other Spark utilities: \code{\link{castKafkaStreamAsString}},
   \code{\link{convertKafkaValueFromJson}}

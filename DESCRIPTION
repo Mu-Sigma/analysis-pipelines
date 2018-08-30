@@ -12,6 +12,7 @@ Description: This package allows data scientists to compose and generate reports
 Depends: R (>= 3.4.0), tibble, magrittr, data.table, pipeR, devtools
 Imports: ggplot2, dplyr
 Suggests: plotly, knitr, rmarkdown, SparkR
+Remotes: github::cran/SparkR
 Encoding: UTF-8
 License: Apache License 2.0
 LazyLoad: yes

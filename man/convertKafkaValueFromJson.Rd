@@ -6,6 +6,12 @@
 \usage{
 convertKafkaValueFromJson(streamObj, schema)
 }
+\arguments{
+\item{streamObj}{Spark Structured Streaming DataFrame which is returned by the \code{castKafkaStreamAsString} function}
+
+\item{schema}{A structType object created from SparkR specifying the schema of the json data present in the \code{value}
+attribute of the incoming Kafka stream}
+}
 \value{
 Spark Structured Streaming DataFrame with the json data in the \code{value} attribute of the Kafka stream parsed
 into a DataFrame format
@@ -14,15 +20,6 @@ into a DataFrame format
 Takes in a Structured Stream from Kafka created from \code{read.stream(source = 'kafka', ...)} and returns
 a Structured Streaming DataFrame where the \code{key} and \code{value} from the Kafka stream are cast to string
 }
-\section{Slots}{
-
-\describe{
-\item{\code{streamObj}}{Spark Structured Streaming DataFrame which is returned by the \code{castKafkaStreamAsString} function}
-
-\item{\code{schema}}{A structType object created from SparkR specifying the schema of the json data present in the \code{value}
-attribute of the incoming Kafka stream}
-}}
-
 \seealso{
 Other Spark utilities: \code{\link{castKafkaStreamAsString}},
   \code{\link{sparkRSessionCreateIfNotPresent}}
