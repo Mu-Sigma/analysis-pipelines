@@ -2,5 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-
+metastore_db/
 .DS_Store
+vignettes/metastore_db/
