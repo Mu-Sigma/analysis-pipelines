@@ -10,7 +10,7 @@
 #' @name sparkRSessionCreateIfNotPresent
 #' @title Connect to a Spark session
 #' @details Loads the SparkR package and intializes a Spark session from R
-#' @slot ... Arguments to sparkR.session
+#' @param ... Arguments to sparkR.session
 #' @family Spark utilities
 #' @export
 
@@ -39,7 +39,7 @@ sparkRSessionCreateIfNotPresent <- function(...){
 #' @title Connect to a Spark session
 #' @details Takes in a Structured Stream from Kafka created from \code{read.stream(source = 'kafka', ...)} and returns
 #' a Structured Streaming DataFrame where the \code{key} and \code{value} from the Kafka stream are cast to string
-#' @slot streamObj Spark Structured Streaming DataFrame returned by \code{read.stream} function with \code{source = 'kafka'}
+#' @param streamObj Spark Structured Streaming DataFrame returned by \code{read.stream} function with \code{source = 'kafka'}
 #' @return Updated Spark Structured Streaming DataFrame with key, value, topic and timestamp from the Kafka stream
 #' @family Spark utilities
 #' @export
@@ -53,8 +53,8 @@ castKafkaStreamAsString <- function(streamObj){
 #' @title Connect to a Spark session
 #' @details Takes in a Structured Stream from Kafka created from \code{read.stream(source = 'kafka', ...)} and returns
 #' a Structured Streaming DataFrame where the \code{key} and \code{value} from the Kafka stream are cast to string
-#' @slot streamObj Spark Structured Streaming DataFrame which is returned by the \code{castKafkaStreamAsString} function
-#' @slot schema A structType object created from SparkR specifying the schema of the json data present in the \code{value}
+#' @param streamObj Spark Structured Streaming DataFrame which is returned by the \code{castKafkaStreamAsString} function
+#' @param schema A structType object created from SparkR specifying the schema of the json data present in the \code{value}
 #' attribute of the incoming Kafka stream
 #' @return Spark Structured Streaming DataFrame with the json data in the \code{value} attribute of the Kafka stream parsed
 #' into a DataFrame format
