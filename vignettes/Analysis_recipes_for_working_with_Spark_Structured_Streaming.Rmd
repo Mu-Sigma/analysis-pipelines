@@ -3,10 +3,10 @@ title: "Analysis recipes for working with Spark Structured Streaming"
 author: "Naren Srinivasan"
 date: "8/24/2018"
 output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Analysis recipes for working with Spark Structured Streaming}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+<!-- vignette: > -->
+<!--   %\VignetteIndexEntry{Analysis recipes for working with Spark Structured Streaming} -->
+<!--   %\VignetteEngine{knitr::rmarkdown} -->
+<!--   %\VignetteEncoding{UTF-8} -->
 ---
 # Objective
 
@@ -41,12 +41,13 @@ schema <- structType(structField("customerId", "string"),
 printSchema(streamObj)
 
 recipeObj <- readInputSpark(input = streamObj)
+recipeObj %>>% getRegistry
 
-recipeObj %>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = schema) -> recipeObj
-recipeObj@recipe
+recipeObj %>>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = schema) -> recipeObj
+recipeObj %>>% getRecipe
 
-recipeObj %>% generateOutput() -> recipeObj
-streamObj <- recipeObj@output[[2]]
+recipeObj %>>% generateOutput() -> recipeObj
+recipeObj %>>% getOuputByOrderId(2) -> streamObj
 printSchema(streamObj)
 
 write.stream(streamObj, 'console')

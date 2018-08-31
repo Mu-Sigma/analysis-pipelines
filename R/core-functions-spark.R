@@ -5,8 +5,6 @@
 # Description: An R package version
 ##################################################################################################
 
-##TODO - Documentation pending for this file
-
 #' @name readInputSpark
 #' @title Function to initialize \code{SparkAnalysisRecipe} class with the input Spark DataFrame
 #' @details The class which holds the metadata including the registry of available functions,
@@ -38,7 +36,7 @@ readInputSpark <- setClass("SparkAnalysisRecipe",
 #'      generally created through operations using SparkR
 #' @return an object of class "\code{SparkAnalysisRecipe}", initialized with the input Spark DataFrame provided
 #' @family Package core functions for Spark
-#'
+#' @export
 setMethod(
   f = "initialize",
   signature = "SparkAnalysisRecipe",
@@ -46,6 +44,7 @@ setMethod(
   {
     .Object@input <- input
     .Object@recipe <- tibble(
+      order = numeric(),
       operation = character(),
       heading = character(),
       parameters = list(),
@@ -55,12 +54,16 @@ setMethod(
     .Object@registry <- tibble(
       functionName = character(),
       heading = character(),
-      outAsIn = logical()
+      outAsIn = logical(),
+      userDefined = logical()
 
     )
 
     for(rowNo in 1:nrow(sparkPredefFunctions)){
-      .Object %>>% registerFunctionSpark(sparkPredefFunctions[['functionName']][[rowNo]],sparkPredefFunctions[['heading']][[rowNo]],sparkPredefFunctions[['outAsIn']][[rowNo]]) -> .Object
+      .Object %>>% registerFunctionSpark(sparkPredefFunctions[['functionName']][[rowNo]],
+                                         sparkPredefFunctions[['heading']][[rowNo]],
+                                         sparkPredefFunctions[['outAsIn']][[rowNo]],
+                                         userDefined = F) -> .Object
     }
     return(.Object)
   }
@@ -86,7 +89,8 @@ setMethod(
 
 setGeneric(
   name = "registerFunctionSpark",
-  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
+  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F,
+                 userDefined = T, session=session)
   {
     standardGeneric("registerFunctionSpark")
   }
@@ -95,7 +99,8 @@ setGeneric(
 setMethod(
   f = "registerFunctionSpark",
   signature = "SparkAnalysisRecipe",
-  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
+  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F,
+                        userDefined = T, session=session)
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
@@ -136,7 +141,8 @@ setMethod(
     if(loadRecipe==F){
       object@registry %>>% add_row(functionName = paste0(functionName),
                                    heading = heading,
-                                   outAsIn = outAsIn) -> object@registry
+                                   outAsIn = outAsIn,
+                                   userDefined = userDefined) -> object@registry
     }
     return(object)
   }
@@ -149,7 +155,6 @@ setMethod(
 #' @details
 #'       The \code{SparkAnalysisRecipe} object is loaded into the file system from the file system
 #'       based on the path specified.
-#' @details
 #' @param RDSPath the path at which the .RDS file containing the recipe is located
 #' @param input Spark DataFrame with which the recipe object should be initialized
 #' @return An \code{SparkAnalysisRecipe} object, optinally initialized with the data frame provided
@@ -160,7 +165,11 @@ loadRecipeSpark <- function(RDSPath, input){
     object@input <- input
   registeredFunctions <- object@registry
   for(rowNo in 1:nrow(registeredFunctions)){
-    object %>>% registerFunctionSpark(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
+    object %>>% registerFunctionSpark(registeredFunctions[['functionName']][[rowNo]],
+                                      registeredFunctions[['heading']][[rowNo]],
+                                      registeredFunctions[['outAsIn']][[rowNo]],
+                                      userDefined =  registeredFunctions[['userDefined']][[rowNo]],
+                                      loadRecipe = T) -> object
   }
   return(object)
 }

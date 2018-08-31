@@ -18,6 +18,8 @@ The sequence of operations stored in the\code{AnalysisRecipe} or \code{SparkAnal
 }
 \seealso{
 Other Package core functions: \code{\link{generateReport}},
+  \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
+  \code{\link{getRecipe}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadRecipe}},
   \code{\link{readInput}}, \code{\link{registerFunction}},
   \code{\link{saveRecipe}}, \code{\link{updateObject}}
