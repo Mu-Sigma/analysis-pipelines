@@ -53,12 +53,16 @@ setMethod(
     .Object@registry <- tibble(
       functionName = character(),
       heading = character(),
-      outAsIn = logical()
+      outAsIn = logical(),
+      userDefined = logical()
 
     )
 
     for(rowNo in 1:nrow(sparkPredefFunctions)){
-      .Object %>>% registerFunctionSpark(sparkPredefFunctions[['functionName']][[rowNo]],sparkPredefFunctions[['heading']][[rowNo]],sparkPredefFunctions[['outAsIn']][[rowNo]]) -> .Object
+      .Object %>>% registerFunctionSpark(sparkPredefFunctions[['functionName']][[rowNo]],
+                                         sparkPredefFunctions[['heading']][[rowNo]],
+                                         sparkPredefFunctions[['outAsIn']][[rowNo]],
+                                         userDefined = F) -> .Object
     }
     return(.Object)
   }
@@ -84,7 +88,8 @@ setMethod(
 
 setGeneric(
   name = "registerFunctionSpark",
-  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
+  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F,
+                 userDefined = T, session=session)
   {
     standardGeneric("registerFunctionSpark")
   }
@@ -93,7 +98,8 @@ setGeneric(
 setMethod(
   f = "registerFunctionSpark",
   signature = "SparkAnalysisRecipe",
-  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
+  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F,
+                        userDefined = T, session=session)
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
@@ -134,7 +140,8 @@ setMethod(
     if(loadRecipe==F){
       object@registry %>>% add_row(functionName = paste0(functionName),
                                    heading = heading,
-                                   outAsIn = outAsIn) -> object@registry
+                                   outAsIn = outAsIn,
+                                   userDefined = userDefined) -> object@registry
     }
     return(object)
   }
@@ -157,7 +164,11 @@ loadRecipeSpark <- function(RDSPath, input){
     object@input <- input
   registeredFunctions <- object@registry
   for(rowNo in 1:nrow(registeredFunctions)){
-    object %>>% registerFunctionSpark(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
+    object %>>% registerFunctionSpark(registeredFunctions[['functionName']][[rowNo]],
+                                      registeredFunctions[['heading']][[rowNo]],
+                                      registeredFunctions[['outAsIn']][[rowNo]],
+                                      userDefined =  registeredFunctions[['userDefined']][[rowNo]],
+                                      loadRecipe = T) -> object
   }
   return(object)
 }

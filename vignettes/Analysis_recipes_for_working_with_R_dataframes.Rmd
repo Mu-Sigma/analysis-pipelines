@@ -60,8 +60,7 @@ The object created is of type <i>"AnalysisRecipe"</i>. The object contains the f
 
 ```{r printing object contents, warning=F}
 str(obj@input)
-print(obj@registry)
-print(obj@recipe)
+obj %>% getRegistry
 ```
 
 <br>
@@ -74,7 +73,7 @@ The pipe (%>>%) operator used here works in a similar manner to the tidyverse pa
 # Running univariate categorical distribution plot on the constructed object
 
 obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
-obj@recipe
+obj %>% getRecipe
 ```
 
 ```{r pipe demo 2, warning=F}
@@ -85,7 +84,7 @@ obj <- obj %>>%
   univarCatDistPlots(uniCol = "location_type", priColor = "blue", optionalPlots = 0) %>>% 
   outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
-obj@recipe
+obj %>% getRecipe
 ```
 
 <br>
@@ -131,7 +130,7 @@ Let us demonstrate this with an example.
 
 ```{r current register, warning=FALSE}
 # Currently registered functions
-print(obj@registry)
+obj %>% getRegistry
 ```
 
 Currently, the package does not have a function to plot bivariate distributions. Let us define a function which can do it for us.
@@ -164,7 +163,7 @@ This user-defined function can now be registered as part of the AnalysisRecipe o
 obj <- obj %>>% registerFunction('bivariatePlots', "Bivariate Plots")
 
 # Printing the updated registry
-print(obj@registry)
+obj %>% getRegistry
 ```
 
 ### Using newly registered function with lazy eval of pipeline
@@ -178,7 +177,7 @@ obj <- obj %>>%
                  priColor = "blue", secColor = "black")
 
 # Printing the updated recipe
-print(obj@recipe)
+obj %>% getRecipe
 ```
 
 The newly added function will also lazy evaluate depending on the trigger.
@@ -228,8 +227,8 @@ This recipe can be loaded and re-used with any other data set.
 ```{r load recipes, message=FALSE, warning=FALSE, eval=T}
 obj2 <- loadRecipe('recipe.RDS',filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
 
-print(obj2@registry)
-print(obj2@recipe)
+obj2 %>% getRegistry
+obj2 %>% getRecipe
 ```
 
 <br>
