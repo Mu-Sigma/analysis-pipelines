@@ -3,18 +3,17 @@ library(analysisRecipes)
 
 ## ----creating object, warning=F------------------------------------------
 obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
-class(obj)[1]
+class(obj)
 
 ## ----printing object contents, warning=F---------------------------------
-str(obj@input)
-print(obj@registry)
-print(obj@recipe)
+obj %>>% getInput %>>% str
+obj %>>% getRegistry
 
 ## ----pipe demo 1, warning=F----------------------------------------------
 # Running univariate categorical distribution plot on the constructed object
 
 obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
-obj@recipe
+obj %>>% getRecipe
 
 ## ----pipe demo 2, warning=F----------------------------------------------
 # Running univariate categorical distribution plot and then 
@@ -24,7 +23,7 @@ obj <- obj %>>%
   univarCatDistPlots(uniCol = "location_type", priColor = "blue", optionalPlots = 0) %>>% 
   outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
-obj@recipe
+obj %>>% getRecipe
 
 ## ----lazy eval 1---------------------------------------------------------
 length(obj@output)
@@ -38,11 +37,11 @@ length(obj@output)
 
 ## ----lazy eval 3, warning=F----------------------------------------------
 # The index can range from 1 to length(obj@output)
-obj1@output[[2]]
+obj1 %>>% getOuputByOrderId(3)
 
 ## ----current register, warning=FALSE-------------------------------------
 # Currently registered functions
-print(obj@registry)
+obj %>>% getRegistry
 
 ## ----bivariate definition------------------------------------------------
 bivariatePlots <- function(object, select_var_name_1, select_var_name_2, 
@@ -69,7 +68,7 @@ bivariatePlots <- function(object, select_var_name_1, select_var_name_2,
 obj <- obj %>>% registerFunction('bivariatePlots', "Bivariate Plots")
 
 # Printing the updated registry
-print(obj@registry)
+obj %>>% getRegistry
 
 ## ----register function 2, warning=F--------------------------------------
 # Chaining the user-defined function to the object's recipe where it was registered
@@ -78,11 +77,11 @@ obj <- obj %>>%
                  priColor = "blue", secColor = "black")
 
 # Printing the updated recipe
-print(obj@recipe)
+obj %>>% getRecipe
 
 ## ----register function 3, warning=F--------------------------------------
 obj2 <- obj %>>% generateOutput()
-obj2@output[[4]]
+obj2 %>>% getOuputByOrderId(4)
 
 ## ----generate report and tabs, warning=F,  eval=F------------------------
 #  # generateReport() needs a destination path as an argument
@@ -102,6 +101,6 @@ saveRecipe(obj, 'recipe.RDS')
 ## ----load recipes, message=FALSE, warning=FALSE, eval=T------------------
 obj2 <- loadRecipe('recipe.RDS',filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
 
-print(obj2@registry)
-print(obj2@recipe)
+obj2 %>% getRegistry
+obj2 %>% getRecipe
 

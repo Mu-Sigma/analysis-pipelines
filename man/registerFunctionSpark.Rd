@@ -6,7 +6,7 @@
        DataFrames}
 \usage{
 registerFunctionSpark(object, functionName, heading = "", outAsIn = F,
-  loadRecipe = F, session = session)
+  loadRecipe = F, userDefined = T, session = session)
 }
 \arguments{
 \item{object}{object that contains input, recipe, registry and output}
