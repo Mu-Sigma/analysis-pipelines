@@ -5,7 +5,7 @@
 \title{Register a user-defined function to be used with \code{AnalysisRecipe} objects}
 \usage{
 registerFunction(object, functionName, heading = "", outAsIn = F,
-  loadRecipe = F, session = session)
+  loadRecipe = F, userDefined = T, session = session)
 }
 \arguments{
 \item{object}{object that contains input, recipe, registry and output}
@@ -29,7 +29,9 @@ The specified operation along with the heading and parameters is updated in the 
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{initialize}},
+  \code{\link{generateReport}}, \code{\link{getInput}},
+  \code{\link{getOuputByOrderId}}, \code{\link{getRecipe}},
+  \code{\link{getRegistry}}, \code{\link{initialize}},
   \code{\link{loadRecipe}}, \code{\link{readInput}},
   \code{\link{saveRecipe}}, \code{\link{updateObject}}
 }

@@ -44,6 +44,7 @@ setMethod(
   {
     .Object@input <- input
     .Object@recipe <- tibble(
+      order = numeric(),
       operation = character(),
       heading = character(),
       parameters = list(),

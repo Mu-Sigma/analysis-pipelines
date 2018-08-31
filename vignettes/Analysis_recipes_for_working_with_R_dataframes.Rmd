@@ -47,7 +47,7 @@ To work with the package, one needs to call the constructor by specifying a file
 
 ```{r creating object, warning=F}
 obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
-class(obj)[1]
+class(obj)
 ```
 
 The object created is of type <i>"AnalysisRecipe"</i>. The object contains the following attributes:
@@ -59,8 +59,8 @@ The object created is of type <i>"AnalysisRecipe"</i>. The object contains the f
 * output - stores the output of each operation when a recipe is evaluated 
 
 ```{r printing object contents, warning=F}
-str(obj@input)
-obj %>% getRegistry
+obj %>>% getInput %>>% str
+obj %>>% getRegistry
 ```
 
 <br>
@@ -73,7 +73,7 @@ The pipe (%>>%) operator used here works in a similar manner to the tidyverse pa
 # Running univariate categorical distribution plot on the constructed object
 
 obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
-obj %>% getRecipe
+obj %>>% getRecipe
 ```
 
 ```{r pipe demo 2, warning=F}
@@ -84,7 +84,7 @@ obj <- obj %>>%
   univarCatDistPlots(uniCol = "location_type", priColor = "blue", optionalPlots = 0) %>>% 
   outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
-obj %>% getRecipe
+obj %>>% getRecipe
 ```
 
 <br>
@@ -112,11 +112,11 @@ Observe that the length of the output list of the first object (the chunk above)
 length(obj@output)
 ```
 
-The outputs can be viewed by subsetting the output list. 
+A specific output can be viewed by providing the position of the function generating the output in the sequence of operations in the recipe. This can be obtained from the "order" column in the "recipe" table corresponding to the function whose output is desired
 
 ```{r lazy eval 3, warning=F}
 # The index can range from 1 to length(obj@output)
-obj1@output[[2]]
+obj1 %>>% getOuputByOrderId(3)
 ```
 
 <br>
@@ -130,7 +130,7 @@ Let us demonstrate this with an example.
 
 ```{r current register, warning=FALSE}
 # Currently registered functions
-obj %>% getRegistry
+obj %>>% getRegistry
 ```
 
 Currently, the package does not have a function to plot bivariate distributions. Let us define a function which can do it for us.
@@ -163,7 +163,7 @@ This user-defined function can now be registered as part of the AnalysisRecipe o
 obj <- obj %>>% registerFunction('bivariatePlots', "Bivariate Plots")
 
 # Printing the updated registry
-obj %>% getRegistry
+obj %>>% getRegistry
 ```
 
 ### Using newly registered function with lazy eval of pipeline
@@ -177,14 +177,14 @@ obj <- obj %>>%
                  priColor = "blue", secColor = "black")
 
 # Printing the updated recipe
-obj %>% getRecipe
+obj %>>% getRecipe
 ```
 
 The newly added function will also lazy evaluate depending on the trigger.
 
 ```{r register function 3, warning=F}
 obj2 <- obj %>>% generateOutput()
-obj2@output[[4]]
+obj2 %>>% getOuputByOrderId(4)
 ```
 
 <br>
