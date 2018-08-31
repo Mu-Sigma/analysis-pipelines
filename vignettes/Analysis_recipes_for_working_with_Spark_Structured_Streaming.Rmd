@@ -41,9 +41,10 @@ schema <- structType(structField("customerId", "string"),
 printSchema(streamObj)
 
 recipeObj <- readInputSpark(input = streamObj)
+recipeObj%>% getRegistry
 
 recipeObj %>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = schema) -> recipeObj
-recipeObj@recipe
+recipeObj%>% getRecipe
 
 recipeObj %>% generateOutput() -> recipeObj
 streamObj <- recipeObj@output[[2]]

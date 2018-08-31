@@ -61,13 +61,17 @@ setMethod(
     .Object@registry <- tibble(
       functionName = character(),
       heading = character(),
-      outAsIn = logical()
+      outAsIn = logical(),
+      userDefined = logical()
 
     )
     .Object@output <- list()
 
     for(rowNo in 1:nrow(dfPredefFunctions)){
-      .Object %>>% registerFunction(dfPredefFunctions[['functionName']][[rowNo]],dfPredefFunctions[['heading']][[rowNo]],dfPredefFunctions[['outAsIn']][[rowNo]]) -> .Object
+      .Object %>>% registerFunction(dfPredefFunctions[['functionName']][[rowNo]],
+                                    dfPredefFunctions[['heading']][[rowNo]],
+                                    dfPredefFunctions[['outAsIn']][[rowNo]],
+                                    userDefined = F) -> .Object
     }
     return(.Object)
   }
@@ -137,7 +141,8 @@ setMethod(
 
 setGeneric(
   name = "registerFunction",
-  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
+  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F,
+                 userDefined = T, session=session)
   {
     standardGeneric("registerFunction")
   }
@@ -146,7 +151,8 @@ setGeneric(
 setMethod(
   f = "registerFunction",
   signature = "AnalysisRecipe",
-  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F, session=session)
+  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F,
+                        userDefined = T, session=session)
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
@@ -187,7 +193,8 @@ setMethod(
     if(loadRecipe==F){
       object@registry %>>% add_row(functionName = paste0(functionName),
                                    heading = heading,
-                                   outAsIn = outAsIn) -> object@registry
+                                   outAsIn = outAsIn,
+                                   userDefined = userDefined) -> object@registry
     }
     return(object)
                               }
@@ -326,7 +333,7 @@ setGeneric(
   }
 )
 
-.saveRecipe = function(object,RDSPath){
+.saveRecipe = function(object, RDSPath){
   object@output <- list()
   object@input <- data.frame()
   saveRDS(object,RDSPath)
@@ -343,6 +350,76 @@ setMethod(
   signature = "SparkAnalysisRecipe",
   definition = .saveRecipe
 )
+
+
+#' @name getRecipe
+#' @title Obtain the recipe
+#' @param object The \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object
+#' @details
+#'      Obtains the recipe from the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object as a tibble
+#' @return Tibble describing the recipe
+#' @family Package core functions
+#' @export
+
+setGeneric(
+  name = "getRecipe",
+  def = function(object)
+  {
+    standardGeneric("getRecipe")
+  }
+)
+
+.getRecipe = function(object){
+  return(object@recipe)
+}
+
+setMethod(
+  f = "getRecipe",
+  signature = "AnalysisRecipe",
+  definition = .getRecipe
+)
+
+setMethod(
+  f = "getRecipe",
+  signature = "SparkAnalysisRecipe",
+  definition = .getRecipe
+)
+
+
+#' @name getRegistry
+#' @title Obtains the function registry
+#' @param object The \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object
+#' @details
+#'      Obtains the function registry from the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object as a tibble,
+#'      including both predefined and user defined functions
+#' @return Tibble describing the registry
+#' @family Package core functions
+#' @export
+
+setGeneric(
+  name = "getRegistry",
+  def = function(object)
+  {
+    standardGeneric("getRegistry")
+  }
+)
+
+.getRegistry = function(object){
+  return(object@registry)
+}
+
+setMethod(
+  f = "getRegistry",
+  signature = "AnalysisRecipe",
+  definition = .getRegistry
+)
+
+setMethod(
+  f = "getRegistry",
+  signature = "SparkAnalysisRecipe",
+  definition = .getRegistry
+)
+
 
 
 #' @name loadRecipe
@@ -372,7 +449,11 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
   }
   registeredFunctions <- object@registry
   for(rowNo in 1:nrow(registeredFunctions)){
-    object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],registeredFunctions[['heading']][[rowNo]],registeredFunctions[['outAsIn']][[rowNo]],loadRecipe=T) -> object
+    object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],
+                                 registeredFunctions[['heading']][[rowNo]],
+                                 registeredFunctions[['outAsIn']][[rowNo]],
+                                 userDefined = registeredFunctions[['userDefined']][[rowNo]],
+                                 loadRecipe = T) -> object
   }
   return(object)
 }
