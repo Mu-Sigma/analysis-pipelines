@@ -6,12 +6,14 @@
 #                to be used for EDA out of the box
 ######################################################################################################
 
-##TODO - Documentation pending for this file
 
 ########################
 # FUNCTION DEFINITIONS #
 ########################
-
+#' @description 
+#' @param data the dataset that needs to be loaded 
+#' @param columns the names of columns to be ignored from the dataset
+#' @export
 ignoreCols <- function(data, columns){
   tryCatch({
     if(all(columns %in% colnames(data))){
@@ -28,6 +30,12 @@ ignoreCols <- function(data, columns){
 }
 
 # Univariate Categoric Distribution function
+#' @description 
+#' @param data the dataset that needs to be loaded 
+#' @param uniCol the name of column on which the plot needs to be generated
+#' @param priColor the primary color for the plots
+#' @param optionalPlots A Flag for optional plots
+#' @export
 univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
   levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
   data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
@@ -53,7 +61,15 @@ univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
   return(catPlot)
 }
 
-#Outlier Plot Function
+#Outlier Plot Function 
+#' @description 
+#' @param data the dataset that needs to be loaded 
+#' @param method the method on which outliers are to be identified
+#' @param columnName the name of column for which the outliers are identified
+#' @param cutoffValue the cut off value to define the threshold for outliers
+#' @param priColor the primary color for the plots
+#' @param optionalPlots A Flag for optional plots
+#' @export
 outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlots){
   if(method == "iqr"){
     outlierPlotObj <- ggplot2::ggplot(data, ggplot2::aes(x="", y = data[,columnName])) +
@@ -104,6 +120,14 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
 }
 
 #Mutlivariate Outlier Plot Function
+#' @description 
+#' @param data the dataset that needs to be loaded 
+#' @param depCol the name of column which is identified as dependent column
+#' @param indepCol the name of independent column
+#' @param sizeCol the name of column used to define the size of point in plots
+#' @param priColor the primary color for the plots
+#' @param optionalPlots A Flag for optional plots
+#' @export
 multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalPlots){
   x<-data[,indepCol]
   y<-data[,depCol]
@@ -126,6 +150,13 @@ multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalP
 }
 
 ## Bivariate Plots
+#' @description 
+#' @param dataset the dataset that needs to be loaded 
+#' @param select_var_name_1 the name of first column on which the plot needs to be generated
+#' @param select_var_name_2 the name of second column on which the plot needs to be generated
+#' @param priColor the primary color for the plots
+#' @param secColor A secondary color for the plots
+#' @export
 bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
 
   numeric_cols <- unlist(getDatatype(dataset)['numeric_cols'])
@@ -205,6 +236,9 @@ bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor =
 }
 
 ## Correlation Matrix
+#' @description 
+#' @param dataset the dataset that needs to be loaded 
+#' @export
 correlationMatPlot <- function(dataset, methodused = "everything"){
   numeric_cols <- getDatatype(dataset)['numeric_cols']
   cormatrix <- base::round(stats::cor(dataset[,unlist(numeric_cols),drop=F], use = methodused),3)
@@ -233,6 +267,9 @@ correlationMatPlot <- function(dataset, methodused = "everything"){
 ##################
 
 ## Return the column type
+#' @description 
+#' @param dataVector a data vector of a column  
+#' @export
 CheckColumnType <- function(dataVector) {
   #Check if the column type is "numeric" or "character" & decide type accordDingly
   if (class(dataVector) == "integer" || class(dataVector) == "numeric") {
@@ -243,6 +280,9 @@ CheckColumnType <- function(dataVector) {
 }
 
 ## Get numeric and categoric
+#' @description 
+#' @param dataset a dataset which needs to be loaded
+#' @export
 getDatatype <- function(dataset){
   numeric_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){ CheckColumnType(x) == "numeric"}))]
   cat_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){CheckColumnType(x) == "character"|| CheckColumnType(x) == "factor"}))]
