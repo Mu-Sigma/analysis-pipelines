@@ -1,0 +1,262 @@
+---
+title: "Analysis recipes for working with sparkR"
+author: "Naren S, Anoop S"
+date: "09/04/2018"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analysis recipes for working with sparkR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+# Objective
+
+The vignette aims to show examples of using sparkR as an interface to run spark jobs through R - using the recipes package. The major use cases can be categorized as:<br>
+
+* Implement a recipe using SparkR dataframes for generic spark jobs
+* Implement a recipe using SparkR dataframes for streaming use cases
+
+## Recipes for generic spark jobs using sparkR
+Spark clusters can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. This example illustrates usage of recipe functions to run spark jobs using sparkR
+
+### Initialize libraries
+* Initialize the analysisRecipes and sparkR libraries
+* Ensure you have a local installation of spark and sparkR package is installed
+* Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
+```{r, include=FALSE}
+library(ggplot2)
+library(analysisRecipes)
+library(SparkR)
+# Set spark home variable if not present
+if(Sys.getenv("SPARK_HOME") == "") {
+  Sys.setenv(SPARK_HOME = "/home/anoop/software/spark-2.3.1-bin-hadoop2.7/")  
+}
+```
+
+### Connect to spark cluster
+* Define the spark master URL
+* Specify dependency packages if any during spark connection. Example: `sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")`
+* Connect to the cluster using the package's `sparkRSessionCreateIfNotPresent` function
+
+```{r}
+sparkMaster <- "local[1]"
+sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1"))
+```
+
+### Read data from csv and initialize sparkrecipe object
+Spark can connect to datasources like Hive, Kafka. Besides, it also also read parquet, json and csv files. In this example we will read a csv file.
+```{r}
+inputDataset <- read.df(path="../inst/hotel_new.csv",source="csv",header = TRUE, inferSchema = "true")
+recipeObj <- readInputSpark(input = inputDataset)
+```
+
+### User defined spark functions
+The example below shows a few functions to perform simple aggregations.
+
+```{r}
+# Function to calculate avg occupany for the client as well as competitors - grouped by input parameter
+occupanyAnalysis <- function(inputDataset, groupByColumn) {
+  occupancySummary <- summarize(groupBy(inputDataset,inputDataset[[groupByColumn]]),
+                       avgOccupancy=mean(inputDataset$Occupancy),
+                       avgCompetitorOccupancy=mean(inputDataset$Compet_Occupancy))
+ return(occupancySummary)
+}
+
+# Function to calculate avg booking contribution for differen channels - grouped by input parameter
+bookingChannelsAnalysis <- function(inputDataset, groupByColumn) {
+  bookingChannelsAnalysisSummary <- summarize(groupBy(inputDataset,inputDataset[[groupByColumn]]),
+                       avgCallCenterBookingPct=avg(inputDataset$call_center_booking_pct),
+                       avgAgencyBookingPct=avg(inputDataset$travel_agency_booking_pct),
+                       avgThirdPartyBookingPct=avg(inputDataset$third_party_web_bookings_pct),
+                       avgHotelToHotelBookingPct=avg(inputDataset$hotel_to_hotel_bookings_pct),
+                       avgDirectBookingPct=avg(inputDataset$direct_call_booking_pct),
+                       avgWebBookingPct=avg(inputDataset$direct_web_booking_pct))
+ return(bookingChannelsAnalysisSummary)
+}
+
+```
+
+### Registering user defined functions to the recipe object
+
+Each user defined function needs to be registered to the recipe object. Post registeration, the function can be used to construct a recipe.A recipe can be a pipeline of multiple functions called in a particular sequence.
+
+```{r}
+# Register user defined functions
+recipeObj <- recipeObj %>>% registerFunctionSpark("occupanyAnalysis", "Occupany analysis",outAsIn = F)  %>>%
+  registerFunctionSpark("bookingChannelsAnalysis", "Booking channels analysis",outAsIn = F)
+# List al registered functions 
+print("Registry")
+print(recipeObj@registry)
+
+# Define recipe from list of registered functions
+recipeObj %>% occupanyAnalysis(groupByColumn = "location_type") %>% bookingChannelsAnalysis(groupByColumn = "location_type") -> recipeObj
+print("Recipe pipeline")
+print(recipeObj@recipe)
+```
+
+### Running the recipe and generating an output
+
+The recipe is run by calling the `generateOutput()` function. The `output` attribute of the recipe object contains the resultant spark dataframe(s).
+
+In this example the spark dataframes are converted to R dataframes to help visualizing the result.
+
+```{r}
+recipeObj %>% generateOutput() -> recipeObj
+
+# Show occupancy analysis result
+occpancyAnalysisResult <- recipeObj@output[[1]]
+occpancyAnalysisResultDf <- as.data.frame(occpancyAnalysisResult)
+print(occpancyAnalysisResultDf)
+ggplot(occpancyAnalysisResultDf, aes(location_type, avgOccupancy, color=location_type)) +
+  geom_col()
+
+# Show booking channels analysis result
+bookingChannelsAnalysisResult <- recipeObj@output[[2]]
+bookingChannelsAnalysisResultDf <- as.data.frame(bookingChannelsAnalysisResult)
+print(bookingChannelsAnalysisResultDf)
+ggplot(bookingChannelsAnalysisResultDf, aes(location_type, avgCallCenterBookingPct, color=location_type)) +
+  geom_col()
+
+```
+
+## Recipes for structured streaming using sparkR
+
+This example illustrates usage of recipes for a streaming application. In this use case streaming data is read from Kafka, aggregations are performed and the output is written to the console.
+
+### Read stream from Kafka
+
+Read streaming data from Kafka.
+
+```{r}
+kafkaBootstrapServers <- "172.25.0.144:9092,172.25.0.98:9092,172.25.0.137:9092"
+consumerTopic <- "netlogo"
+streamObj <- read.stream(source = "kafka", kafka.bootstrap.servers = kafkaBootstrapServers, subscribe = consumerTopic, startingOffsets="earliest")
+printSchema(streamObj)
+```
+
+### User defined spark functions
+
+Users can define their own functions and use it as a part of the recipe. These functions range from data prep, agrregations, casting data to suitable write stream format, etc.
+
+```{r}
+
+# Function to convert datatype json struct to colums
+convertStructToDf <- function(streamObj) {
+  streamObj <- select(streamObj,list(getField(streamObj$`jsontostructs(value)`,"bannerId"),
+                                   getField(streamObj$`jsontostructs(value)`,"mobile"),
+                                   getField(streamObj$`jsontostructs(value)`,"homeAppliance"),
+                                   getField(streamObj$`jsontostructs(value)`,"gamingConsole"),
+                                   getField(streamObj$`jsontostructs(value)`,"accessories"),
+                                   getField(streamObj$`jsontostructs(value)`,"brand"),
+                                   getField(streamObj$`jsontostructs(value)`,"previousPrice"),
+                                   getField(streamObj$`jsontostructs(value)`,"currentPrice"),
+                                   getField(streamObj$`jsontostructs(value)`,"discount"),
+                                   getField(streamObj$`jsontostructs(value)`,"emi"),
+                                   getField(streamObj$`jsontostructs(value)`,"crossSale"),
+                                   getField(streamObj$`jsontostructs(value)`,"customerId"),
+                                   getField(streamObj$`jsontostructs(value)`,"ts"),
+                                   getField(streamObj$`jsontostructs(value)`,"click"),
+                                   getField(streamObj$`jsontostructs(value)`,"conversion"),
+                                   getField(streamObj$`jsontostructs(value)`,"age"),
+                                   getField(streamObj$`jsontostructs(value)`,"income"),
+                                   getField(streamObj$`jsontostructs(value)`,"maritalStatus"),
+                                   getField(streamObj$`jsontostructs(value)`,"segment")))
+  colnames(streamObj) <- c("bannerId","mobile","homeAppliance","gamingConsole","accessories","brand","previousPrice","currentPrice",
+                           "discount","emi","crossSale","customerId","ts","click","conversion","age","income","maritalStatus","segment")
+  return(streamObj)
+}
+
+# Function to cast columns as string, integer, etc
+castDfColumns <- function(streamObj) {
+  streamObj <- selectExpr(streamObj, "bannerId","mobile","homeAppliance","gamingConsole","accessories","brand",
+                          "CAST(previousPrice as INTEGER)","CAST(currentPrice as INTEGER)","CAST(discount as INTEGER)","emi",
+                          "crossSale","customerId","ts","CAST(click as INTEGER)","CAST(conversion as INTEGER)",
+                          "CAST(age as INTEGER)","CAST(income as INTEGER)","maritalStatus","segment")
+  streamObj$ts <- to_timestamp(streamObj$ts,"yyyy-MM-dd HH:mm:ss")
+  return (streamObj)
+}
+
+# Function to convert datatype json struct to colums
+convertDfToKafkaKeyValuePairs <- function (streamObj, kafkaKey) {
+  streamObj <- toJSON(streamObj)
+  streamObj$key <- kafkaKey
+  return(streamObj)
+}
+
+# Function to summarize click stream data
+globalUiMetrics <- function (streamObj) {
+  ## Aggregation query
+  streamObj <- summarize(groupBy(streamObj,streamObj$bannerId),
+                         impressions=count(streamObj$customerId),
+                         clicks=sum(streamObj$click),
+                         conversions=sum(streamObj$conversion))
+  colnames(streamObj) <- c("banner_id","impressions","clicks","conversions")
+  return (streamObj)
+}
+
+```
+
+### Define recipe object, register user defined functions to the recipe object
+
+In order to use recipes, a recipe object needs to be defined. Notice the spark recipes are defined using the `readInputSpark` function.
+
+Each user defined function needs to be registered to the recipe object. Post registeration, the function can be used to construct a recipe.A recipe can be a pipeline of multiple functions called in a particular sequence.
+
+```{r}
+# Define recipe object
+recipeObj <- analysisRecipes::readInputSpark(input = streamObj)
+
+consumerDataSchema <- structType(structField("bannerId", "string"),
+                                 structField("mobile", "string"),
+                                 structField("homeAppliance", "string"),
+                                 structField("gamingConsole", "string"),
+                                 structField("accessories", "string"),
+                                 structField("brand", "string"),
+                                 structField("previousPrice", "string"),
+                                 structField("currentPrice", "string"),
+                                 structField("discount", "string"),
+                                 structField("emi", "string"),
+                                 structField("crossSale", "string"),
+                                 structField("customerId", "string"),
+                                 structField("ts", "string"),
+                                 structField("click", "string"),
+                                 structField("conversion", "string"),
+                                 structField("age", "string"),
+                                 structField("income", "string"),
+                                 structField("maritalStatus", "string"),
+                                 structField("segment", "string"))
+
+# Register user defined functions
+recipeObj <- recipeObj %>>% registerFunctionSpark("convertStructToDf", "",outAsIn = T)  %>>%
+  registerFunctionSpark("castDfColumns", "",outAsIn = T) %>>%
+  registerFunctionSpark("globalUiMetrics", "",outAsIn = T) %>>%
+  registerFunctionSpark("convertDfToKafkaKeyValuePairs", "",outAsIn = T)
+print(recipeObj@registry)
+
+# Define recipe pipeline
+# Do data prep
+recipeObj %>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = consumerDataSchema) %>% convertStructToDf %>% castDfColumns -> recipeObj
+# Perform analytical operations
+recipeObj %>% globalUiMetrics -> recipeObj
+print(recipeObj@recipe)
+```
+
+### Running the recipe and generating an output
+
+The recipe is run by calling the `generateOutput()` function. The `output` attribute of the recipe object contains the resultant spark dataframe(s).
+
+In this example the spark dataframes are converted to R dataframes to help visualizing the result.
+
+
+```{r}
+
+## Run recipe
+recipeObj %>% generateOutput() -> recipeObj
+
+## Write to output stream
+streamObj <- recipeObj@output[[length(recipeObj@output)]]
+write.stream(streamObj, 'console',outputMode = "complete")
+```
+
+# Conclusion
+
+This vignette successfully demonstrates usage of recipes for running spark jobs through the sparkR interface.
