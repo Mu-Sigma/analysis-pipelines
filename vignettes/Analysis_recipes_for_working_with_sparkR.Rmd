@@ -99,22 +99,20 @@ The recipe is run by calling the `generateOutput()` function. The `output` attri
 
 In this example the spark dataframes are converted to R dataframes to help visualizing the result.
 
-```{r}
+```{r fig.width=6, fig.height=3}
 recipeObj %>% generateOutput() -> recipeObj
 
 # Show occupancy analysis result
 occpancyAnalysisResult <- recipeObj@output[[1]]
 occpancyAnalysisResultDf <- as.data.frame(occpancyAnalysisResult)
 print(occpancyAnalysisResultDf)
-ggplot(occpancyAnalysisResultDf, aes(location_type, avgOccupancy, color=location_type)) +
-  geom_col()
+# ggplot(occpancyAnalysisResultDf) + geom_col(aes(location_type, avgOccupancy, color=location_type)) 
 
 # Show booking channels analysis result
 bookingChannelsAnalysisResult <- recipeObj@output[[2]]
 bookingChannelsAnalysisResultDf <- as.data.frame(bookingChannelsAnalysisResult)
 print(bookingChannelsAnalysisResultDf)
-ggplot(bookingChannelsAnalysisResultDf, aes(location_type, avgCallCenterBookingPct, color=location_type)) +
-  geom_col()
+# ggplot(bookingChannelsAnalysisResultDf) + geom_col(aes(location_type, avgCallCenterBookingPct, color=location_type)) + scale_y_continuous(labels = scales::percent)
 
 ```
 
