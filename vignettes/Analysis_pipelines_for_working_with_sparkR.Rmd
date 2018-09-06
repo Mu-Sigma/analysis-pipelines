@@ -1,30 +1,30 @@
 ---
-title: "Analysis recipes for working with sparkR"
+title: "Analysis pipelines for working with SparkR"
 author: "Naren S, Anoop S"
 date: "09/04/2018"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Analysis recipes for working with sparkR}
+  %\VignetteIndexEntry{Analysis pipelines for working with SparkR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 # Objective
 
-The vignette aims to show examples of using sparkR as an interface to run spark jobs through R - using the recipes package. The major use cases can be categorized as:<br>
+The vignette aims to show examples of using SparkR as an interface to run spark jobs through R - using the pipelines package. The major use cases can be categorized as:<br>
 
-* Implement a recipe using SparkR dataframes for generic spark jobs
-* Implement a recipe using SparkR dataframes for streaming use cases
+* Implement a pipeline using SparkR dataframes for generic spark jobs
+* Implement a pipeline using SparkR dataframes for streaming use cases
 
-## Recipes for generic spark jobs using sparkR
-Spark clusters can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. This example illustrates usage of recipe functions to run spark jobs using sparkR
+## Pipelines for generic spark jobs using SparkR
+Spark clusters can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. This example illustrates usage of pipeline functions to run spark jobs using SparkR
 
 ### Initialize libraries
-* Initialize the analysisRecipes and sparkR libraries
-* Ensure you have a local installation of spark and sparkR package is installed
+* Initialize the analysisPipelines and SparkR libraries
+* Ensure you have a local installation of spark and SparkR package is installed
 * Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
 ```{r, include=FALSE}
 library(ggplot2)
-library(analysisRecipes)
+library(analysisPipelines)
 library(SparkR)
 # Set spark home variable if not present
 if(Sys.getenv("SPARK_HOME") == "") {
@@ -42,11 +42,11 @@ sparkMaster <- "local[1]"
 sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1"))
 ```
 
-### Read data from csv and initialize sparkrecipe object
+### Read data from csv and initialize spark pipeline object
 Spark can connect to datasources like Hive, Kafka. Besides, it also also read parquet, json and csv files. In this example we will read a csv file.
 ```{r}
 inputDataset <- read.df(path="../inst/hotel_new.csv",source="csv",header = TRUE, inferSchema = "true")
-recipeObj <- readInputSpark(input = inputDataset)
+pipelineObj <- readInputSpark(input = inputDataset)
 ```
 
 ### User defined spark functions
@@ -75,50 +75,50 @@ bookingChannelsAnalysis <- function(inputDataset, groupByColumn) {
 
 ```
 
-### Registering user defined functions to the recipe object
+### Registering user defined functions to the pipeline object
 
-Each user defined function needs to be registered to the recipe object. Post registeration, the function can be used to construct a recipe.A recipe can be a pipeline of multiple functions called in a particular sequence.
+Each user defined function needs to be registered to the pipeline object. Post registeration, the function can be used to construct a pipeline.A pipeline can be a pipeline of multiple functions called in a particular sequence.
 
 ```{r}
 # Register user defined functions
-recipeObj <- recipeObj %>>% registerFunctionSpark("occupanyAnalysis", "Occupany analysis",outAsIn = F)  %>>%
+pipelineObj <- pipelineObj %>>% registerFunctionSpark("occupanyAnalysis", "Occupany analysis",outAsIn = F)  %>>%
   registerFunctionSpark("bookingChannelsAnalysis", "Booking channels analysis",outAsIn = F)
 # List al registered functions 
 print("Registry")
-print(recipeObj@registry)
+print(pipelineObj@registry)
 
-# Define recipe from list of registered functions
-recipeObj %>% occupanyAnalysis(groupByColumn = "location_type") %>% bookingChannelsAnalysis(groupByColumn = "location_type") -> recipeObj
-print("Recipe pipeline")
-print(recipeObj@recipe)
+# Define pipeline from list of registered functions
+pipelineObj %>% occupanyAnalysis(groupByColumn = "location_type") %>% bookingChannelsAnalysis(groupByColumn = "location_type") -> pipelineObj
+print("pipeline")
+print(pipelineObj@pipeline)
 ```
 
-### Running the recipe and generating an output
+### Running the pipeline and generating an output
 
-The recipe is run by calling the `generateOutput()` function. The `output` attribute of the recipe object contains the resultant spark dataframe(s).
+The pipeline is run by calling the `generateOutput()` function. The `output` attribute of the pipeline object contains the resultant spark dataframe(s).
 
 In this example the spark dataframes are converted to R dataframes to help visualizing the result.
 
 ```{r fig.width=6, fig.height=3}
-recipeObj %>% generateOutput() -> recipeObj
+pipelineObj %>% generateOutput() -> pipelineObj
 
 # Show occupancy analysis result
-occpancyAnalysisResult <- recipeObj@output[[1]]
+occpancyAnalysisResult <- pipelineObj@output[[1]]
 occpancyAnalysisResultDf <- as.data.frame(occpancyAnalysisResult)
 print(occpancyAnalysisResultDf)
 # ggplot(occpancyAnalysisResultDf) + geom_col(aes(location_type, avgOccupancy, color=location_type)) 
 
 # Show booking channels analysis result
-bookingChannelsAnalysisResult <- recipeObj@output[[2]]
+bookingChannelsAnalysisResult <- pipelineObj@output[[2]]
 bookingChannelsAnalysisResultDf <- as.data.frame(bookingChannelsAnalysisResult)
 print(bookingChannelsAnalysisResultDf)
 # ggplot(bookingChannelsAnalysisResultDf) + geom_col(aes(location_type, avgCallCenterBookingPct, color=location_type)) + scale_y_continuous(labels = scales::percent)
 
 ```
 
-## Recipes for structured streaming using sparkR
+## Pipelines for structured streaming using SparkR
 
-This example illustrates usage of recipes for a streaming application. In this use case streaming data is read from Kafka, aggregations are performed and the output is written to the console.
+This example illustrates usage of pipelines for a streaming application. In this use case streaming data is read from Kafka, aggregations are performed and the output is written to the console.
 
 ### Read stream from Kafka
 
@@ -133,7 +133,7 @@ printSchema(streamObj)
 
 ### User defined spark functions
 
-Users can define their own functions and use it as a part of the recipe. These functions range from data prep, agrregations, casting data to suitable write stream format, etc.
+Users can define their own functions and use it as a part of the pipeline. These functions range from data prep, agrregations, casting data to suitable write stream format, etc.
 
 ```{r}
 
@@ -193,15 +193,15 @@ globalUiMetrics <- function (streamObj) {
 
 ```
 
-### Define recipe object, register user defined functions to the recipe object
+### Define pipeline object, register user defined functions to the pipeline object
 
-In order to use recipes, a recipe object needs to be defined. Notice the spark recipes are defined using the `readInputSpark` function.
+In order to use pipelines, a pipeline object needs to be defined. Notice the spark pipelines are defined using the `readInputSpark` function.
 
-Each user defined function needs to be registered to the recipe object. Post registeration, the function can be used to construct a recipe.A recipe can be a pipeline of multiple functions called in a particular sequence.
+Each user defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline can be a pipeline of multiple functions called in a particular sequence.
 
 ```{r}
-# Define recipe object
-recipeObj <- analysisRecipes::readInputSpark(input = streamObj)
+# Define pipeline object
+pipelineObj <- analysisPipelines::readInputSpark(input = streamObj)
 
 consumerDataSchema <- structType(structField("bannerId", "string"),
                                  structField("mobile", "string"),
@@ -224,37 +224,37 @@ consumerDataSchema <- structType(structField("bannerId", "string"),
                                  structField("segment", "string"))
 
 # Register user defined functions
-recipeObj <- recipeObj %>>% registerFunctionSpark("convertStructToDf", "",outAsIn = T)  %>>%
+pipelineObj <- pipelineObj %>>% registerFunctionSpark("convertStructToDf", "",outAsIn = T)  %>>%
   registerFunctionSpark("castDfColumns", "",outAsIn = T) %>>%
   registerFunctionSpark("globalUiMetrics", "",outAsIn = T) %>>%
   registerFunctionSpark("convertDfToKafkaKeyValuePairs", "",outAsIn = T)
-print(recipeObj@registry)
+print(pipelineObj@registry)
 
-# Define recipe pipeline
+# Define pipeline 
 # Do data prep
-recipeObj %>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = consumerDataSchema) %>% convertStructToDf %>% castDfColumns -> recipeObj
+pipelineObj %>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = consumerDataSchema) %>% convertStructToDf %>% castDfColumns -> pipelineObj
 # Perform analytical operations
-recipeObj %>% globalUiMetrics -> recipeObj
-print(recipeObj@recipe)
+pipelineObj %>% globalUiMetrics -> pipelineObj
+print(pipelineObj@pipeline)
 ```
 
-### Running the recipe and generating an output
+### Running the pipeline and generating an output
 
-The recipe is run by calling the `generateOutput()` function. The `output` attribute of the recipe object contains the resultant spark dataframe(s).
+The pipeline is run by calling the `generateOutput()` function. The `output` attribute of the pipeline object contains the resultant spark dataframe(s).
 
 In this example the spark dataframes are converted to R dataframes to help visualizing the result.
 
 
 ```{r}
 
-## Run recipe
-recipeObj %>% generateOutput() -> recipeObj
+## Run pipeline
+pipelineObj %>% generateOutput() -> pipelineObj
 
 ## Write to output stream
-streamObj <- recipeObj@output[[length(recipeObj@output)]]
+streamObj <- pipelineObj@output[[length(pipelineObj@output)]]
 write.stream(streamObj, 'console',outputMode = "complete")
 ```
 
 # Conclusion
 
-This vignette successfully demonstrates usage of recipes for running spark jobs through the sparkR interface.
+This vignette successfully demonstrates usage of pipelines for running spark jobs through the SparkR interface.
