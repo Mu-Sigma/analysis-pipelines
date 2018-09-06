@@ -3,10 +3,10 @@
 \docType{class}
 \name{readInputSpark}
 \alias{readInputSpark}
-\title{Function to initialize \code{SparkAnalysisRecipe} class with the input Spark DataFrame}
+\title{Function to initialize \code{SparkAnalysisPipeline} class with the input Spark DataFrame}
 \details{
 The class which holds the metadata including the registry of available functions,
-the data on which the recipe is to be applied, as well as the recipe itself
+the data on which the pipeline is to be applied, as well as the pipeline itself
 
 More details of how an object of this class should be initialized is provided in the
 constructor - \link{initialize}
@@ -18,7 +18,7 @@ constructor - \link{initialize}
 
 \item{\code{workingInput}}{Internal slot for having a working version of the input}
 
-\item{\code{recipe}}{A tibble which holds functions to be called}
+\item{\code{pipeline}}{A tibble which holds functions to be called}
 
 \item{\code{registry}}{A tibble which holds all the registered functions}
 
@@ -27,6 +27,6 @@ constructor - \link{initialize}
 
 \seealso{
 Other Package core functions for Spark: \code{\link{initialize}},
-  \code{\link{loadRecipeSpark}},
+  \code{\link{loadPipelineSpark}},
   \code{\link{registerFunctionSpark}}
 }

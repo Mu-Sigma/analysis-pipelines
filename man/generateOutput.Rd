@@ -2,25 +2,25 @@
 % Please edit documentation in R/core-functions.R
 \name{generateOutput}
 \alias{generateOutput}
-\title{Generate a list of outputs from an \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object}
+\title{Generate a list of outputs from an \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object}
 \usage{
 generateOutput(object)
 }
 \arguments{
-\item{object}{object that contains input, recipe, registry and output}
+\item{object}{object that contains input, pipeline, registry and output}
 }
 \value{
-A list of the outputs in the sequence in which the recipe was created
+A list of the outputs in the sequence in which the pipeline was created
 }
 \details{
-The sequence of operations stored in the\code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
+The sequence of operations stored in the\code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
       are run and outputs generated, stored in a list
 }
 \seealso{
 Other Package core functions: \code{\link{generateReport}},
   \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
-  \code{\link{getRecipe}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadRecipe}},
+  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{initialize}}, \code{\link{loadPipeline}},
   \code{\link{readInput}}, \code{\link{registerFunction}},
-  \code{\link{saveRecipe}}, \code{\link{updateObject}}
+  \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

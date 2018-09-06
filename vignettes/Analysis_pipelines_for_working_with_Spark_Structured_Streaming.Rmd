@@ -1,22 +1,22 @@
 ---
-title: "Analysis recipes for working with Spark Structured Streaming"
+title: "Analysis pipelines for working with Spark Structured Streaming"
 author: "Naren Srinivasan"
 date: "8/24/2018"
 output: rmarkdown::html_vignette
 <!-- vignette: > -->
-<!--   %\VignetteIndexEntry{Analysis recipes for working with Spark Structured Streaming} -->
+<!--   %\VignetteIndexEntry{Analysis pipelines for working with Spark Structured Streaming} -->
 <!--   %\VignetteEngine{knitr::rmarkdown} -->
 <!--   %\VignetteEncoding{UTF-8} -->
 ---
 # Objective
 
-* Implement a recipe using SparkR structured streaming functionss
+* Implement a pipeline using SparkR structured streaming functionss
 
-# Define analysis recipe based on Structured Streaming functions using SparkR
+# Define analysis pipeline based on Structured Streaming functions using SparkR
 
 ```{r}
 
-library(analysisRecipes)
+library(analysisPipelines)
 library(SparkR)
 
 sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
@@ -40,14 +40,14 @@ schema <- structType(structField("customerId", "string"),
 
 printSchema(streamObj)
 
-recipeObj <- readInputSpark(input = streamObj)
-recipeObj %>>% getRegistry
+pipelineObj <- readInputSpark(input = streamObj)
+pipelineObj %>>% getRegistry
 
-recipeObj %>>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = schema) -> recipeObj
-recipeObj %>>% getRecipe
+pipelineObj %>>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = schema) -> pipelineObj
+pipelineObj %>>% getPipeline
 
-recipeObj %>>% generateOutput() -> recipeObj
-recipeObj %>>% getOuputByOrderId(2) -> streamObj
+pipelineObj %>>% generateOutput() -> pipelineObj
+pipelineObj %>>% getOuputByOrderId(2)-> streamObj
 printSchema(streamObj)
 
 write.stream(streamObj, 'console')

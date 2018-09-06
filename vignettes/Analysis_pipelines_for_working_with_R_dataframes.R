@@ -1,8 +1,8 @@
 ## ----sourcing------------------------------------------------------------
-library(analysisRecipes)
+library(analysisPipelines)
 
 ## ----creating object, warning=F------------------------------------------
-obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
+obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 class(obj)
 
 ## ----printing object contents, warning=F---------------------------------
@@ -13,7 +13,7 @@ obj %>>% getRegistry
 # Running univariate categorical distribution plot on the constructed object
 
 obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
-obj %>>% getRecipe
+obj %>>% getPipeline
 
 ## ----pipe demo 2, warning=F----------------------------------------------
 # Running univariate categorical distribution plot and then 
@@ -23,7 +23,7 @@ obj <- obj %>>%
   univarCatDistPlots(uniCol = "location_type", priColor = "blue", optionalPlots = 0) %>>% 
   outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
-obj %>>% getRecipe
+obj %>>% getPipeline
 
 ## ----lazy eval 1---------------------------------------------------------
 length(obj@output)
@@ -71,13 +71,13 @@ obj <- obj %>>% registerFunction('bivariatePlots', "Bivariate Plots")
 obj %>>% getRegistry
 
 ## ----register function 2, warning=F--------------------------------------
-# Chaining the user-defined function to the object's recipe where it was registered
+# Chaining the user-defined function to the object's pipeline where it was registered
 obj <- obj %>>% 
   bivariatePlots(select_var_name_1 = 'Occupancy', select_var_name_2 = 'max_rooms_capacity', 
                  priColor = "blue", secColor = "black")
 
-# Printing the updated recipe
-obj %>>% getRecipe
+# Printing the updated pipeline
+obj %>>% getPipeline
 
 ## ----register function 3, warning=F--------------------------------------
 obj2 <- obj %>>% generateOutput()
@@ -94,13 +94,13 @@ obj2 %>>% getOuputByOrderId(4)
 #  
 #  obj %>>% generateReport('~/Desktop')
 
-## ----save recipes, message=FALSE, warning=FALSE, eval=TRUE---------------
-# Saves the recipe and registry of the EDA object
-saveRecipe(obj, 'recipe.RDS')
+## ----save pipelines, message=FALSE, warning=FALSE, eval=TRUE-------------
+# Saves the pipeline and registry of the EDA object
+savePipeline(obj, 'pipeline.RDS')
 
-## ----load recipes, message=FALSE, warning=FALSE, eval=T------------------
-obj2 <- loadRecipe('recipe.RDS',filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
+## ----load pipelines, message=FALSE, warning=FALSE, eval=T----------------
+obj2 <- loadPipeline('pipeline.RDS',filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 
 obj2 %>% getRegistry
-obj2 %>% getRecipe
+obj2 %>% getPipeline
 

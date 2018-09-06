@@ -1,5 +1,5 @@
 ##################################################################################################
-# Title: Reusable recipes for generating analyses outputs and reports
+# Title: Reusable pipelines for generating analyses outputs and reports
 # Version: 18.08.01
 # Created on: July 12, 2018
 # Description: An R package version which works both on R data frames, and a Spark environment i.e.
@@ -7,42 +7,42 @@
 ##################################################################################################
 
 #' @name readInput
-#' @title Function to initialize \code{AnalysisRecipe} class with the input data frame
+#' @title Function to initialize \code{AnalysisPipeline} class with the input data frame
 #' @details The class which holds the metadata including the registry of available functions,
-#' the data on which the recipe is to be applied, as well as the recipe itself
+#' the data on which the pipeline is to be applied, as well as the pipeline itself
 #' @details More details of how an object of this class should be initialized is provided in the
 #' constructor - \link{initialize}
 #' @slot input The input dataset on which analysis is to be performed
 #' @slot workingInput Internal slot for having a working version of the input
 #' @slot filePath Path of the input dataset to be uploaded
-#' @slot recipe A tibble which holds functions to be called
+#' @slot pipeline A tibble which holds functions to be called
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
 #' @family Package core functions
 #' @export
-readInput <- setClass("AnalysisRecipe",
+readInput <- setClass("AnalysisPipeline",
                        slots = c(
                          input = "data.frame",
                          filePath = "character",
                          workingInput = "data.frame",
-                         recipe = "tbl",
+                         pipeline = "tbl",
                          registry = "tbl",
                          output = "list"
                        ))
 
 #' @name initialize
-#' @title Constructor for the \code{AnalysisRecipe} object
-#' @param .Object The \code{AnalysisRecipe} object
+#' @title Constructor for the \code{AnalysisPipeline} object
+#' @param .Object The \code{AnalysisPipeline} object
 #' @param input The data frame on which operations need to be performed
 #' @param filePath File path for a .csv file to directly read in the dataset from
 #' @details
 #'      Either one of \code{input} or \code{filePath} need to be provided i.e. either the
 #'      data frame or the file path to a csv file
-#' @return an object of class "\code{AnalysisRecipe}", initialized with the input data frame provided
+#' @return an object of class "\code{AnalysisPipeline}", initialized with the input data frame provided
 #' @family Package core functions
 setMethod(
   f = "initialize",
-  signature = "AnalysisRecipe",
+  signature = "AnalysisPipeline",
   definition = function(.Object, input = data.frame(), filePath = "", workingInput = data.frame())
   {
     if(filePath == ""){
@@ -51,7 +51,7 @@ setMethod(
     else{
       .Object@input <- read.csv(filePath)
     }
-    .Object@recipe <- tibble(
+    .Object@pipeline <- tibble(
       order = numeric(),
       operation = character(),
       heading = character(),
@@ -79,17 +79,17 @@ setMethod(
 )
 
 #' @name updateObject
-#' @title Update the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object by adding an operation to the recipe
+#' @title Update the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object by adding an operation to the pipeline
 #' @details
-#'       The specified operation along with the heading and parameters is updated in the recipe slot
-#'       of the  \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object, where the sequence of operations
+#'       The specified operation along with the heading and parameters is updated in the pipeline slot
+#'       of the  \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object, where the sequence of operations
 #'      to be performed is stored
-#' @param object object that contains input, recipe, registry and output
+#' @param object object that contains input, pipeline, registry and output
 #' @param operation function name to be updated in tibble
 #' @param heading heading of that section in report
 #' @param parameters parameters passed to that function
 #' @param outAsIn whether to use original input or output from previous function
-#' @return Updated \code{AnalysisRecipe} object
+#' @return Updated \code{AnalysisPipeline} object
 #' @family Package core functions
 #' @export
 setGeneric(
@@ -106,49 +106,49 @@ setGeneric(
 
 .updateObject = function(object, operation, heading="", parameters, outAsIn = F)
 {
-  if(nrow(object@recipe) == 0){
+  if(nrow(object@pipeline) == 0){
     order = 1
   }else{
-    order = max(object@recipe$order) + 1
+    order = max(object@pipeline$order) + 1
   }
-  object@recipe %>>% add_row(order = order,
+  object@pipeline %>>% add_row(order = order,
                              operation = operation,
                              heading = heading,
                              parameters = list(parameters),
-                             outAsIn = outAsIn) -> object@recipe
+                             outAsIn = outAsIn) -> object@pipeline
   return(object)
 }
 
 setMethod(
   f = "updateObject",
-  signature = "AnalysisRecipe",
+  signature = "AnalysisPipeline",
   definition = .updateObject
 )
 
 setMethod(
   f = "updateObject",
-  signature = "SparkAnalysisRecipe",
+  signature = "SparkAnalysisPipeline",
   definition = .updateObject
 )
 
 #' @name registerFunction
-#' @title Register a user-defined function to be used with \code{AnalysisRecipe} objects
+#' @title Register a user-defined function to be used with \code{AnalysisPipeline} objects
 #' @details
-#'       The specified operation along with the heading and parameters is updated in the recipe slot
-#'       of the AnalysisRecipe object, where the sequence of operations to be performed is stored
-#' @param object object that contains input, recipe, registry and output
+#'       The specified operation along with the heading and parameters is updated in the pipeline slot
+#'       of the AnalysisPipeline object, where the sequence of operations to be performed is stored
+#' @param object object that contains input, pipeline, registry and output
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
 #' @param outAsIn whether to use original input or output from previous function
-#' @param loadRecipe logical parameter to see if function is being used in loadRecipe or not
+#' @param loadPipeline logical parameter to see if function is being used in loadPipeline or not
 #' @param session to load shiny session in the function
-#' @return Updated \code{AnalysisRecipe} object
+#' @return Updated \code{AnalysisPipeline} object
 #' @family Package core functions
 #' @export
 
 setGeneric(
   name = "registerFunction",
-  def = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F,
+  def = function(object, functionName,  heading ="", outAsIn=F, loadPipeline=F,
                  userDefined = T, session=session)
   {
     standardGeneric("registerFunction")
@@ -157,8 +157,8 @@ setGeneric(
 
 setMethod(
   f = "registerFunction",
-  signature = "AnalysisRecipe",
-  definition = function(object, functionName,  heading ="", outAsIn=F, loadRecipe=F,
+  signature = "AnalysisPipeline",
+  definition = function(object, functionName,  heading ="", outAsIn=F, loadPipeline=F,
                         userDefined = T, session=session)
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
@@ -181,7 +181,7 @@ setMethod(
 
                               setMethod(
                               f = \"",functionName,"\",
-                              signature = \"AnalysisRecipe\",
+                              signature = \"AnalysisPipeline\",
                               definition = function(object",parametersName,")
                               {
                               parametersList <- unlist(strsplit(\"",sub(", ", "", parametersName),"\",\",\"))
@@ -197,7 +197,7 @@ setMethod(
                               ")
 
     eval(parse(text = registerFunText), envir=.GlobalEnv)
-    if(loadRecipe==F){
+    if(loadPipeline==F){
       object@registry %>>% add_row(functionName = paste0(functionName),
                                    heading = heading,
                                    outAsIn = outAsIn,
@@ -209,13 +209,13 @@ setMethod(
 
 
 #' @name generateReport
-#' @title Generate a HTML report from an \code{AnalysisRecipe} object
+#' @title Generate a HTML report from an \code{AnalysisPipeline} object
 #' @details
-#'       The sequence of operations stored in the \code{AnalysisRecipe} object are run, outputs generated,
+#'       The sequence of operations stored in the \code{AnalysisPipeline} object are run, outputs generated,
 #'       and a HTML report is generated with outputs in the same sequence as the pipeline created by the user
-#' @param object object that contains input, recipe, registry and output
+#' @param object object that contains input, pipeline, registry and output
 #' @param path path on the file system, where the generated html report should be stored
-#' @return Updated \code{AnalysisRecipe} object
+#' @return Updated \code{AnalysisPipeline} object
 #' @family Package core functions
 #' @export
 
@@ -229,7 +229,7 @@ setGeneric(
 
 setMethod(
   f = "generateReport",
-  signature = c("AnalysisRecipe", "character"),
+  signature = c("AnalysisPipeline", "character"),
   definition = function(object,path)
   {
     require(rmarkdown)
@@ -240,14 +240,14 @@ setMethod(
 
 
     rmarkdown::render(
-      system.file("report.Rmd", package = "analysisRecipes"),
+      system.file("report.Rmd", package = "analysisPipelines"),
       params = list(
         input = object@input,
-        recipe = object@recipe,
+        pipeline = object@pipeline,
         output = object@output
       ),
       html_document(
-        css = system.file("styles.css", package = "analysisRecipes"),
+        css = system.file("styles.css", package = "analysisPipelines"),
         toc = T,
         toc_float = T
       ),
@@ -260,12 +260,12 @@ setMethod(
 )
 
 #' @name generateOutput
-#' @title Generate a list of outputs from an \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
+#' @title Generate a list of outputs from an \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
 #' @details
-#'       The sequence of operations stored in the\code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
+#'       The sequence of operations stored in the\code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
 #'       are run and outputs generated, stored in a list
-#' @param object object that contains input, recipe, registry and output
-#' @return A list of the outputs in the sequence in which the recipe was created
+#' @param object object that contains input, pipeline, registry and output
+#' @return A list of the outputs in the sequence in which the pipeline was created
 #' @family Package core functions
 #' @export
 
@@ -280,27 +280,27 @@ setGeneric(
 .generateOutput = function(object)
 {
   input <- object@input
-  for(rowNo in 1:nrow(object@recipe)){
-    if(object@recipe[['outAsIn']][rowNo] == T && rowNo > 1){
-      #object@workingInput <- do.call(object@recipe[['operation']][[rowNo]], append(list(input), object@recipe[['parameters']][[rowNo]]))
+  for(rowNo in 1:nrow(object@pipeline)){
+    if(object@pipeline[['outAsIn']][rowNo] == T && rowNo > 1){
+      #object@workingInput <- do.call(object@pipeline[['operation']][[rowNo]], append(list(input), object@pipeline[['parameters']][[rowNo]]))
       object@workingInput <- object@output[[rowNo-1]]
     }else{
       object@workingInput <- input
     }
-    object@output[[rowNo]] <- do.call(object@recipe[['operation']][[rowNo]], append(list(object@workingInput), object@recipe[['parameters']][[rowNo]]))
+    object@output[[rowNo]] <- do.call(object@pipeline[['operation']][[rowNo]], append(list(object@workingInput), object@pipeline[['parameters']][[rowNo]]))
   }
   return(object)
 }
 
 setMethod(
   f = "generateOutput",
-  signature = "AnalysisRecipe",
+  signature = "AnalysisPipeline",
   definition = .generateOutput
 )
 
 setMethod(
   f = "generateOutput",
-  signature = "SparkAnalysisRecipe",
+  signature = "SparkAnalysisPipeline",
   definition = .generateOutput
 )
 
@@ -322,82 +322,82 @@ setMethod(
 )
 
 
-#' @name saveRecipe
-#' @title Saves the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object to the file system without outputs
+#' @name savePipeline
+#' @title Saves the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object to the file system without outputs
 #' @details
-#'       The \code{AnalysisRecipe} object is saved to the file system in the paths specified
-#' @param object object that contains input, recipe, registry and output
-#' @param RDSPath the path at which the .RDS file containing the recipe should be stored
+#'       The \code{AnalysisPipeline} object is saved to the file system in the paths specified
+#' @param object object that contains input, pipeline, registry and output
+#' @param RDSPath the path at which the .RDS file containing the pipeline should be stored
 #' @return Does not return a value
 #' @family Package core functions
 #' @export
 
 setGeneric(
-  name = "saveRecipe",
+  name = "savePipeline",
   def = function(object, RDSPath)
   {
-    standardGeneric("saveRecipe")
+    standardGeneric("savePipeline")
   }
 )
 
-.saveRecipe = function(object, RDSPath){
+.savePipeline = function(object, RDSPath){
   object@output <- list()
   object@input <- data.frame()
   saveRDS(object,RDSPath)
 }
 
 setMethod(
-  f = "saveRecipe",
-  signature = "AnalysisRecipe",
-  definition = .saveRecipe
+  f = "savePipeline",
+  signature = "AnalysisPipeline",
+  definition = .savePipeline
 )
 
 setMethod(
-  f = "saveRecipe",
-  signature = "SparkAnalysisRecipe",
-  definition = .saveRecipe
+  f = "savePipeline",
+  signature = "SparkAnalysisPipeline",
+  definition = .savePipeline
 )
 
 
-#' @name getRecipe
-#' @title Obtain the recipe
-#' @param object The \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object
+#' @name getPipeline
+#' @title Obtain the pipeline
+#' @param object The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object
 #' @details
-#'      Obtains the recipe from the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object as a tibble
-#' @return Tibble describing the recipe
+#'      Obtains the pipeline from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble
+#' @return Tibble describing the pipeline
 #' @family Package core functions
 #' @export
 
 setGeneric(
-  name = "getRecipe",
+  name = "getPipeline",
   def = function(object)
   {
-    standardGeneric("getRecipe")
+    standardGeneric("getPipeline")
   }
 )
 
-.getRecipe = function(object){
-  return(object@recipe)
+.getPipeline = function(object){
+  return(object@pipeline)
 }
 
 setMethod(
-  f = "getRecipe",
-  signature = "AnalysisRecipe",
-  definition = .getRecipe
+  f = "getPipeline",
+  signature = "AnalysisPipeline",
+  definition = .getPipeline
 )
 
 setMethod(
-  f = "getRecipe",
-  signature = "SparkAnalysisRecipe",
-  definition = .getRecipe
+  f = "getPipeline",
+  signature = "SparkAnalysisPipeline",
+  definition = .getPipeline
 )
 
 
 #' @name getRegistry
 #' @title Obtains the function registry
-#' @param object The \code{AnalysisRecipe} or \code{SparkAnalysisRecipe}  object
+#' @param object The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object
 #' @details
-#'      Obtains the function registry from the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object as a tibble,
+#'      Obtains the function registry from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble,
 #'      including both predefined and user defined functions
 #' @return Tibble describing the registry
 #' @family Package core functions
@@ -417,22 +417,22 @@ setGeneric(
 
 setMethod(
   f = "getRegistry",
-  signature = "AnalysisRecipe",
+  signature = "AnalysisPipeline",
   definition = .getRegistry
 )
 
 setMethod(
   f = "getRegistry",
-  signature = "SparkAnalysisRecipe",
+  signature = "SparkAnalysisPipeline",
   definition = .getRegistry
 )
 
 #' @name getInput
 #' @title Obtains the initializedInput
-#' @param object The \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
+#' @param object The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
 #' @details
-#'      Obtains the input from the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
-#' @return Dataframe for an \code{AnalysisRecipe} & SparkDataFrame for a \code{SparkAnalysisRecipe}
+#'      Obtains the input from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
+#' @return Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{SparkAnalysisPipeline}
 #' @family Package core functions
 #' @export
 
@@ -450,25 +450,27 @@ setGeneric(
 
 setMethod(
   f = "getInput",
-  signature = "AnalysisRecipe",
+  signature = "AnalysisPipeline",
   definition = .getInput
 )
 
 setMethod(
   f = "getInput",
-  signature = "SparkAnalysisRecipe",
+  signature = "SparkAnalysisPipeline",
   definition = .getInput
 )
 
 #' @name getOuputByOrderId
 #' @title Obtains a specific output
-#' @param object The \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
-#' @param position The position of the function for which the output is desired in the sequence of operations in the recipe.
+#' @param object The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
+#' @param position The position of the function for which the output is desired in the sequence of operations in the pipeline.
+#' @param includeCall Logical which defines whether the call used to generate the output should be returned. By, default this is false
 #' @details
-#'      Obtains a specific output from the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object by passing the position
-#'      of the function for which the output is desired, in the sequence of operations in the recipe. This can be obtained by passing the number
-#'      under the 'order' column in the recipe table corresponding to the required function
-#' @return List containing to elements
+#'      Obtains a specific output from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object by passing the position
+#'      of the function for which the output is desired, in the sequence of operations in the pipeline. This can be obtained by passing the number
+#'      under the 'order' column in the pipeline table corresponding to the required function
+#' @return If includeCall = F, the output object generated by the function is returned
+#' @return If includeCall = T, it is a list containing to elements
 #'         - call: tibble with 1 row containing the function call for the output desired
 #'         - output: output generated
 #' @family Package core functions
@@ -476,54 +478,60 @@ setMethod(
 
 setGeneric(
   name = "getOuputByOrderId",
-  def = function(object, position)
+  def = function(object, position, includeCall = F)
   {
     standardGeneric("getOuputByOrderId")
   }
 )
 
-.getOuputByOrderId = function(object, position){
+.getOuputByOrderId = function(object, position, includeCall = F){
   op <- list(call = data.frame(),
              output = list())
-  object@recipe %>% dplyr::filter(order == position) -> call
+  object@pipeline %>% dplyr::filter(order == position) -> call
   object@output[[position]] -> output
-  op <- list(call = call,
-            output = output)
-  return(op)
+
+  if(includeCall){
+    op <- list(call = call,
+               output = output)
+    return(op)
+  }else{
+    return(output)
+  }
+
 }
 
 setMethod(
   f = "getOuputByOrderId",
-  signature = "AnalysisRecipe",
+  signature = "AnalysisPipeline",
   definition = .getOuputByOrderId
 )
 
 setMethod(
   f = "getOuputByOrderId",
-  signature = "SparkAnalysisRecipe",
+  signature = "SparkAnalysisPipeline",
   definition = .getOuputByOrderId
 )
 
 
 
-#' @name loadRecipe
-#' @title Loads the \code{AnalysisRecipe} object from the file system
+#' @name loadPipeline
+#' @title Loads the \code{AnalysisPipeline} object from the file system
 #' @details
-#'       The \code{AnalysisRecipe} object is loaded into the file system from the file system
+#'       The \code{AnalysisPipeline} object is loaded into the file system from the file system
 #'       based on the path specified.
 #' @details Optionally, the \code{input} parameter can be provided to
-#'       initialize the \code{AnalysisRecipe} object with a data frame present in the R session.
+#'       initialize the \code{AnalysisPipeline} object with a data frame present in the R session.
 #'       Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
 #'       and the object will be initialized with this data frame. The \code{filePath} parameter takes precedence over
 #'       \code{input} parameter
-#' @param RDSPath the path at which the .RDS file containing the recipe is located
-#' @param input (optional) data frame with which the recipe object should be initialized
+#' @param RDSPath the path at which the .RDS file containing the pipeline is located
+#' @param input (optional) data frame with which the pipeline object should be initialized
 #' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
-#' @return An \code{AnalysisRecipe} object, optinally initialized with the data frame provided
+#' @return An \code{AnalysisPipeline} object, optinally initialized with the data frame provided
 #' @family Package core functions
 #' @export
 
-loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
+loadPipeline <- function(RDSPath, input=data.frame(), filePath=""){
   object <- readRDS(RDSPath)
   if(filePath == ""){
     object@input <- input
@@ -537,7 +545,7 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
                                  registeredFunctions[['heading']][[rowNo]],
                                  registeredFunctions[['outAsIn']][[rowNo]],
                                  userDefined = registeredFunctions[['userDefined']][[rowNo]],
-                                 loadRecipe = T) -> object
+                                 loadPipeline = T) -> object
   }
   return(object)
 }
@@ -550,7 +558,7 @@ loadRecipe <- function(RDSPath, input=data.frame(), filePath=""){
 #' @param functionName the name of the function
 #' @param functionHeader the header caption that will feature in the report for this function's output
 #' @param flag a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
-#' @return An \code{AnalysisRecipe} object, optinally initialized with the data frame provided
+#' @return An \code{AnalysisPipeline} object, optinally initialized with the data frame provided
 #' @family Package core functions
 #' @keywords internal
 #'

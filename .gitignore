@@ -5,4 +5,4 @@
 metastore_db/
 .DS_Store
 vignettes/metastore_db/
-vignettes/recipe.RDS
+vignettes/pipeline.RDS

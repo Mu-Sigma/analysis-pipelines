@@ -2,27 +2,27 @@
 % Please edit documentation in R/core-functions.R
 \name{generateReport}
 \alias{generateReport}
-\title{Generate a HTML report from an \code{AnalysisRecipe} object}
+\title{Generate a HTML report from an \code{AnalysisPipeline} object}
 \usage{
 generateReport(object, path)
 }
 \arguments{
-\item{object}{object that contains input, recipe, registry and output}
+\item{object}{object that contains input, pipeline, registry and output}
 
 \item{path}{path on the file system, where the generated html report should be stored}
 }
 \value{
-Updated \code{AnalysisRecipe} object
+Updated \code{AnalysisPipeline} object
 }
 \details{
-The sequence of operations stored in the \code{AnalysisRecipe} object are run, outputs generated,
+The sequence of operations stored in the \code{AnalysisPipeline} object are run, outputs generated,
       and a HTML report is generated with outputs in the same sequence as the pipeline created by the user
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
-  \code{\link{getRecipe}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadRecipe}},
+  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{initialize}}, \code{\link{loadPipeline}},
   \code{\link{readInput}}, \code{\link{registerFunction}},
-  \code{\link{saveRecipe}}, \code{\link{updateObject}}
+  \code{\link{savePipeline}}, \code{\link{updateObject}}
 }
