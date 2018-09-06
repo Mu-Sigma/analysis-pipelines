@@ -3,10 +3,10 @@
 \docType{class}
 \name{readInput}
 \alias{readInput}
-\title{Function to initialize \code{AnalysisRecipe} class with the input data frame}
+\title{Function to initialize \code{AnalysisPipeline} class with the input data frame}
 \details{
 The class which holds the metadata including the registry of available functions,
-the data on which the recipe is to be applied, as well as the recipe itself
+the data on which the pipeline is to be applied, as well as the pipeline itself
 
 More details of how an object of this class should be initialized is provided in the
 constructor - \link{initialize}
@@ -20,7 +20,7 @@ constructor - \link{initialize}
 
 \item{\code{filePath}}{Path of the input dataset to be uploaded}
 
-\item{\code{recipe}}{A tibble which holds functions to be called}
+\item{\code{pipeline}}{A tibble which holds functions to be called}
 
 \item{\code{registry}}{A tibble which holds all the registered functions}
 
@@ -30,8 +30,9 @@ constructor - \link{initialize}
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}}, \code{\link{getRecipe}},
-  \code{\link{getRegistry}}, \code{\link{initialize}},
-  \code{\link{loadRecipe}}, \code{\link{registerFunction}},
-  \code{\link{saveRecipe}}, \code{\link{updateObject}}
+  \code{\link{getOuputByOrderId}},
+  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{initialize}}, \code{\link{loadPipeline}},
+  \code{\link{registerFunction}},
+  \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

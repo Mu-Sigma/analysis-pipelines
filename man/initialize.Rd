@@ -4,28 +4,28 @@
 \name{initialize}
 \alias{initialize}
 \alias{initialize}
-\title{Constructor for the \code{SparkAnalysisRecipe} object}
+\title{Constructor for the \code{SparkAnalysisPipeline} object}
 \usage{
-\S4method{initialize}{SparkAnalysisRecipe}(.Object, input)
+\S4method{initialize}{SparkAnalysisPipeline}(.Object, input)
 
-\S4method{initialize}{AnalysisRecipe}(.Object, input = data.frame(),
+\S4method{initialize}{AnalysisPipeline}(.Object, input = data.frame(),
   filePath = "", workingInput = data.frame())
 }
 \arguments{
-\item{.Object}{The \code{SparkAnalysisRecipe} object}
+\item{.Object}{The \code{SparkAnalysisPipeline} object}
 
 \item{input}{The Spark DataFrame on which operations need to be performed}
 
 \item{filePath}{File path for a .csv file to directly read in the dataset from}
 
-\item{.Object}{The \code{AnalysisRecipe} object}
+\item{.Object}{The \code{AnalysisPipeline} object}
 
 \item{input}{The data frame on which operations need to be performed}
 }
 \value{
-an object of class "\code{SparkAnalysisRecipe}", initialized with the input Spark DataFrame provided
+an object of class "\code{SparkAnalysisPipeline}", initialized with the input Spark DataFrame provided
 
-an object of class "\code{AnalysisRecipe}", initialized with the input data frame provided
+an object of class "\code{AnalysisPipeline}", initialized with the input data frame provided
 }
 \details{
 \code{input} needs to be provded and the argument needs to be of class \code{SparkDataFrame}, which is
@@ -35,14 +35,15 @@ Either one of \code{input} or \code{filePath} need to be provided i.e. either th
      data frame or the file path to a csv file
 }
 \seealso{
-Other Package core functions for Spark: \code{\link{loadRecipeSpark}},
+Other Package core functions for Spark: \code{\link{loadPipelineSpark}},
   \code{\link{readInputSpark}},
   \code{\link{registerFunctionSpark}}
 
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}}, \code{\link{getRecipe}},
-  \code{\link{getRegistry}}, \code{\link{loadRecipe}},
-  \code{\link{readInput}}, \code{\link{registerFunction}},
-  \code{\link{saveRecipe}}, \code{\link{updateObject}}
+  \code{\link{getOuputByOrderId}},
+  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{loadPipeline}}, \code{\link{readInput}},
+  \code{\link{registerFunction}},
+  \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

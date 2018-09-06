@@ -7,20 +7,20 @@
 getInput(object)
 }
 \arguments{
-\item{object}{The \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object}
+\item{object}{The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object}
 }
 \value{
-Dataframe for an \code{AnalysisRecipe} & SparkDataFrame for a \code{SparkAnalysisRecipe}
+Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{SparkAnalysisPipeline}
 }
 \details{
-Obtains the input from the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object
+Obtains the input from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}},
-  \code{\link{getOuputByOrderId}}, \code{\link{getRecipe}},
-  \code{\link{getRegistry}}, \code{\link{initialize}},
-  \code{\link{loadRecipe}}, \code{\link{readInput}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}},
-  \code{\link{updateObject}}
+  \code{\link{getOuputByOrderId}},
+  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{initialize}}, \code{\link{loadPipeline}},
+  \code{\link{readInput}}, \code{\link{registerFunction}},
+  \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

@@ -2,12 +2,12 @@
 % Please edit documentation in R/core-functions.R
 \name{updateObject}
 \alias{updateObject}
-\title{Update the \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object by adding an operation to the recipe}
+\title{Update the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object by adding an operation to the pipeline}
 \usage{
 updateObject(object, operation, heading = "", parameters, outAsIn = F)
 }
 \arguments{
-\item{object}{object that contains input, recipe, registry and output}
+\item{object}{object that contains input, pipeline, registry and output}
 
 \item{operation}{function name to be updated in tibble}
 
@@ -18,18 +18,19 @@ updateObject(object, operation, heading = "", parameters, outAsIn = F)
 \item{outAsIn}{whether to use original input or output from previous function}
 }
 \value{
-Updated \code{AnalysisRecipe} object
+Updated \code{AnalysisPipeline} object
 }
 \details{
-The specified operation along with the heading and parameters is updated in the recipe slot
-      of the  \code{AnalysisRecipe} or \code{SparkAnalysisRecipe} object, where the sequence of operations
+The specified operation along with the heading and parameters is updated in the pipeline slot
+      of the  \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object, where the sequence of operations
      to be performed is stored
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}}, \code{\link{getRecipe}},
-  \code{\link{getRegistry}}, \code{\link{initialize}},
-  \code{\link{loadRecipe}}, \code{\link{readInput}},
-  \code{\link{registerFunction}}, \code{\link{saveRecipe}}
+  \code{\link{getOuputByOrderId}},
+  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{initialize}}, \code{\link{loadPipeline}},
+  \code{\link{readInput}}, \code{\link{registerFunction}},
+  \code{\link{savePipeline}}
 }
