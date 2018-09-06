@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<!-- saved from url=(0093)file:///tmp/RtmpmCbxMY/preview-190e3ed66b60.dir/Analysis_recipes_for_working_with_sparkR.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+
+<meta name="generator" content="pandoc">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Naren S, Anoop S">
+
+<meta name="date" content="2018-09-04">
+
+<title>Analysis recipes for working with sparkR</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css">
+
+<script type="text/javascript" src="./Analysis recipes for working with sparkR_files/MathJax.js"></script><style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 5px 0px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; -khtml-border-radius: 5px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 1px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: .7em}
+.MathJax_MenuRadioCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuLabel {padding: 1px 2em 3px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #DDDDDD; margin: 4px 3px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: #606872; color: white}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1em; bottom: 1.5em; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style></head>
+
+<body><div id="MathJax_Message" style="display: none;"></div>
+
+
+
+
+<h1 class="title toc-ignore">Analysis recipes for working with sparkR</h1>
+<h4 class="author"><em>Naren S, Anoop S</em></h4>
+<h4 class="date"><em>09/04/2018</em></h4>
+
+
+
+<div id="objective" class="section level1">
+<h1>Objective</h1>
+<p>The vignette aims to show examples of using sparkR as an interface to run spark jobs through R - using the recipes package. The major use cases can be categorized as:<br></p>
+<ul>
+<li>Implement a recipe using SparkR dataframes for generic spark jobs</li>
+<li>Implement a recipe using SparkR dataframes for streaming use cases</li>
+</ul>
+<div id="recipes-for-generic-spark-jobs-using-sparkr" class="section level2">
+<h2>Recipes for generic spark jobs using sparkR</h2>
+<p>Spark clusters can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. This example illustrates usage of recipe functions to run spark jobs using sparkR</p>
+<div id="initialize-libraries" class="section level3">
+<h3>Initialize libraries</h3>
+<ul>
+<li>Initialize the analysisRecipes and sparkR libraries</li>
+<li>Ensure you have a local installation of spark and sparkR package is installed</li>
+<li>Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using <code>sys.setenv()</code> function.</li>
+</ul>
+</div>
+<div id="connect-to-spark-cluster" class="section level3">
+<h3>Connect to spark cluster</h3>
+<ul>
+<li>Define the spark master URL</li>
+<li>Specify dependency packages if any during spark connection. Example: <code>sparkPackages &lt;- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")</code></li>
+<li>Connect to the cluster using the package’s <code>sparkRSessionCreateIfNotPresent</code> function</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">sparkMaster &lt;-<span class="st"> "local[1]"</span>
+<span class="kw">sparkRSessionCreateIfNotPresent</span>(<span class="dt">master =</span> sparkMaster, <span class="dt">sparkPackages =</span> <span class="kw">c</span>(<span class="st">"org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1"</span>))</code></pre></div>
+<pre><code>## Spark package found in SPARK_HOME: /home/anoop/software/spark-2.3.1-bin-hadoop2.7/</code></pre>
+<pre><code>## Launching java with spark-submit command /home/anoop/software/spark-2.3.1-bin-hadoop2.7//bin/spark-submit  --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 sparkr-shell /tmp/RtmpuPXi12/backend_port194214351077</code></pre>
+<pre><code>## Java ref type org.apache.spark.sql.SparkSession id 1</code></pre>
+</div>
+<div id="read-data-from-csv-and-initialize-sparkrecipe-object" class="section level3">
+<h3>Read data from csv and initialize sparkrecipe object</h3>
+<p>Spark can connect to datasources like Hive, Kafka. Besides, it also also read parquet, json and csv files. In this example we will read a csv file.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">inputDataset &lt;-<span class="st"> </span><span class="kw">read.df</span>(<span class="dt">path=</span><span class="st">"../inst/hotel_new.csv"</span>,<span class="dt">source=</span><span class="st">"csv"</span>,<span class="dt">header =</span> <span class="ot">TRUE</span>, <span class="dt">inferSchema =</span> <span class="st">"true"</span>)
+recipeObj &lt;-<span class="st"> </span><span class="kw">readInputSpark</span>(<span class="dt">input =</span> inputDataset)</code></pre></div>
+<pre><code>## Creating a new generic function for 'castKafkaStreamAsString' in the global environment</code></pre>
+<pre><code>## Creating a new generic function for 'convertKafkaValueFromJson' in the global environment</code></pre>
+</div>
+<div id="user-defined-spark-functions" class="section level3">
+<h3>User defined spark functions</h3>
+<p>The example below shows a few functions to perform simple aggregations.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Function to calculate avg occupany for the client as well as competitors - grouped by input parameter</span>
+occupanyAnalysis &lt;-<span class="st"> </span><span class="cf">function</span>(inputDataset, groupByColumn) {
+  occupancySummary &lt;-<span class="st"> </span><span class="kw">summarize</span>(<span class="kw">groupBy</span>(inputDataset,inputDataset[[groupByColumn]]),
+                       <span class="dt">avgOccupancy=</span><span class="kw">mean</span>(inputDataset<span class="op">$</span>Occupancy),
+                       <span class="dt">avgCompetitorOccupancy=</span><span class="kw">mean</span>(inputDataset<span class="op">$</span>Compet_Occupancy))
+ <span class="kw">return</span>(occupancySummary)
+}
+
+<span class="co"># Function to calculate avg booking contribution for differen channels - grouped by input parameter</span>
+bookingChannelsAnalysis &lt;-<span class="st"> </span><span class="cf">function</span>(inputDataset, groupByColumn) {
+  bookingChannelsAnalysisSummary &lt;-<span class="st"> </span><span class="kw">summarize</span>(<span class="kw">groupBy</span>(inputDataset,inputDataset[[groupByColumn]]),
+                       <span class="dt">avgCallCenterBookingPct=</span><span class="kw">avg</span>(inputDataset<span class="op">$</span>call_center_booking_pct),
+                       <span class="dt">avgAgencyBookingPct=</span><span class="kw">avg</span>(inputDataset<span class="op">$</span>travel_agency_booking_pct),
+                       <span class="dt">avgThirdPartyBookingPct=</span><span class="kw">avg</span>(inputDataset<span class="op">$</span>third_party_web_bookings_pct),
+                       <span class="dt">avgHotelToHotelBookingPct=</span><span class="kw">avg</span>(inputDataset<span class="op">$</span>hotel_to_hotel_bookings_pct),
+                       <span class="dt">avgDirectBookingPct=</span><span class="kw">avg</span>(inputDataset<span class="op">$</span>direct_call_booking_pct),
+                       <span class="dt">avgWebBookingPct=</span><span class="kw">avg</span>(inputDataset<span class="op">$</span>direct_web_booking_pct))
+ <span class="kw">return</span>(bookingChannelsAnalysisSummary)
+}</code></pre></div>
+</div>
+<div id="registering-user-defined-functions-to-the-recipe-object" class="section level3">
+<h3>Registering user defined functions to the recipe object</h3>
+<p>Each user defined function needs to be registered to the recipe object. Post registeration, the function can be used to construct a recipe.A recipe can be a pipeline of multiple functions called in a particular sequence.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Register user defined functions</span>
+recipeObj &lt;-<span class="st"> </span>recipeObj <span class="op">%&gt;&gt;%</span><span class="st"> </span><span class="kw">registerFunctionSpark</span>(<span class="st">"occupanyAnalysis"</span>, <span class="st">"Occupany analysis"</span>,<span class="dt">outAsIn =</span> F)  <span class="op">%&gt;&gt;%</span>
+<span class="st">  </span><span class="kw">registerFunctionSpark</span>(<span class="st">"bookingChannelsAnalysis"</span>, <span class="st">"Booking channels analysis"</span>,<span class="dt">outAsIn =</span> F)
+<span class="co"># List al registered functions </span>
+<span class="kw">print</span>(<span class="st">"Registry"</span>)</code></pre></div>
+<pre><code>## [1] "Registry"</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(recipeObj<span class="op">@</span>registry)</code></pre></div>
+<pre><code>## # A tibble: 4 x 3
+##   functionName              heading                   outAsIn
+##   &lt;chr&gt;                     &lt;chr&gt;                     &lt;lgl&gt;  
+## 1 castKafkaStreamAsString   ""                        TRUE   
+## 2 convertKafkaValueFromJson ""                        TRUE   
+## 3 occupanyAnalysis          Occupany analysis         FALSE  
+## 4 bookingChannelsAnalysis   Booking channels analysis FALSE</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Define recipe from list of registered functions</span>
+recipeObj <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">occupanyAnalysis</span>(<span class="dt">groupByColumn =</span> <span class="st">"location_type"</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">bookingChannelsAnalysis</span>(<span class="dt">groupByColumn =</span> <span class="st">"location_type"</span>) -&gt;<span class="st"> </span>recipeObj
+<span class="kw">print</span>(<span class="st">"Recipe pipeline"</span>)</code></pre></div>
+<pre><code>## [1] "Recipe pipeline"</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(recipeObj<span class="op">@</span>recipe)</code></pre></div>
+<pre><code>## # A tibble: 2 x 4
+##   operation               heading                   parameters outAsIn
+##   &lt;chr&gt;                   &lt;chr&gt;                     &lt;list&gt;     &lt;lgl&gt;  
+## 1 occupanyAnalysis        Occupany analysis         &lt;list [1]&gt; FALSE  
+## 2 bookingChannelsAnalysis Booking channels analysis &lt;list [1]&gt; FALSE</code></pre>
+</div>
+<div id="running-the-recipe-and-generating-an-output" class="section level3">
+<h3>Running the recipe and generating an output</h3>
+<p>The recipe is run by calling the <code>generateOutput()</code> function. The <code>output</code> attribute of the recipe object contains the resultant spark dataframe(s).</p>
+<p>In this example the spark dataframes are converted to R dataframes to help visualizing the result.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">recipeObj <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">generateOutput</span>() -&gt;<span class="st"> </span>recipeObj
+
+<span class="co"># Show occupancy analysis result</span>
+occpancyAnalysisResult &lt;-<span class="st"> </span>recipeObj<span class="op">@</span>output[[<span class="dv">1</span>]]
+occpancyAnalysisResultDf &lt;-<span class="st"> </span><span class="kw">as.data.frame</span>(occpancyAnalysisResult)
+<span class="kw">print</span>(occpancyAnalysisResultDf)</code></pre></div>
+<pre><code>##     location_type avgOccupancy avgCompetitorOccupancy
+## 1        SUBURBAN    0.4704766              0.4819015
+## 2     NO LOCATION    0.3603111              0.0000000
+## 3         AIRPORT    0.5574527              0.5533833
+## 4          RESORT    0.4961310              0.4679009
+## 5           URBAN    0.5138176              0.5163944
+## 6      SMALL TOWN    0.4610705              0.4601783
+## 7         HIGHWAY    0.4425714              0.4578774
+## 8        DOWNTOWN    0.2651563              0.4117362
+## 9 OTHER COMMUNITY    0.4133195              0.0000000</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># ggplot(occpancyAnalysisResultDf) + geom_col(aes(location_type, avgOccupancy, color=location_type)) </span>
+
+<span class="co"># Show booking channels analysis result</span>
+bookingChannelsAnalysisResult &lt;-<span class="st"> </span>recipeObj<span class="op">@</span>output[[<span class="dv">2</span>]]
+bookingChannelsAnalysisResultDf &lt;-<span class="st"> </span><span class="kw">as.data.frame</span>(bookingChannelsAnalysisResult)
+<span class="kw">print</span>(bookingChannelsAnalysisResultDf)</code></pre></div>
+<pre><code>##     location_type avgCallCenterBookingPct avgAgencyBookingPct
+## 1        SUBURBAN              0.09750159          0.08033697
+## 2     NO LOCATION              0.05882353          0.00000000
+## 3         AIRPORT              0.09854660          0.08465475
+## 4          RESORT              0.12963557          0.04613172
+## 5           URBAN              0.11923409          0.06389060
+## 6      SMALL TOWN              0.07405087          0.06629881
+## 7         HIGHWAY              0.07915098          0.05187852
+## 8        DOWNTOWN              0.08373291          0.11601386
+## 9 OTHER COMMUNITY              0.13636364          0.48484848
+##   avgThirdPartyBookingPct avgHotelToHotelBookingPct avgDirectBookingPct
+## 1             0.033810095              0.0080580548           0.6925464
+## 2             0.000000000              0.0000000000           0.8823529
+## 3             0.046934354              0.0088257844           0.6800475
+## 4             0.049467868              0.0216849833           0.6300868
+## 5             0.040180280              0.0125065588           0.6774226
+## 6             0.018085806              0.0064208721           0.7568627
+## 7             0.010643108              0.0060202032           0.7790918
+## 8             0.002807562              0.0002275312           0.6751766
+## 9             0.000000000              0.0000000000           0.0000000
+##   avgWebBookingPct
+## 1       0.08774690
+## 2       0.05882353
+## 3       0.08099101
+## 4       0.12299306
+## 5       0.08676589
+## 6       0.07828098
+## 7       0.07321539
+## 8       0.12204152
+## 9       0.37878788</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># ggplot(bookingChannelsAnalysisResultDf) + geom_col(aes(location_type, avgCallCenterBookingPct, color=location_type)) + scale_y_continuous(labels = scales::percent)</span></code></pre></div>
+</div>
+</div>
+<div id="recipes-for-structured-streaming-using-sparkr" class="section level2">
+<h2>Recipes for structured streaming using sparkR</h2>
+<p>This example illustrates usage of recipes for a streaming application. In this use case streaming data is read from Kafka, aggregations are performed and the output is written to the console.</p>
+<div id="read-stream-from-kafka" class="section level3">
+<h3>Read stream from Kafka</h3>
+<p>Read streaming data from Kafka.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">kafkaBootstrapServers &lt;-<span class="st"> "172.25.0.144:9092,172.25.0.98:9092,172.25.0.137:9092"</span>
+consumerTopic &lt;-<span class="st"> "netlogo"</span>
+streamObj &lt;-<span class="st"> </span><span class="kw">read.stream</span>(<span class="dt">source =</span> <span class="st">"kafka"</span>, <span class="dt">kafka.bootstrap.servers =</span> kafkaBootstrapServers, <span class="dt">subscribe =</span> consumerTopic, <span class="dt">startingOffsets=</span><span class="st">"earliest"</span>)
+<span class="kw">printSchema</span>(streamObj)</code></pre></div>
+<pre><code>## root
+##  |-- key: binary (nullable = true)
+##  |-- value: binary (nullable = true)
+##  |-- topic: string (nullable = true)
+##  |-- partition: integer (nullable = true)
+##  |-- offset: long (nullable = true)
+##  |-- timestamp: timestamp (nullable = true)
+##  |-- timestampType: integer (nullable = true)</code></pre>
+</div>
+<div id="user-defined-spark-functions-1" class="section level3">
+<h3>User defined spark functions</h3>
+<p>Users can define their own functions and use it as a part of the recipe. These functions range from data prep, agrregations, casting data to suitable write stream format, etc.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Function to convert datatype json struct to colums</span>
+convertStructToDf &lt;-<span class="st"> </span><span class="cf">function</span>(streamObj) {
+  streamObj &lt;-<span class="st"> </span><span class="kw">select</span>(streamObj,<span class="kw">list</span>(<span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"bannerId"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"mobile"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"homeAppliance"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"gamingConsole"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"accessories"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"brand"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"previousPrice"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"currentPrice"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"discount"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"emi"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"crossSale"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"customerId"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"ts"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"click"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"conversion"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"age"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"income"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"maritalStatus"</span>),
+                                   <span class="kw">getField</span>(streamObj<span class="op">$</span><span class="st">`</span><span class="dt">jsontostructs(value)</span><span class="st">`</span>,<span class="st">"segment"</span>)))
+  <span class="kw">colnames</span>(streamObj) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">"bannerId"</span>,<span class="st">"mobile"</span>,<span class="st">"homeAppliance"</span>,<span class="st">"gamingConsole"</span>,<span class="st">"accessories"</span>,<span class="st">"brand"</span>,<span class="st">"previousPrice"</span>,<span class="st">"currentPrice"</span>,
+                           <span class="st">"discount"</span>,<span class="st">"emi"</span>,<span class="st">"crossSale"</span>,<span class="st">"customerId"</span>,<span class="st">"ts"</span>,<span class="st">"click"</span>,<span class="st">"conversion"</span>,<span class="st">"age"</span>,<span class="st">"income"</span>,<span class="st">"maritalStatus"</span>,<span class="st">"segment"</span>)
+  <span class="kw">return</span>(streamObj)
+}
+
+<span class="co"># Function to cast columns as string, integer, etc</span>
+castDfColumns &lt;-<span class="st"> </span><span class="cf">function</span>(streamObj) {
+  streamObj &lt;-<span class="st"> </span><span class="kw">selectExpr</span>(streamObj, <span class="st">"bannerId"</span>,<span class="st">"mobile"</span>,<span class="st">"homeAppliance"</span>,<span class="st">"gamingConsole"</span>,<span class="st">"accessories"</span>,<span class="st">"brand"</span>,
+                          <span class="st">"CAST(previousPrice as INTEGER)"</span>,<span class="st">"CAST(currentPrice as INTEGER)"</span>,<span class="st">"CAST(discount as INTEGER)"</span>,<span class="st">"emi"</span>,
+                          <span class="st">"crossSale"</span>,<span class="st">"customerId"</span>,<span class="st">"ts"</span>,<span class="st">"CAST(click as INTEGER)"</span>,<span class="st">"CAST(conversion as INTEGER)"</span>,
+                          <span class="st">"CAST(age as INTEGER)"</span>,<span class="st">"CAST(income as INTEGER)"</span>,<span class="st">"maritalStatus"</span>,<span class="st">"segment"</span>)
+  streamObj<span class="op">$</span>ts &lt;-<span class="st"> </span><span class="kw">to_timestamp</span>(streamObj<span class="op">$</span>ts,<span class="st">"yyyy-MM-dd HH:mm:ss"</span>)
+  <span class="kw">return</span> (streamObj)
+}
+
+<span class="co"># Function to convert datatype json struct to colums</span>
+convertDfToKafkaKeyValuePairs &lt;-<span class="st"> </span><span class="cf">function</span> (streamObj, kafkaKey) {
+  streamObj &lt;-<span class="st"> </span><span class="kw">toJSON</span>(streamObj)
+  streamObj<span class="op">$</span>key &lt;-<span class="st"> </span>kafkaKey
+  <span class="kw">return</span>(streamObj)
+}
+
+<span class="co"># Function to summarize click stream data</span>
+globalUiMetrics &lt;-<span class="st"> </span><span class="cf">function</span> (streamObj) {
+  ## Aggregation query
+  streamObj &lt;-<span class="st"> </span><span class="kw">summarize</span>(<span class="kw">groupBy</span>(streamObj,streamObj<span class="op">$</span>bannerId),
+                         <span class="dt">impressions=</span><span class="kw">count</span>(streamObj<span class="op">$</span>customerId),
+                         <span class="dt">clicks=</span><span class="kw">sum</span>(streamObj<span class="op">$</span>click),
+                         <span class="dt">conversions=</span><span class="kw">sum</span>(streamObj<span class="op">$</span>conversion))
+  <span class="kw">colnames</span>(streamObj) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">"banner_id"</span>,<span class="st">"impressions"</span>,<span class="st">"clicks"</span>,<span class="st">"conversions"</span>)
+  <span class="kw">return</span> (streamObj)
+}</code></pre></div>
+</div>
+<div id="define-recipe-object-register-user-defined-functions-to-the-recipe-object" class="section level3">
+<h3>Define recipe object, register user defined functions to the recipe object</h3>
+<p>In order to use recipes, a recipe object needs to be defined. Notice the spark recipes are defined using the <code>readInputSpark</code> function.</p>
+<p>Each user defined function needs to be registered to the recipe object. Post registeration, the function can be used to construct a recipe.A recipe can be a pipeline of multiple functions called in a particular sequence.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Define recipe object</span>
+recipeObj &lt;-<span class="st"> </span>analysisRecipes<span class="op">::</span><span class="kw">readInputSpark</span>(<span class="dt">input =</span> streamObj)
+
+consumerDataSchema &lt;-<span class="st"> </span><span class="kw">structType</span>(<span class="kw">structField</span>(<span class="st">"bannerId"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"mobile"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"homeAppliance"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"gamingConsole"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"accessories"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"brand"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"previousPrice"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"currentPrice"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"discount"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"emi"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"crossSale"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"customerId"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"ts"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"click"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"conversion"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"age"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"income"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"maritalStatus"</span>, <span class="st">"string"</span>),
+                                 <span class="kw">structField</span>(<span class="st">"segment"</span>, <span class="st">"string"</span>))
+
+<span class="co"># Register user defined functions</span>
+recipeObj &lt;-<span class="st"> </span>recipeObj <span class="op">%&gt;&gt;%</span><span class="st"> </span><span class="kw">registerFunctionSpark</span>(<span class="st">"convertStructToDf"</span>, <span class="st">""</span>,<span class="dt">outAsIn =</span> T)  <span class="op">%&gt;&gt;%</span>
+<span class="st">  </span><span class="kw">registerFunctionSpark</span>(<span class="st">"castDfColumns"</span>, <span class="st">""</span>,<span class="dt">outAsIn =</span> T) <span class="op">%&gt;&gt;%</span>
+<span class="st">  </span><span class="kw">registerFunctionSpark</span>(<span class="st">"globalUiMetrics"</span>, <span class="st">""</span>,<span class="dt">outAsIn =</span> T) <span class="op">%&gt;&gt;%</span>
+<span class="st">  </span><span class="kw">registerFunctionSpark</span>(<span class="st">"convertDfToKafkaKeyValuePairs"</span>, <span class="st">""</span>,<span class="dt">outAsIn =</span> T)
+<span class="kw">print</span>(recipeObj<span class="op">@</span>registry)</code></pre></div>
+<pre><code>## # A tibble: 6 x 3
+##   functionName                  heading outAsIn
+##   &lt;chr&gt;                         &lt;chr&gt;   &lt;lgl&gt;  
+## 1 castKafkaStreamAsString       ""      TRUE   
+## 2 convertKafkaValueFromJson     ""      TRUE   
+## 3 convertStructToDf             ""      TRUE   
+## 4 castDfColumns                 ""      TRUE   
+## 5 globalUiMetrics               ""      TRUE   
+## 6 convertDfToKafkaKeyValuePairs ""      TRUE</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Define recipe pipeline</span>
+<span class="co"># Do data prep</span>
+recipeObj <span class="op">%&gt;%</span><span class="st"> </span>castKafkaStreamAsString <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">convertKafkaValueFromJson</span>(<span class="dt">schema =</span> consumerDataSchema) <span class="op">%&gt;%</span><span class="st"> </span>convertStructToDf <span class="op">%&gt;%</span><span class="st"> </span>castDfColumns -&gt;<span class="st"> </span>recipeObj
+<span class="co"># Perform analytical operations</span>
+recipeObj <span class="op">%&gt;%</span><span class="st"> </span>globalUiMetrics -&gt;<span class="st"> </span>recipeObj
+<span class="kw">print</span>(recipeObj<span class="op">@</span>recipe)</code></pre></div>
+<pre><code>## # A tibble: 5 x 4
+##   operation                 heading parameters outAsIn
+##   &lt;chr&gt;                     &lt;chr&gt;   &lt;list&gt;     &lt;lgl&gt;  
+## 1 castKafkaStreamAsString   ""      &lt;list [0]&gt; TRUE   
+## 2 convertKafkaValueFromJson ""      &lt;list [1]&gt; TRUE   
+## 3 convertStructToDf         ""      &lt;list [0]&gt; TRUE   
+## 4 castDfColumns             ""      &lt;list [0]&gt; TRUE   
+## 5 globalUiMetrics           ""      &lt;list [0]&gt; TRUE</code></pre>
+</div>
+<div id="running-the-recipe-and-generating-an-output-1" class="section level3">
+<h3>Running the recipe and generating an output</h3>
+<p>The recipe is run by calling the <code>generateOutput()</code> function. The <code>output</code> attribute of the recipe object contains the resultant spark dataframe(s).</p>
+<p>In this example the spark dataframes are converted to R dataframes to help visualizing the result.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Run recipe
+recipeObj <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">generateOutput</span>() -&gt;<span class="st"> </span>recipeObj
+
+## Write to output stream
+streamObj &lt;-<span class="st"> </span>recipeObj<span class="op">@</span>output[[<span class="kw">length</span>(recipeObj<span class="op">@</span>output)]]
+<span class="kw">write.stream</span>(streamObj, <span class="st">'console'</span>,<span class="dt">outputMode =</span> <span class="st">"complete"</span>)</code></pre></div>
+<pre><code>## StreamingQuery</code></pre>
+</div>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>This vignette successfully demonstrates usage of recipes for running spark jobs through the sparkR interface.</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+
+
+</body></html>
