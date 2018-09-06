@@ -1,10 +1,10 @@
 ---
-title: "Analysis recipes for working with R data frames"
+title: "Analysis pipelines for working with R data frames"
 author: "Sanjay, Neeratyoy Mallik, Naren Srinivasan"
 date: "8/24/2018"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Analysis recipes for working with R data frames}
+  %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -13,7 +13,7 @@ vignette: >
 
 # Objective
 
-* Providing an overview of what the analysisRecipes package offers
+* Providing an overview of what the analysisPipelines package offers
 
 # Introduction
 
@@ -25,7 +25,7 @@ The EDA utility that this handbook describes, attempts at making the entire EDA 
 * <i>Descriptive chaining</i> by adhering to the tidyverse paradigm of piping operations in a cascading manner
 * <i>Flexibility</i> to use any custom function defined by any user, that can work in the paradigm defined above
 * <i>Light on memory</i> through lazy evaluation of the functions that have been piped, i.e., the actual execution happens selectively
-* <i>Reproducible</i> and <i>scalable</i> since recipes can be exported and reused with new data and/or standard R code
+* <i>Reproducible</i> and <i>scalable</i> since pipelines can be exported and reused with new data and/or standard R code
 
 The sections below will provide sample code and a walkthrough in using the utility. The sections should also highlight the features this utility has to offer.
 
@@ -34,29 +34,29 @@ The sections below will provide sample code and a walkthrough in using the utili
 # Loading the package
 
 ```{r sourcing}
-library(analysisRecipes)
+library(analysisPipelines)
 ```
 
 <br>
 
-# Creating an analysisRecipe object
+# Creating an analysisPipeline object
 
-The analysisRecipes package has been written as per R's S4 object system standard. 
+The analysisPipelines package has been written as per R's S4 object system standard. 
 <br>
 To work with the package, one needs to call the constructor by specifying a file as an input.
 
 ```{r creating object, warning=F}
-obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
+obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 class(obj)
 ```
 
-The object created is of type <i>"AnalysisRecipe"</i>. The object contains the following attributes:
+The object created is of type <i>"AnalysisPipeline"</i>. The object contains the following attributes:
 
 * input - stores the data frame read by the constructor
 * workingInput - Internal
-* recipe - stores a tibble object which can store a sequence of function calls
+* pipeline - stores a tibble object which can store a sequence of function calls
 * registry - stores the list of function names that are available to the object
-* output - stores the output of each operation when a recipe is evaluated 
+* output - stores the output of each operation when a pipeline is evaluated 
 
 ```{r printing object contents, warning=F}
 obj %>>% getInput %>>% str
@@ -73,7 +73,7 @@ The pipe (%>>%) operator used here works in a similar manner to the tidyverse pa
 # Running univariate categorical distribution plot on the constructed object
 
 obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
-obj %>>% getRecipe
+obj %>>% getPipeline
 ```
 
 ```{r pipe demo 2, warning=F}
@@ -84,14 +84,14 @@ obj <- obj %>>%
   univarCatDistPlots(uniCol = "location_type", priColor = "blue", optionalPlots = 0) %>>% 
   outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
-obj %>>% getRecipe
+obj %>>% getPipeline
 ```
 
 <br>
 
 # Lazy evaluation
 
-The sequence of operations is stored as metadata. It is only processed when an evaluation is exclusively triggered through a call to <i>generateOutput()</i> (available in the utility), or when generating an HTML report based on the recipe. <br>
+The sequence of operations is stored as metadata. It is only processed when an evaluation is exclusively triggered through a call to <i>generateOutput()</i> (available in the utility), or when generating an HTML report based on the pipeline. <br>
 
 If noticed, the <i>output</i> attribute of the EDA object is empty so far.
 
@@ -99,7 +99,7 @@ If noticed, the <i>output</i> attribute of the EDA object is empty so far.
 length(obj@output)
 ```
 
-However, a specific function call can generate the output of the recipe stored in the object. Which is then stored in the <i>output</i> attribute of the object.
+However, a specific function call can generate the output of the pipeline stored in the object. Which is then stored in the <i>output</i> attribute of the object.
 
 ```{r lazy eval 2, warning=F}
 obj1 <- obj %>>% generateOutput()
@@ -112,7 +112,7 @@ Observe that the length of the output list of the first object (the chunk above)
 length(obj@output)
 ```
 
-A specific output can be viewed by providing the position of the function generating the output in the sequence of operations in the recipe. This can be obtained from the "order" column in the "recipe" table corresponding to the function whose output is desired
+A specific output can be viewed by providing the position of the function generating the output in the sequence of operations in the pipeline. This can be obtained from the "order" column in the "pipeline" table corresponding to the function whose output is desired
 
 ```{r lazy eval 3, warning=F}
 # The index can range from 1 to length(obj@output)
@@ -123,7 +123,7 @@ obj1 %>>% getOuputByOrderId(3)
 
 # Registering a new function
 
-On invoking the constructor, i.e., creating an object of type AnalysisRecipe, the functions defined in the list are <i>registered</i> for the said object. The list of registered functions can be viewed as <i>obj@registry</i>. The package has the option to add any user-defined function to this list of functions,  <br>
+On invoking the constructor, i.e., creating an object of type AnalysisPipeline, the functions defined in the list are <i>registered</i> for the said object. The list of registered functions can be viewed as <i>obj@registry</i>. The package has the option to add any user-defined function to this list of functions,  <br>
 The only <b>constraint</b> for registering an user-defined function is that the first parameter in the argument list must be a data frame.
 <br>
 Let us demonstrate this with an example.
@@ -155,7 +155,7 @@ bivariatePlots <- function(object, select_var_name_1, select_var_name_2,
 }
 ```
 
-This user-defined function can now be registered as part of the AnalysisRecipe object created. Following which, the updated registry will show that the object has at its disposal an additional function which was not defined in the utility.
+This user-defined function can now be registered as part of the AnalysisPipeline object created. Following which, the updated registry will show that the object has at its disposal an additional function which was not defined in the utility.
 
 ```{r register function, warning=F}
 # The first parameter provides the function name
@@ -171,13 +171,13 @@ obj %>>% getRegistry
 Now that a new user-defined function is also available along with the existing functions, all the features can be leveraged in unison.
 
 ```{r register function 2, warning=F}
-# Chaining the user-defined function to the object's recipe where it was registered
+# Chaining the user-defined function to the object's pipeline where it was registered
 obj <- obj %>>% 
   bivariatePlots(select_var_name_1 = 'Occupancy', select_var_name_2 = 'max_rooms_capacity', 
                  priColor = "blue", secColor = "black")
 
-# Printing the updated recipe
-obj %>>% getRecipe
+# Printing the updated pipeline
+obj %>>% getPipeline
 ```
 
 The newly added function will also lazy evaluate depending on the trigger.
@@ -191,7 +191,7 @@ obj2 %>>% getOuputByOrderId(4)
 
 # Generate Report
 
-Object and lists stored in the memory are not consumable. Hence, the package allows for the option to knit a recipe's outputs into a neat HTML file, which can serve as a report of the analysis performed.
+Object and lists stored in the memory are not consumable. Hence, the package allows for the option to knit a pipeline's outputs into a neat HTML file, which can serve as a report of the analysis performed.
 
 ```{r generate report and tabs, warning=F,  eval=F}
 # generateReport() needs a destination path as an argument
@@ -213,22 +213,22 @@ obj %>>% generateReport('~/Desktop')
 
 <br>
 
-# Save and Load Recipes
+# Save and Load Pipelines
 
-The recipes stored as an attribute in the object are effectively meta recipes which document the steps in an EDA pipeline. These can be exported and re-read by certain functions available in this EDA utility. The recipes are generic enough to work with the schema of the data that was used to invoke the constructor. Therefore, this recipe can be used on any data of the same schema.
+The pipelines stored as an attribute in the object are effectively meta pipelines which document the steps in an EDA pipeline. These can be exported and re-read by certain functions available in this EDA utility. The pipelines are generic enough to work with the schema of the data that was used to invoke the constructor. Therefore, this pipeline can be used on any data of the same schema.
 
-```{r save recipes, message=FALSE, warning=FALSE, eval=TRUE}
-# Saves the recipe and registry of the EDA object
-saveRecipe(obj, 'recipe.RDS')
+```{r save pipelines, message=FALSE, warning=FALSE, eval=TRUE}
+# Saves the pipeline and registry of the EDA object
+savePipeline(obj, 'pipeline.RDS')
 ```
 
-This recipe can be loaded and re-used with any other data set.
+This pipeline can be loaded and re-used with any other data set.
 
-```{r load recipes, message=FALSE, warning=FALSE, eval=T}
-obj2 <- loadRecipe('recipe.RDS',filePath = system.file("hotel_new.csv", package = "analysisRecipes")) 
+```{r load pipelines, message=FALSE, warning=FALSE, eval=T}
+obj2 <- loadPipeline('pipeline.RDS',filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 
 obj2 %>% getRegistry
-obj2 %>% getRecipe
+obj2 %>% getPipeline
 ```
 
 <br>

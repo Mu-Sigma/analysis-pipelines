@@ -2,13 +2,13 @@
 % Please edit documentation in R/core-functions.R
 \name{registerFunction}
 \alias{registerFunction}
-\title{Register a user-defined function to be used with \code{AnalysisRecipe} objects}
+\title{Register a user-defined function to be used with \code{AnalysisPipeline} objects}
 \usage{
 registerFunction(object, functionName, heading = "", outAsIn = F,
-  loadRecipe = F, userDefined = T, session = session)
+  loadPipeline = F, userDefined = T, session = session)
 }
 \arguments{
-\item{object}{object that contains input, recipe, registry and output}
+\item{object}{object that contains input, pipeline, registry and output}
 
 \item{functionName}{name of function to be registered}
 
@@ -16,22 +16,23 @@ registerFunction(object, functionName, heading = "", outAsIn = F,
 
 \item{outAsIn}{whether to use original input or output from previous function}
 
-\item{loadRecipe}{logical parameter to see if function is being used in loadRecipe or not}
+\item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not}
 
 \item{session}{to load shiny session in the function}
 }
 \value{
-Updated \code{AnalysisRecipe} object
+Updated \code{AnalysisPipeline} object
 }
 \details{
-The specified operation along with the heading and parameters is updated in the recipe slot
-      of the AnalysisRecipe object, where the sequence of operations to be performed is stored
+The specified operation along with the heading and parameters is updated in the pipeline slot
+      of the AnalysisPipeline object, where the sequence of operations to be performed is stored
 }
 \seealso{
 Other Package core functions: \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}}, \code{\link{getRecipe}},
-  \code{\link{getRegistry}}, \code{\link{initialize}},
-  \code{\link{loadRecipe}}, \code{\link{readInput}},
-  \code{\link{saveRecipe}}, \code{\link{updateObject}}
+  \code{\link{getOuputByOrderId}},
+  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{initialize}}, \code{\link{loadPipeline}},
+  \code{\link{readInput}}, \code{\link{savePipeline}},
+  \code{\link{updateObject}}
 }

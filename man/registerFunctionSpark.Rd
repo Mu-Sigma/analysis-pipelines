@@ -2,14 +2,14 @@
 % Please edit documentation in R/core-functions-spark.R
 \name{registerFunctionSpark}
 \alias{registerFunctionSpark}
-\title{Register a user-defined function to be used with \code{SparkAnalysisRecipe} objects specifically for Spark
+\title{Register a user-defined function to be used with \code{SparkAnalysisPipeline} objects specifically for Spark
        DataFrames}
 \usage{
 registerFunctionSpark(object, functionName, heading = "", outAsIn = F,
-  loadRecipe = F, userDefined = T, session = session)
+  loadPipeline = F, userDefined = T, session = session)
 }
 \arguments{
-\item{object}{object that contains input, recipe, registry and output}
+\item{object}{object that contains input, pipeline, registry and output}
 
 \item{functionName}{name of function to be registered}
 
@@ -17,20 +17,20 @@ registerFunctionSpark(object, functionName, heading = "", outAsIn = F,
 
 \item{outAsIn}{whether to use original input or output from previous function}
 
-\item{loadRecipe}{logical parameter to see if function is being used in loadRecipe or not}
+\item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not}
 
 \item{session}{to load shiny session in the function (Currently not implemented)}
 }
 \value{
-Updated \code{SparkAnalysisRecipe} object
+Updated \code{SparkAnalysisPipeline} object
 }
 \details{
-The specified operation along with the heading and parameters is updated in the recipe slot
-      of the \code{SparkAnalysisRecipe} object, where the sequence of operations to be performed is stored. This function
+The specified operation along with the heading and parameters is updated in the pipeline slot
+      of the \code{SparkAnalysisPipeline} object, where the sequence of operations to be performed is stored. This function
       is used to register functions which are designed to operate on Spark DataFrames
 }
 \seealso{
 Other Package core functions for Spark: \code{\link{initialize}},
-  \code{\link{loadRecipeSpark}},
+  \code{\link{loadPipelineSpark}},
   \code{\link{readInputSpark}}
 }
