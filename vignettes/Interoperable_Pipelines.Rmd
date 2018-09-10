@@ -2,11 +2,11 @@
 title: "Interoperable pipelines"
 author: "Naren Srinivasan"
 date: "9/10/2018"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+# output: rmarkdown::html_vignette
+<!-- vignette: > -->
+<!--   %\VignetteIndexEntry{Analysis pipelines for working with R data frames} -->
+<!--   %\VignetteEngine{knitr::rmarkdown} -->
+<!--   %\VignetteEncoding{UTF-8} -->
 ---
 
 # Objective
