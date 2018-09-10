@@ -2,11 +2,11 @@
 title: "Analysis pipelines for working with SparkR"
 author: "Naren S, Anoop S"
 date: "09/04/2018"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Analysis pipelines for working with SparkR}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+# output: rmarkdown::html_vignette
+# vignette: >
+#   %\VignetteIndexEntry{Analysis pipelines for working with SparkR}
+#   %\VignetteEngine{knitr::rmarkdown}
+#   %\VignetteEncoding{UTF-8}
 ---
 # Objective
 
