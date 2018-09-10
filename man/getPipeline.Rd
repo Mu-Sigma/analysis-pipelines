@@ -16,7 +16,8 @@ Tibble describing the pipeline
 Obtains the pipeline from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getRegistry}}, \code{\link{initialize}},

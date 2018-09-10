@@ -5,7 +5,7 @@
 \title{Register a user-defined function to be used with \code{AnalysisPipeline} objects}
 \usage{
 registerFunction(object, functionName, heading = "", outAsIn = F,
-  loadPipeline = F, userDefined = T, session = session)
+  engine = "r", loadPipeline = F, userDefined = T, session = session)
 }
 \arguments{
 \item{object}{object that contains input, pipeline, registry and output}
@@ -15,6 +15,8 @@ registerFunction(object, functionName, heading = "", outAsIn = F,
 \item{heading}{heading of that section in report}
 
 \item{outAsIn}{whether to use original input or output from previous function}
+
+\item{engine}{specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"}
 
 \item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not}
 
@@ -28,7 +30,8 @@ The specified operation along with the heading and parameters is updated in the 
       of the AnalysisPipeline object, where the sequence of operations to be performed is stored
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},

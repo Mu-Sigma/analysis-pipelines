@@ -6,47 +6,52 @@
 ##################################################################################################
 
 ##################################################################################################
-# Working with data frames
+# Working with batch pipelines - data frames in R, Spark or Python
 ##################################################################################################
 
 ##################################################################################################
 # EDA
 ##################################################################################################
-dfPredefFunctions <- data.frame(functionName = c("univarCatDistPlots"),
+batchPredefFunctions <- data.frame(functionName = c("univarCatDistPlots"),
                                 heading = c("Univariate Distribution Categorical"),
-                                outAsIn = c(FALSE), stringsAsFactors = F)
+                                outAsIn = c(FALSE),
+                                engine = "r",
+                                stringsAsFactors = F)
 
-dfPredefFunctions %>>% dplyr::add_row(functionName = "outlierPlot",
+batchPredefFunctions %>>% dplyr::add_row(functionName = "outlierPlot",
                                    heading = "Univariate Outlier",
-                                   outAsIn = FALSE)           -> dfPredefFunctions
-dfPredefFunctions %>>% dplyr::add_row(functionName = "multiVarOutlierPlot",
+                                   outAsIn = FALSE,
+                                   engine = "r")           -> batchPredefFunctions
+batchPredefFunctions %>>% dplyr::add_row(functionName = "multiVarOutlierPlot",
                                    heading = "Multivariate Outlier",
-                                   outAsIn = FALSE)           -> dfPredefFunctions
-dfPredefFunctions %>>% dplyr::add_row(functionName = "ignoreCols",
+                                   outAsIn = FALSE,
+                                   engine = "r")           -> batchPredefFunctions
+batchPredefFunctions %>>% dplyr::add_row(functionName = "ignoreCols",
                                    heading = "",
-                                   outAsIn = TRUE)            -> dfPredefFunctions
+                                   outAsIn = TRUE,
+                                   engine = "r")            -> batchPredefFunctions
 
 ##################################################################################################
 
 ##################################################################################################
-# Working with Spark DataFrames, and Spark Structured Streaming
+# Working with Spark Structured Streaming
 ##################################################################################################
 
 ##################################################################################################
 # Kafka Streams as input
 ##################################################################################################
 
-sparkPredefFunctions <- data.frame(functionName = c("castKafkaStreamAsString"),
+structuredStreamingPredefFunctions <- data.frame(functionName = c("castKafkaStreamAsString"),
                                         heading = c(""),
                                         outAsIn = c(TRUE), stringsAsFactors = F)
 
-sparkPredefFunctions %>>% dplyr::add_row(functionName = "convertKafkaValueFromJson",
+structuredStreamingPredefFunctions %>>% dplyr::add_row(functionName = "convertKafkaValueFromJson",
                                        heading = "",
-                                       outAsIn = TRUE)           -> sparkPredefFunctions
+                                       outAsIn = TRUE)           -> structuredStreamingPredefFunctions
 
 # sparkPredefFunctions %>>% dplyr::add_row(functionName = "printStream",
 #                                        heading = "",
 #                                        outAsIn = TRUE)           -> sparkPredefFunctions
 
 
-devtools::use_data(dfPredefFunctions, sparkPredefFunctions, internal = TRUE, overwrite = T)
+devtools::use_data(batchPredefFunctions, structuredStreamingPredefFunctions, internal = TRUE, overwrite = T)
