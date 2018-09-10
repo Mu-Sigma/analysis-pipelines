@@ -18,7 +18,8 @@ Does not return a value
 The \code{AnalysisPipeline} object is saved to the file system in the paths specified
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},

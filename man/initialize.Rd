@@ -39,7 +39,8 @@ Other Package core functions for Spark: \code{\link{loadPipelineSpark}},
   \code{\link{readInputSpark}},
   \code{\link{registerFunctionSpark}}
 
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},

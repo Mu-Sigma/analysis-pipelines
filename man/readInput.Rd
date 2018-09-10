@@ -28,7 +28,8 @@ constructor - \link{initialize}
 }}
 
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},

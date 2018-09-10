@@ -63,15 +63,17 @@ setMethod(
       functionName = character(),
       heading = character(),
       outAsIn = logical(),
+      engine = character(),
       userDefined = logical()
 
     )
     .Object@output <- list()
 
-    for(rowNo in 1:nrow(dfPredefFunctions)){
-      .Object %>>% registerFunction(dfPredefFunctions[['functionName']][[rowNo]],
-                                    dfPredefFunctions[['heading']][[rowNo]],
-                                    dfPredefFunctions[['outAsIn']][[rowNo]],
+    for(rowNo in 1:nrow(batchPredefFunctions)){
+      .Object %>>% registerFunction(batchPredefFunctions[['functionName']][[rowNo]],
+                                    batchPredefFunctions[['heading']][[rowNo]],
+                                    batchPredefFunctions[['outAsIn']][[rowNo]],
+                                    batchPredefFunctions[['engine']][[rowNo]],
                                     userDefined = F) -> .Object
     }
     return(.Object)
@@ -140,6 +142,7 @@ setMethod(
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
 #' @param outAsIn whether to use original input or output from previous function
+#' @param engine specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"
 #' @param loadPipeline logical parameter to see if function is being used in loadPipeline or not
 #' @param session to load shiny session in the function
 #' @return Updated \code{AnalysisPipeline} object
@@ -148,8 +151,9 @@ setMethod(
 
 setGeneric(
   name = "registerFunction",
-  def = function(object, functionName,  heading ="", outAsIn=F, loadPipeline=F,
-                 userDefined = T, session=session)
+  def = function(object, functionName,  heading ="", outAsIn=F,
+                 engine = "r", #options are 'r', 'spark', 'python'
+                 loadPipeline=F, userDefined = T, session=session)
   {
     standardGeneric("registerFunction")
   }
@@ -158,9 +162,18 @@ setGeneric(
 setMethod(
   f = "registerFunction",
   signature = "AnalysisPipeline",
-  definition = function(object, functionName,  heading ="", outAsIn=F, loadPipeline=F,
+  definition = function(object, functionName,  heading ="", outAsIn=F, engine = "r",
+                        loadPipeline=F,
                         userDefined = T, session=session)
   {
+
+    #Define data frame class according to engine type
+    dataFrameClass <- "data.frame"
+    if(engine == "spark"){
+      dataFrameClass <- "SparkDataFrame"
+    }
+
+
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
     if(parametersName != ""){
@@ -192,8 +205,8 @@ setMethod(
                               )
                               setMethod(
                               f = \"",functionName,"\",
-                              signature = \"data.frame\",
-                              definition = function(object ",methodArg,"",methodBody,")
+                              signature = \"", dataFrameClass, "\",
+                              definition = function(object ", methodArg, "", methodBody,")
                               ")
 
     eval(parse(text = registerFunText), envir=.GlobalEnv)
@@ -201,11 +214,86 @@ setMethod(
       object@registry %>>% add_row(functionName = paste0(functionName),
                                    heading = heading,
                                    outAsIn = outAsIn,
+                                   engine = engine,
                                    userDefined = userDefined) -> object@registry
     }
     return(object)
                               }
                               )
+
+
+#' @name assessEngineSetUp
+#' @title Assesses engine (R, Spark, Python) set up
+#' @details
+#'       Assesses whether engines required for executing functions in an \code{AnalysisPipeline} object have been set up
+#' @param object object that contains input, pipeline, registry and output
+#' @return Tibble containing the details of available engines, whether they are required for a recipe, a logical reporting
+#'         whether the engine has been set up, and comments.
+#' @family Package core functions
+#' @export
+
+setGeneric(
+  name = "assessEngineSetUp",
+  def = function(object)
+  {
+    standardGeneric("assessEngineSetUp")
+  }
+)
+
+.assessEngineSetUp = function(object)
+{
+  engineAssessment <- tibble(engine = character(),
+                             requiredForPipeline = logical(),
+                             isSetup = logical(),
+                             comments = character())
+  if(nrow(object@pipeline) == 0){
+    stop("No functions have been added to the pipeline")
+  }else{
+    pipelineRegistryJoin = dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+    requiredEngines <- unique(pipelineRegistryJoin$engine)
+
+    # R
+    isRSetup <- T
+    rComments <- ""
+    engineAssessment %>>% dplyr::add_row(engine = "r",
+                                         requiredForPipeline = ifelse("r" %in% requiredEngines, T, F),
+                                         isSetup = isRSetup,
+                                         comments = rComments)           -> engineAssessment
+
+    #Spark Batch
+
+    isSparkSetup <- T
+    sparkComments <- ""
+    checkSession <- tryCatch(SparkR::sparkR.conf(), error = function(e) e)
+    if("SparkSession not initialized" %in% checkSession){
+      isSparkSetup <- F
+      sparkComments <- paste0("There does not seem to be a Spark Session initialized through SparkR ",
+                              "which is required to execute pipelines containing Spark functions. ",
+                              "Please initialize a SparkR session. The analysisPipelines::sparkRSessionCreateIfNotPresent() ",
+                              "helper function can be used.")
+    }else{
+      sparkComments <- paste0("SESSION DETAILS : ", paste0(checkSession, collapse = " "))
+    }
+
+    engineAssessment %>>% dplyr::add_row(engine = "spark",
+                                         requiredForPipeline = ifelse("spark" %in% requiredEngines, T, F),
+                                         isSetup = isSparkSetup,
+                                         comments = sparkComments)           -> engineAssessment
+
+    #TO DO -  Python
+
+  }
+
+  return(engineAssessment)
+
+}
+
+setMethod(
+  f = "assessEngineSetUp",
+  signature = "AnalysisPipeline",
+  definition = .assessEngineSetUp
+)
+
 
 
 #' @name generateReport
@@ -279,16 +367,67 @@ setGeneric(
 
 .generateOutput = function(object)
 {
-  input <- object@input
-  for(rowNo in 1:nrow(object@pipeline)){
-    if(object@pipeline[['outAsIn']][rowNo] == T && rowNo > 1){
-      #object@workingInput <- do.call(object@pipeline[['operation']][[rowNo]], append(list(input), object@pipeline[['parameters']][[rowNo]]))
-      object@workingInput <- object@output[[rowNo-1]]
-    }else{
-      object@workingInput <- input
-    }
-    object@output[[rowNo]] <- do.call(object@pipeline[['operation']][[rowNo]], append(list(object@workingInput), object@pipeline[['parameters']][[rowNo]]))
+  inputToExecute <- object@input
+
+  ## Check engine setup
+  object %>>% assessEngineSetUp ->  engineAssessment
+  engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
+
+  if(!all(requiredEngines$isSetup)){
+    stop(paste0("All engines required for the pipelines have not been configured. ",
+          "Please use the analysisPipelines::assessEngine() function to check"))
   }
+  pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+
+  if(nrow(pipelineRegistryJoin) > 0){
+    for(rowNo in 1:nrow(pipelineRegistryJoin)){
+
+      #Check engine
+
+      if(rowNo > 1){
+        prevEngine <- pipelineRegistryJoin[["engine"]][rowNo - 1]
+        currEngine <- pipelineRegistryJoin[["engine"]][rowNo]
+      }else{
+        prevEngine <- currEngine <-  pipelineRegistryJoin[["engine"]][rowNo]
+      }
+
+
+      ## Check outAsIn and engine conversion accordingly
+      if(pipelineRegistryJoin[['outAsIn.x']][rowNo] == T && rowNo > 1){
+        #object@workingInput <- do.call(object@pipeline[['operation']][[rowNo]], append(list(input), object@pipeline[['parameters']][[rowNo]]))
+        if(prevEngine != currEngine){
+
+          if(prevEngine == 'spark'){
+
+            if(currEngine == 'r'){
+              inputToExecute <- SparkR::as.data.frame(object@output[[rowNo-1]])
+            }
+
+          }else if(prevEngine == 'r'){
+            if(currEngine == "spark"){
+              inputToExecute <- SparkR::as.DataFrame(object@output[[rowNo-1]])
+            }
+
+          }
+        }else{
+          inputToExecute <- object@output[[rowNo-1]]
+        }
+      }else{
+
+          if(currEngine == 'r'){
+            inputToExecute <- object@input
+          }else if(currEngine == 'spark'){
+            inputToExecute <- SparkR::as.DataFrame(object@input)
+          }
+      }
+      object@output[[rowNo]] <- do.call(pipelineRegistryJoin[['operation']][[rowNo]],
+                                        append(list(inputToExecute),
+                                               pipelineRegistryJoin[['parameters']][[rowNo]]))
+    }
+  }else{
+    stop("No functions have been added to the pipeline")
+  }
+
   return(object)
 }
 
@@ -544,6 +683,7 @@ loadPipeline <- function(RDSPath, input=data.frame(), filePath=""){
     object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],
                                  registeredFunctions[['heading']][[rowNo]],
                                  registeredFunctions[['outAsIn']][[rowNo]],
+                                 registeredFunctions[['engine']][[rowNo]],
                                  userDefined = registeredFunctions[['userDefined']][[rowNo]],
                                  loadPipeline = T) -> object
   }

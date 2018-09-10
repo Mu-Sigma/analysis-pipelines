@@ -19,8 +19,9 @@ The sequence of operations stored in the \code{AnalysisPipeline} object are run,
       and a HTML report is generated with outputs in the same sequence as the pipeline created by the user
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}}, \code{\link{getInput}},
+  \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
   \code{\link{readInput}}, \code{\link{registerFunction}},

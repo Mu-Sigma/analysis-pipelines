@@ -26,7 +26,8 @@ Obtains a specific output from the \code{AnalysisPipeline} or \code{SparkAnalysi
      under the 'order' column in the pipeline table corresponding to the required function
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},

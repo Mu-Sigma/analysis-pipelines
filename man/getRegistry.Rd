@@ -17,7 +17,8 @@ Obtains the function registry from the \code{AnalysisPipeline} or \code{SparkAna
      including both predefined and user defined functions
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{initialize}},

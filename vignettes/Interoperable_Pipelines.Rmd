@@ -1,0 +1,97 @@
+---
+title: "Interoperable pipelines"
+author: "Naren Srinivasan"
+date: "9/10/2018"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Objective
+
+This vignette explains how pipelines containing functions operating on different engines such as R, Spark and Python can be configured and executed. Currently, the package supports interoperable pipelines containing R and Spark batch functions.
+
+
+# Loading the package
+
+```{r sourcing}
+library(analysisPipelines)
+```
+
+<br>
+
+# Creating an analysisPipeline object
+
+```{r}
+sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
+sparkMaster <- "local[1]"
+sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
+
+sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
+
+inputDataset <- SparkR::read.df(path="../inst/hotel_new.csv",source="csv",header = TRUE, inferSchema = "true")
+obj <- readInput(input = SparkR::as.data.frame(inputDataset))
+```
+
+
+
+# Registering Spark functions
+
+```{r}
+getSchema <- function(inputDataset) {
+  sparkSchema <- SparkR::schema(inputDataset)
+ return(sparkSchema)
+}
+
+sparkFilterData <- function(inputDataset, condition) {
+  filteredData <- SparkR::filter(inputDataset, condition)
+ return(filteredData)
+}
+
+rBivarPlot <- function(dataset, xVar, yVar){
+  return(plot(dataset[[xVar]], dataset[[yVar]]))
+}
+
+obj %>>% registerFunction(functionName = "getSchema", engine = "spark") -> obj
+obj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark", outAsIn = F) -> obj
+obj %>>% registerFunction(functionName = "rBivarPlot", engine = "r", outAsIn = T) -> obj
+
+obj %>>% getRegistry
+```
+
+
+```{r}
+
+
+obj %>>% getInput %>>% str
+
+obj %>>% getSchema-> obj1
+obj1 %>>% getPipeline
+obj1 %>>% generateOutput -> op1
+op1 %>>% getOuputByOrderId(1)
+
+obj %>>% getSchema %>>% sparkFilterData("Class == 'good'") -> obj2
+obj2 %>>% getPipeline
+obj2 %>>% generateOutput -> op2
+op2 %>>% getOuputByOrderId(2)
+
+
+obj %>>% rBivarPlot(xVar = "Compet_Occupancy", yVar = "Occupancy") -> obj3
+obj3 %>>% getPipeline
+obj3 %>>% generateOutput -> opWithoutFilter
+opWithoutFilter %>>% getOuputByOrderId(1)
+
+obj %>>% sparkFilterData("Class == 'good'") %>>% rBivarPlot("Compet_Occupancy", "Occupancy") -> obj4
+obj4 %>>% generateOutput -> opWithFilter
+opWithFilter %>>% getOuputByOrderId(2)
+
+
+obj4 %>>% getPipeline
+
+obj4 %>>% assessEngineSetUp
+
+
+```
+

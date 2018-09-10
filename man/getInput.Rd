@@ -16,7 +16,8 @@ Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{SparkAnaly
 Obtains the input from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
