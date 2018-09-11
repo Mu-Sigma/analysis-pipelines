@@ -81,7 +81,7 @@ bookingChannelsAnalysis <- function(inputDataset, groupByColumn) {
 
 ### Registering user defined functions to the pipeline object
 
-Each user defined function needs to be registered to the pipeline object. Post registeration, the function can be used to construct a pipeline.A pipeline can be a pipeline of multiple functions called in a particular sequence.
+Each user defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline is a set of multiple functions called in a particular sequence.
 
 ```{r}
 # Register user defined functions
@@ -100,9 +100,9 @@ pipelineObj %>>% getPipeline
 
 ### Running the pipeline and generating an output
 
-The pipeline is run by calling the `generateOutput()` function. The `output` attribute of the pipeline object contains the resultant spark dataframe(s).
+The pipeline is run by calling the `generateOutput()` function. A particular output in the sequence on evaluations can be accessed by calling the `getOutputByOrderId` function
 
-In this example the spark dataframes are converted to R dataframes to help visualizing the result.
+In this example the Spark DataFrames are converted to R dataframes to help visualize the result.
 
 ```{r fig.width=6, fig.height=3}
 pipelineObj %>% generateOutput() -> pipelineObj
@@ -122,6 +122,3 @@ bookingChannelsAnalysisResultDf
 
 ```
 
-# Conclusion
-
-This vignette successfully demonstrates usage of pipelines for running spark jobs through the SparkR interface.

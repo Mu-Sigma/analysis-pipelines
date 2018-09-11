@@ -1,28 +1,40 @@
 ---
-title: "Interoperable pipelines"
+title: "Interoperable pipelines across R and Spark"
 author: "Naren Srinivasan"
 date: "9/10/2018"
-# output: rmarkdown::html_vignette
+output: html_document
+---
+ <!-- output: rmarkdown::html_vignette -->
 <!-- vignette: > -->
 <!--   %\VignetteIndexEntry{Analysis pipelines for working with R data frames} -->
 <!--   %\VignetteEngine{knitr::rmarkdown} -->
 <!--   %\VignetteEncoding{UTF-8} -->
----
+
 
 # Objective
 
-This vignette explains how pipelines containing functions operating on different engines such as R, Spark and Python can be configured and executed. Currently, the package supports interoperable pipelines containing R and Spark batch functions.
+This vignette explains how pipelines containing functions operating on different engines such as R, Spark and Python can be configured and executed through the **analysisPipelines** package. Currently, the package supports interoperable pipelines containing R and Spark batch functions.
 
+# Introduction
 
-# Loading the package
+As the data science community matures, there are multiple tools suited for different purposes. R is typically used for data transformations, statistical models, and visualizations, while Python provides more robust functions for machine learning. In addition to this, Spark provides an environment to process high volume data - both as one-time/ batch or as streams.
+
+Recently in the data science community, interfaces for using these various tools have been published. In terms of R packages, the *reticulate* package provides an interface to Python, and the *SparkR* and *sparklyr* packages provide an interface to Spark. 
+
+The **analysisPipelines** package uses these interfaces to enable **Interoperable Pipelines** i.e. the ability define an execute a reusable data science pipeline which can contain functions to be executed in an R environment, in a Python environment or in a Spark environment. These pipelines can saved and loaded, to enable batch operation as datasets get updated with new data.
+
 
 ```{r sourcing}
 library(analysisPipelines)
 ```
 
-<br>
+# An example of an interoperable pipeline
 
-# Creating an analysisPipeline object
+In this vignette we demonstrate an interoperable pipeline built using the **analysisPipelines** package, which contains a couple of filtering/ aggregation functions performed in Spark, which is then subsequently visualized through R functions using *ggplot2*
+
+## Initializing a Spark connection from R and loading the data
+
+We initialize a Spark session using the `sparkRSessionCreateIfNotPresent` helper function in the **analysisPipelines** package, which internally uses *SparkR*. We then read the data into the Spark session using functions in the SparkR package. In this case we read a *.csv* file, though SparkR can work with multiple other data sources
 
 ```{r}
 sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
@@ -32,13 +44,24 @@ sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
 sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
 
 inputDataset <- SparkR::read.df(path="../inst/hotel_new.csv",source="csv",header = TRUE, inferSchema = "true")
+```
 
+
+## Creating an analysisPipeline object
+
+We then initialize an AnalysisPipeline, with the input dataset
+
+```{r}
 obj <- AnalysisPipeline(input = SparkR::as.data.frame(inputDataset))
 ```
 
 
 
-# Registering functions to work in the Spark environment
+## Registering functions to work in the Spark environment
+
+In order to manipulate the data in the Spark environment, we define our own functions using SparkR interface functions. We then **register** these functions with the **AnalysisPipeline** object, so that they can be used in constructing a pipeline.
+
+The `getRegistry` function lists all the registered functions, along with details such as which **engine** they should run on.
 
 ```{r}
 getSchema <- function(inputDataset) {
@@ -59,6 +82,9 @@ obj %>>% getRegistry
 ```
 
 # Registering R functions
+
+Similar to the Spark functions, we register some user-defined functions in R. In this case to plot a bivariate plot using *ggplot2*.
+
 ```{r}
 
 rBivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
@@ -144,27 +170,14 @@ obj %>>% registerFunction(functionName = "rBivarPlots", engine = "r", outAsIn = 
 obj %>>% getRegistry
 ```
 
-# Pipeline with only Spark Functions
 
-```{r}
+## Interoperable pipeline containing both R & Spark functions
 
-obj %>>% getInput %>>% str
+* Here we consider a typical use case of performing data filtering/ aggregations and so on and Spark, and then using R to perform analysis
+* We use ggplot2 in R to visualize the data that is filtered in Spark
 
-obj %>>% getSchema-> obj1
-obj1 %>>% getPipeline
-obj1 %>>% assessEngineSetUp
-obj1 %>>% generateOutput -> op1
-op1 %>>% getOuputByOrderId(1)
+We first visualize the data without filtering:
 
-obj %>>% sparkFilterData("Class == 'good'") -> obj2
-obj2 %>>% getPipeline
-obj2 %>>% assessEngineSetUp
-obj2 %>>% generateOutput -> op2
-op2 %>>% getOuputByOrderId(1)
-
-```
-
-# Pipeline with only R functions
 
 ```{r}
 
@@ -176,11 +189,7 @@ obj3 %>>% generateOutput -> opWithoutFilter
 opWithoutFilter %>>% getOuputByOrderId(1)
 ```
 
-
-# Interoperable pipeline containing both R & Spark Functions
-
-* Here we consider a typical use case of performing data filtering/ aggregations and so on and Spark, and then using R to perform analysis
-* We use ggplot2 in R to visualize the data that is filtered in Spark
+We then perform filtering on one of the variables in Spark, before visualizing in R
 
 ```{r}
 obj %>>% sparkFilterData("Class == 'good'") %>>% 
@@ -191,7 +200,8 @@ obj4 %>>% generateOutput -> opWithFilter
 opWithFilter %>>% getOuputByOrderId(2)
 ```
 
-* Next we show a case, where sequential filtering steps are performed in Spark, before visualizing in R
+Finally, we show a case, where sequential filtering steps are performed in Spark, before visualizing in R
+
 ```{r}
 obj %>>% sparkFilterData("Class == 'good'") %>>% 
   sparkFilterData("Occupancy > 0.7") %>>%
