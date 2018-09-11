@@ -38,7 +38,7 @@ obj <- AnalysisPipeline(input = SparkR::as.data.frame(inputDataset))
 
 
 
-# Registering Spark functions
+# Registering functions to work in the Spark environment
 
 ```{r}
 getSchema <- function(inputDataset) {
@@ -50,6 +50,16 @@ sparkFilterData <- function(inputDataset, condition) {
   filteredData <- SparkR::filter(inputDataset, condition)
  return(filteredData)
 }
+
+obj %>>% registerFunction(functionName = "getSchema", engine = "spark") -> obj
+obj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark", outAsIn = T) -> obj
+
+
+obj %>>% getRegistry
+```
+
+# Registering R functions
+```{r}
 
 rBivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
 
@@ -129,16 +139,14 @@ rBivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor 
   return(bivarPlot)
 }
 
-obj %>>% registerFunction(functionName = "getSchema", engine = "spark") -> obj
-obj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark", outAsIn = F) -> obj
 obj %>>% registerFunction(functionName = "rBivarPlots", engine = "r", outAsIn = T) -> obj
 
 obj %>>% getRegistry
 ```
 
+# Pipeline with only Spark Functions
 
 ```{r}
-
 
 obj %>>% getInput %>>% str
 
@@ -148,12 +156,17 @@ obj1 %>>% assessEngineSetUp
 obj1 %>>% generateOutput -> op1
 op1 %>>% getOuputByOrderId(1)
 
-obj %>>% getSchema %>>% sparkFilterData("Class == 'good'") -> obj2
+obj %>>% sparkFilterData("Class == 'good'") -> obj2
 obj2 %>>% getPipeline
 obj2 %>>% assessEngineSetUp
 obj2 %>>% generateOutput -> op2
-op2 %>>% getOuputByOrderId(2)
+op2 %>>% getOuputByOrderId(1)
 
+```
+
+# Pipeline with only R functions
+
+```{r}
 
 obj %>>% rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
                      priColor = "blue", secColor = "green") -> obj3
@@ -161,13 +174,31 @@ obj3 %>>% getPipeline
 obj3 %>>% assessEngineSetUp
 obj3 %>>% generateOutput -> opWithoutFilter
 opWithoutFilter %>>% getOuputByOrderId(1)
+```
 
+
+# Interoperable pipeline containing both R & Spark Functions
+
+* Here we consider a typical use case of performing data filtering/ aggregations and so on and Spark, and then using R to perform analysis
+* We use ggplot2 in R to visualize the data that is filtered in Spark
+
+```{r}
 obj %>>% sparkFilterData("Class == 'good'") %>>% 
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
                      priColor = "blue", secColor = "green") -> obj4
 obj4 %>>% assessEngineSetUp
 obj4 %>>% generateOutput -> opWithFilter
 opWithFilter %>>% getOuputByOrderId(2)
+```
 
+* Next we show a case, where sequential filtering steps are performed in Spark, before visualizing in R
+```{r}
+obj %>>% sparkFilterData("Class == 'good'") %>>% 
+  sparkFilterData("Occupancy > 0.7") %>>%
+  rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+                     priColor = "blue", secColor = "green") -> obj4
+obj4 %>>% assessEngineSetUp
+obj4 %>>% generateOutput -> opWithFilter
+opWithFilter %>>% getOuputByOrderId(3)
 ```
 
