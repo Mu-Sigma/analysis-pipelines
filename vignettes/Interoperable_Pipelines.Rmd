@@ -32,7 +32,8 @@ sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
 sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
 
 inputDataset <- SparkR::read.df(path="../inst/hotel_new.csv",source="csv",header = TRUE, inferSchema = "true")
-obj <- readInput(input = SparkR::as.data.frame(inputDataset))
+
+obj <- AnalysisPipeline(input = SparkR::as.data.frame(inputDataset))
 ```
 
 
@@ -50,13 +51,87 @@ sparkFilterData <- function(inputDataset, condition) {
  return(filteredData)
 }
 
-rBivarPlot <- function(dataset, xVar, yVar){
-  return(plot(dataset[[xVar]], dataset[[yVar]]))
+rBivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
+
+  numeric_cols <- unlist(getDatatype(dataset)['numeric_cols'])
+  cat_cols <- unlist(getDatatype(dataset)['cat_cols'])
+
+  if (select_var_name_1 %in% numeric_cols && select_var_name_2 %in% numeric_cols) {
+    x = dataset[, select_var_name_1]
+    y = dataset[, select_var_name_2]
+    bivarPlot <-
+      ggplot2::ggplot(dataset, ggplot2::aes(x, y)) +
+      ggplot2::geom_point(color = priColor, alpha = 0.7) +
+      ggplot2::geom_smooth(method = lm, color = secColor) +
+      ggplot2::xlab(select_var_name_1) +
+      ggplot2::ylab(select_var_name_2) + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste(
+        'Bivariate plot for',
+        select_var_name_1,
+        'and',
+        select_var_name_2,
+        sep = ' '
+      )) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 10),
+        axis.text = ggplot2::element_text(size = 10),
+        axis.title = ggplot2::element_text(size = 10)
+      )
+
+
+
+  } else if (select_var_name_1 %in% cat_cols &&
+             select_var_name_2 %in% cat_cols) {
+    new_df <- dataset %>% dplyr::group_by_(.dots=c(select_var_name_1,select_var_name_2)) %>% dplyr::summarise(n = dplyr::n())
+    colfunc <- grDevices::colorRampPalette(c(priColor, "white" , secColor))
+    colorvar <- length(unique(new_df[[select_var_name_2]]))
+    a=as.vector(as.character(unique(new_df[[select_var_name_1]])))
+    y=new_df[[select_var_name_1]]
+    label=new_df[[select_var_name_2]]
+    bivarPlot <-ggplot2::ggplot(new_df, ggplot2::aes(x = y, y= n, fill = label)) +
+      ggplot2::geom_bar(position = "dodge", stat = "identity",alpha=0.9) +
+      ggplot2::guides(fill=ggplot2::guide_legend(title=select_var_name_2)) +
+      ggplot2::coord_flip()+
+      ggplot2::xlab(select_var_name_1) +
+      ggplot2::ylab("count") + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste('Bivariate plot for',select_var_name_1,'and',select_var_name_2,sep=' '))+
+      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 10),axis.text = ggplot2::element_text(size=10),
+                     axis.title=ggplot2::element_text(size=10),legend.position="bottom",axis.text.x=ggplot2::element_text(angle=45, hjust=1))+ ggplot2::scale_fill_manual(values = colfunc(colorvar))
+
+
+  } else {
+    cols <- c(select_var_name_1, select_var_name_2)
+    cat_col <- cols[which(cols %in% cat_cols)]
+    num_col <- cols[which(cols %in% numeric_cols)]
+    a = as.vector(as.character(unique(dataset[[cat_col]])))
+    y = dataset[[cat_col]]
+    x = dataset[[num_col]]
+    bivarPlot <-
+      ggplot2::ggplot(dataset, ggplot2::aes(x = y, y = x)) +
+      ggplot2::geom_point(color = priColor, alpha = 0.7) +
+      ggplot2::coord_flip() +
+      ggplot2::xlab(cat_col) +
+      ggplot2::ylab(num_col) + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste(
+        'Bivariate plot for',
+        select_var_name_1,
+        'and',
+        select_var_name_2,
+        sep = ' '
+      )) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 10),
+        axis.text = ggplot2::element_text(size = 10),
+        axis.title = ggplot2::element_text(size = 10)
+      )
+  }
+
+  return(bivarPlot)
 }
 
 obj %>>% registerFunction(functionName = "getSchema", engine = "spark") -> obj
 obj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark", outAsIn = F) -> obj
-obj %>>% registerFunction(functionName = "rBivarPlot", engine = "r", outAsIn = T) -> obj
+obj %>>% registerFunction(functionName = "rBivarPlots", engine = "r", outAsIn = T) -> obj
 
 obj %>>% getRegistry
 ```
@@ -69,29 +144,30 @@ obj %>>% getInput %>>% str
 
 obj %>>% getSchema-> obj1
 obj1 %>>% getPipeline
+obj1 %>>% assessEngineSetUp
 obj1 %>>% generateOutput -> op1
 op1 %>>% getOuputByOrderId(1)
 
 obj %>>% getSchema %>>% sparkFilterData("Class == 'good'") -> obj2
 obj2 %>>% getPipeline
+obj2 %>>% assessEngineSetUp
 obj2 %>>% generateOutput -> op2
 op2 %>>% getOuputByOrderId(2)
 
 
-obj %>>% rBivarPlot(xVar = "Compet_Occupancy", yVar = "Occupancy") -> obj3
+obj %>>% rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+                     priColor = "blue", secColor = "green") -> obj3
 obj3 %>>% getPipeline
+obj3 %>>% assessEngineSetUp
 obj3 %>>% generateOutput -> opWithoutFilter
 opWithoutFilter %>>% getOuputByOrderId(1)
 
-obj %>>% sparkFilterData("Class == 'good'") %>>% rBivarPlot("Compet_Occupancy", "Occupancy") -> obj4
+obj %>>% sparkFilterData("Class == 'good'") %>>% 
+  rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+                     priColor = "blue", secColor = "green") -> obj4
+obj4 %>>% assessEngineSetUp
 obj4 %>>% generateOutput -> opWithFilter
 opWithFilter %>>% getOuputByOrderId(2)
-
-
-obj4 %>>% getPipeline
-
-obj4 %>>% assessEngineSetUp
-
 
 ```
 

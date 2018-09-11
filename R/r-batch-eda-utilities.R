@@ -13,7 +13,7 @@
 #' @name ignoreCols
 #' @title Ignores the columns in the loaded dataframe object
 #' @details The columns selected are removed from the object
-#' @param data the dataframe object that needs to be loaded 
+#' @param data the dataframe object that needs to be loaded
 #' @param columns the names of columns to be ignored from dataframe object
 #' @return Updated dataframe object
 #' @family Package EDA Utilites functions
@@ -34,7 +34,7 @@ ignoreCols <- function(data, columns){
 }
 
 # Univariate Categoric Distribution function
-#' @name univarCatDistPlots 
+#' @name univarCatDistPlots
 #' @title Univariate Categoric Distribution
 #' @details A univariate distribution graph on the selected categorical columns from the dataframe
 #' @param uniCol the name of column on which the plot needs to be generated
@@ -46,7 +46,7 @@ ignoreCols <- function(data, columns){
 univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
   levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
   data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
-  data <- data %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = n())
+  data <- data %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = dplyr::n())
   y=data[[uniCol]]
   catPlot <- ggplot2::ggplot(data,
                              ggplot2::aes(x = reorder(y, count), y=count)) +
@@ -68,17 +68,17 @@ univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
   return(catPlot)
 }
 
-#Outlier Plot Function 
-#' @name outlierPlot 
+#Outlier Plot Function
+#' @name outlierPlot
 #' @title Outlier detection plot
 #' @details Outlier are to be identified on the selected column from the dataframe
-#' @param data the dataframe that needs to be loaded 
+#' @param data the dataframe that needs to be loaded
 #' @param method the method on which outliers are to be identified
 #' @param columnName the name of column for which the outliers are identified
 #' @param cutoffValue the cut off value to define the threshold for outliers
 #' @param priColor the primary color for the plots
 #' @param optionalPlots A Flag for optional plots
-#' @return Outliers plot object 
+#' @return Outliers plot object
 #' @family Package EDA Utilites functions
 #' @export
 outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlots){
@@ -134,13 +134,13 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
 #' @name multiVarOutlierPlot
 #' @title Multi-Variate Outlier Plot
 #' @details Multivaraite outlier plot using the selected columns from the dataframe
-#' @param data the dataframe that needs to be loaded 
+#' @param data the dataframe that needs to be loaded
 #' @param depCol the name of column which is to be identified as dependent column
 #' @param indepCol the name of an independent column
 #' @param sizeCol the name of column used to define the size of point in plots
 #' @param priColor the primary color for the plots
 #' @param optionalPlots A Flag for optional plots
-#' @return Outliers plot 
+#' @return Outliers plot
 #' @family Package EDA Utilites functions
 #' @export
 multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalPlots){
@@ -168,12 +168,12 @@ multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalP
 #' @name bivarPlots
 #' @title Bi-Variate Plot
 #' @details A bivariate distribution graph on the selected columns from the dataframe.Selected two columns are on two axis' and a plot is generated
-#' @param dataset the dataframe that needs to be loaded 
+#' @param dataset the dataframe that needs to be loaded
 #' @param select_var_name_1 the name of first column on which the plot needs to be generated
 #' @param select_var_name_2 the name of second column on which the plot needs to be generated
 #' @param priColor the primary color for the plots
 #' @param secColor A secondary color for the plots
-#' @return Bivariate plot 
+#' @return Bivariate plot
 #' @family Package EDA Utilites functions
 #' @export
 bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
@@ -207,7 +207,7 @@ bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor =
 
   } else if (select_var_name_1 %in% cat_cols &&
              select_var_name_2 %in% cat_cols) {
-    new_df <- dataset %>% dplyr::group_by_(.dots=c(select_var_name_1,select_var_name_2)) %>% dplyr::summarise(n = n())
+    new_df <- dataset %>% dplyr::group_by_(.dots=c(select_var_name_1,select_var_name_2)) %>% dplyr::summarise(n = dplyr::n())
     colfunc <- grDevices::colorRampPalette(c(priColor, "white" , secColor))
     colorvar <- length(unique(new_df[[select_var_name_2]]))
     a=as.vector(as.character(unique(new_df[[select_var_name_1]])))
@@ -258,7 +258,7 @@ bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor =
 #' @name correlationMatPlot
 #' @title Correlation Matrix Plot
 #' @description A correlation matrix is created and plotted across all the columns in the dataset
-#' @param dataset the dataset that needs to be loaded 
+#' @param dataset the dataset that needs to be loaded
 #' @return Correlation Matrix graph
 #' @family Package EDA Utilites functions
 #' @export
@@ -292,7 +292,7 @@ correlationMatPlot <- function(dataset, methodused = "everything"){
 ## Return the column type
 
 #' @name CheckColumnType
-#' @title Check for type of column 
+#' @title Check for type of column
 #' @details Checking for type of columns in the datavector
 #' @param dataVector a data vector of a column
 #' @return column Type

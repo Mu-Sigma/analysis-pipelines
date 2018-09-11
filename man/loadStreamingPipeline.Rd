@@ -23,7 +23,7 @@ The \code{StreamingAnalysisPipeline} object is loaded into the file system from 
       based on the path specified.
 }
 \seealso{
-Other Package core functions for Streaming Analyses: \code{\link{initialize}},
-  \code{\link{readStreamingInput}},
+Other Package core functions for Streaming Analyses: \code{\link{StreamingAnalysisPipeline}},
+  \code{\link{initialize}},
   \code{\link{registerStreamingFunction}}
 }

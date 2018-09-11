@@ -1,5 +1,5 @@
 ---
-title: "Analysis pipelines for working with SparkR"
+title: "Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses"
 author: "Naren S, Anoop S"
 date: "09/04/2018"
 # output: rmarkdown::html_vignette
@@ -10,15 +10,16 @@ date: "09/04/2018"
 ---
 # Objective
 
-The vignette aims to show examples of using SparkR as an interface to run spark jobs through R - using the pipelines package. The major use cases can be categorized as:<br>
+The vignette aims to show examples of using SparkR as an interface to run one-time/batch spark jobs through R - using the analysisPipelines package. The major use cases can be categorized as:<br>
 
-* Implement a pipeline using SparkR dataframes for generic spark jobs
-* Implement a pipeline using SparkR dataframes for streaming use cases
+* Implement a pipeline using SparkR, to work on Spark DataFrames for one-time/batchtch Spark jobs
 
-## Pipelines for generic spark jobs using SparkR
-Spark clusters can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. This example illustrates usage of pipeline functions to run spark jobs using SparkR
+## Pipelines for batch spark jobs using SparkR
+
+Spark clusters can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. This example illustrates usage of pipeline functions to run one-time/batch Spark jobs using the analysisPipelines package
 
 ### Initialize libraries
+
 * Initialize the analysisPipelines and SparkR libraries
 * Ensure you have a local installation of spark and SparkR package is installed
 * Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
@@ -26,9 +27,13 @@ Spark clusters can be leveraged to process large volumes of distributed data tha
 library(ggplot2)
 library(analysisPipelines)
 library(SparkR)
+
+sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
+sparkMaster <- "local[1]"
+sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
 # Set spark home variable if not present
 if(Sys.getenv("SPARK_HOME") == "") {
-  Sys.setenv(SPARK_HOME = "/home/anoop/software/spark-2.3.1-bin-hadoop2.7/")  
+  Sys.setenv(SPARK_HOME = sparkHome)  
 }
 ```
 
@@ -38,15 +43,14 @@ if(Sys.getenv("SPARK_HOME") == "") {
 * Connect to the cluster using the package's `sparkRSessionCreateIfNotPresent` function
 
 ```{r}
-sparkMaster <- "local[1]"
-sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1"))
+sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = sparkPackages)
 ```
 
 ### Read data from csv and initialize spark pipeline object
 Spark can connect to datasources like Hive, Kafka. Besides, it also also read parquet, json and csv files. In this example we will read a csv file.
 ```{r}
 inputDataset <- read.df(path="../inst/hotel_new.csv",source="csv",header = TRUE, inferSchema = "true")
-pipelineObj <- readInputSpark(input = inputDataset)
+pipelineObj <- AnalysisPipeline(input = SparkR::as.data.frame(inputDataset))
 ```
 
 ### User defined spark functions
@@ -81,16 +85,17 @@ Each user defined function needs to be registered to the pipeline object. Post r
 
 ```{r}
 # Register user defined functions
-pipelineObj <- pipelineObj %>>% registerFunctionSpark("occupanyAnalysis", "Occupany analysis",outAsIn = F)  %>>%
-  registerFunctionSpark("bookingChannelsAnalysis", "Booking channels analysis",outAsIn = F)
+pipelineObj <- pipelineObj %>>% registerFunction("occupanyAnalysis", "Occupany analysis",outAsIn = F,
+                                                 engine = "spark")  %>>%
+  registerFunction("bookingChannelsAnalysis", "Booking channels analysis", outAsIn = F,
+                                                 engine = "spark")
 # List al registered functions 
-print("Registry")
-print(pipelineObj@registry)
+pipelineObj %>>% getRegistry
 
 # Define pipeline from list of registered functions
 pipelineObj %>% occupanyAnalysis(groupByColumn = "location_type") %>% bookingChannelsAnalysis(groupByColumn = "location_type") -> pipelineObj
-print("pipeline")
-print(pipelineObj@pipeline)
+
+pipelineObj %>>% getPipeline
 ```
 
 ### Running the pipeline and generating an output
@@ -103,156 +108,18 @@ In this example the spark dataframes are converted to R dataframes to help visua
 pipelineObj %>% generateOutput() -> pipelineObj
 
 # Show occupancy analysis result
-occpancyAnalysisResult <- pipelineObj@output[[1]]
+occpancyAnalysisResult <- pipelineObj %>>% getOuputByOrderId(1)
 occpancyAnalysisResultDf <- as.data.frame(occpancyAnalysisResult)
-print(occpancyAnalysisResultDf)
+occpancyAnalysisResultDf
+
 # ggplot(occpancyAnalysisResultDf) + geom_col(aes(location_type, avgOccupancy, color=location_type)) 
 
 # Show booking channels analysis result
-bookingChannelsAnalysisResult <- pipelineObj@output[[2]]
+bookingChannelsAnalysisResult <- pipelineObj %>>% getOuputByOrderId(2)
 bookingChannelsAnalysisResultDf <- as.data.frame(bookingChannelsAnalysisResult)
-print(bookingChannelsAnalysisResultDf)
+bookingChannelsAnalysisResultDf
 # ggplot(bookingChannelsAnalysisResultDf) + geom_col(aes(location_type, avgCallCenterBookingPct, color=location_type)) + scale_y_continuous(labels = scales::percent)
 
-```
-
-## Pipelines for structured streaming using SparkR
-
-This example illustrates usage of pipelines for a streaming application. In this use case streaming data is read from Kafka, aggregations are performed and the output is written to the console.
-
-### Read stream from Kafka
-
-Read streaming data from Kafka.
-
-```{r}
-kafkaBootstrapServers <- "172.25.0.144:9092,172.25.0.98:9092,172.25.0.137:9092"
-consumerTopic <- "netlogo"
-streamObj <- read.stream(source = "kafka", kafka.bootstrap.servers = kafkaBootstrapServers, subscribe = consumerTopic, startingOffsets="earliest")
-printSchema(streamObj)
-```
-
-### User defined spark functions
-
-Users can define their own functions and use it as a part of the pipeline. These functions range from data prep, agrregations, casting data to suitable write stream format, etc.
-
-```{r}
-
-# Function to convert datatype json struct to colums
-convertStructToDf <- function(streamObj) {
-  streamObj <- select(streamObj,list(getField(streamObj$`jsontostructs(value)`,"bannerId"),
-                                   getField(streamObj$`jsontostructs(value)`,"mobile"),
-                                   getField(streamObj$`jsontostructs(value)`,"homeAppliance"),
-                                   getField(streamObj$`jsontostructs(value)`,"gamingConsole"),
-                                   getField(streamObj$`jsontostructs(value)`,"accessories"),
-                                   getField(streamObj$`jsontostructs(value)`,"brand"),
-                                   getField(streamObj$`jsontostructs(value)`,"previousPrice"),
-                                   getField(streamObj$`jsontostructs(value)`,"currentPrice"),
-                                   getField(streamObj$`jsontostructs(value)`,"discount"),
-                                   getField(streamObj$`jsontostructs(value)`,"emi"),
-                                   getField(streamObj$`jsontostructs(value)`,"crossSale"),
-                                   getField(streamObj$`jsontostructs(value)`,"customerId"),
-                                   getField(streamObj$`jsontostructs(value)`,"ts"),
-                                   getField(streamObj$`jsontostructs(value)`,"click"),
-                                   getField(streamObj$`jsontostructs(value)`,"conversion"),
-                                   getField(streamObj$`jsontostructs(value)`,"age"),
-                                   getField(streamObj$`jsontostructs(value)`,"income"),
-                                   getField(streamObj$`jsontostructs(value)`,"maritalStatus"),
-                                   getField(streamObj$`jsontostructs(value)`,"segment")))
-  colnames(streamObj) <- c("bannerId","mobile","homeAppliance","gamingConsole","accessories","brand","previousPrice","currentPrice",
-                           "discount","emi","crossSale","customerId","ts","click","conversion","age","income","maritalStatus","segment")
-  return(streamObj)
-}
-
-# Function to cast columns as string, integer, etc
-castDfColumns <- function(streamObj) {
-  streamObj <- selectExpr(streamObj, "bannerId","mobile","homeAppliance","gamingConsole","accessories","brand",
-                          "CAST(previousPrice as INTEGER)","CAST(currentPrice as INTEGER)","CAST(discount as INTEGER)","emi",
-                          "crossSale","customerId","ts","CAST(click as INTEGER)","CAST(conversion as INTEGER)",
-                          "CAST(age as INTEGER)","CAST(income as INTEGER)","maritalStatus","segment")
-  streamObj$ts <- to_timestamp(streamObj$ts,"yyyy-MM-dd HH:mm:ss")
-  return (streamObj)
-}
-
-# Function to convert datatype json struct to colums
-convertDfToKafkaKeyValuePairs <- function (streamObj, kafkaKey) {
-  streamObj <- toJSON(streamObj)
-  streamObj$key <- kafkaKey
-  return(streamObj)
-}
-
-# Function to summarize click stream data
-globalUiMetrics <- function (streamObj) {
-  ## Aggregation query
-  streamObj <- summarize(groupBy(streamObj,streamObj$bannerId),
-                         impressions=count(streamObj$customerId),
-                         clicks=sum(streamObj$click),
-                         conversions=sum(streamObj$conversion))
-  colnames(streamObj) <- c("banner_id","impressions","clicks","conversions")
-  return (streamObj)
-}
-
-```
-
-### Define pipeline object, register user defined functions to the pipeline object
-
-In order to use pipelines, a pipeline object needs to be defined. Notice the spark pipelines are defined using the `readInputSpark` function.
-
-Each user defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline can be a pipeline of multiple functions called in a particular sequence.
-
-```{r}
-# Define pipeline object
-pipelineObj <- analysisPipelines::readInputSpark(input = streamObj)
-
-consumerDataSchema <- structType(structField("bannerId", "string"),
-                                 structField("mobile", "string"),
-                                 structField("homeAppliance", "string"),
-                                 structField("gamingConsole", "string"),
-                                 structField("accessories", "string"),
-                                 structField("brand", "string"),
-                                 structField("previousPrice", "string"),
-                                 structField("currentPrice", "string"),
-                                 structField("discount", "string"),
-                                 structField("emi", "string"),
-                                 structField("crossSale", "string"),
-                                 structField("customerId", "string"),
-                                 structField("ts", "string"),
-                                 structField("click", "string"),
-                                 structField("conversion", "string"),
-                                 structField("age", "string"),
-                                 structField("income", "string"),
-                                 structField("maritalStatus", "string"),
-                                 structField("segment", "string"))
-
-# Register user defined functions
-pipelineObj <- pipelineObj %>>% registerFunctionSpark("convertStructToDf", "",outAsIn = T)  %>>%
-  registerFunctionSpark("castDfColumns", "",outAsIn = T) %>>%
-  registerFunctionSpark("globalUiMetrics", "",outAsIn = T) %>>%
-  registerFunctionSpark("convertDfToKafkaKeyValuePairs", "",outAsIn = T)
-print(pipelineObj@registry)
-
-# Define pipeline 
-# Do data prep
-pipelineObj %>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = consumerDataSchema) %>% convertStructToDf %>% castDfColumns -> pipelineObj
-# Perform analytical operations
-pipelineObj %>% globalUiMetrics -> pipelineObj
-print(pipelineObj@pipeline)
-```
-
-### Running the pipeline and generating an output
-
-The pipeline is run by calling the `generateOutput()` function. The `output` attribute of the pipeline object contains the resultant spark dataframe(s).
-
-In this example the spark dataframes are converted to R dataframes to help visualizing the result.
-
-
-```{r}
-
-## Run pipeline
-pipelineObj %>% generateOutput() -> pipelineObj
-
-## Write to output stream
-streamObj <- pipelineObj@output[[length(pipelineObj@output)]]
-write.stream(streamObj, 'console',outputMode = "complete")
 ```
 
 # Conclusion

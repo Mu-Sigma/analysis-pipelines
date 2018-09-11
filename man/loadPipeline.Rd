@@ -27,12 +27,12 @@ Optionally, the \code{input} parameter can be provided to
       \code{input} parameter
 }
 \seealso{
-Other Package core functions: \code{\link{assessEngineSetUp}},
+Other Package core functions: \code{\link{AnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
   \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{readInput}},
-  \code{\link{registerFunction}},
+  \code{\link{initialize}}, \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

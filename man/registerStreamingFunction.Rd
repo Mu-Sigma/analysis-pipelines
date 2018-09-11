@@ -31,7 +31,7 @@ The specified operation along with the heading and parameters is updated in the 
       is used to register functions which are designed to operate on Spark Structured Streaming DataFrames
 }
 \seealso{
-Other Package core functions for Streaming Analyses: \code{\link{initialize}},
-  \code{\link{loadStreamingPipeline}},
-  \code{\link{readStreamingInput}}
+Other Package core functions for Streaming Analyses: \code{\link{StreamingAnalysisPipeline}},
+  \code{\link{initialize}},
+  \code{\link{loadStreamingPipeline}}
 }

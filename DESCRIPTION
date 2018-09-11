@@ -2,7 +2,7 @@ Package: analysisPipelines
 Type: Package
 Title: Put analyis reports and pipelines into production
 Version: 0.1.0
-Authors@R:c(
+Authors@R: c(
       person("Naren","Srinivasan", email = "Naren.Srinivasan@mu-sigma.com", role = c("cre","aut")),
       person("Neeratyoy","Mallik", email = "Neeratyoy.Mallik@mu-sigma.com", role = c("aut")),
 		  person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("aut")),
@@ -21,3 +21,9 @@ LazyLoad: yes
 LazyData: yes
 RoxygenNote: 6.0.1
 VignetteBuilder: knitr
+Collate: 
+    'analysisPipelines_package.R'
+    'core-streaming-functions.R'
+    'core-functions.R'
+    'r-batch-eda-utilities.R'
+    'spark-structured-streaming-utilities.R'

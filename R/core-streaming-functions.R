@@ -5,7 +5,7 @@
 # Description: An R package version - Currently supports Apache Spark Structured Streaming
 ##################################################################################################
 
-#' @name readStreamingInput
+#' @name StreamingAnalysisPipeline
 #' @title Function to initialize \code{StreamingAnalysisPipeline} class with the input Spark DataFrame
 #' @details The class which holds the metadata including the registry of available functions,
 #' the data on which the pipeline is to be applied, as well as the pipeline itself
@@ -17,10 +17,10 @@
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
 #' @family Package core functions for Streaming Analyses
-#' @export readStreamingInput
+#' @export StreamingAnalysisPipeline
 #' @exportClass StreamingAnalysisPipeline
 
-readStreamingInput <- setClass("StreamingAnalysisPipeline",
+StreamingAnalysisPipeline <- setClass("StreamingAnalysisPipeline",
                            slots = c(
                              input = "SparkDataFrame",
                              workingInput = "SparkDataFrame",
@@ -64,7 +64,7 @@ setMethod(
     )
 
     for(rowNo in 1:nrow(streamingPredefFunctions)){
-      .Object %>>% registerFunctionSpark(streamingPredefFunctions[['functionName']][[rowNo]],
+      .Object %>>% registerStreamingFunction(streamingPredefFunctions[['functionName']][[rowNo]],
                                          streamingPredefFunctions[['heading']][[rowNo]],
                                          streamingPredefFunctions[['outAsIn']][[rowNo]],
                                          streamingPredefFunctions[['engine']][[rowNo]],
@@ -185,3 +185,39 @@ loadStreamingPipeline <- function(RDSPath, input){
   }
   return(object)
 }
+
+
+.generateStreamingOutput = function(object)
+{
+  inputToExecute <- object@input
+
+  ## Check engine setup
+  object %>>% assessEngineSetUp ->  engineAssessment
+  engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
+
+  if(!all(requiredEngines$isSetup)){
+    stop(paste0("All engines required for the pipelines have not been configured. ",
+                "Please use the analysisPipelines::assessEngine() function to check"))
+  }
+  pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+
+  if(nrow(pipelineRegistryJoin) > 0){
+    for(rowNo in 1:nrow(pipelineRegistryJoin)){
+
+      ## Check outAsIn and engine conversion accordingly
+      if(pipelineRegistryJoin[['outAsIn.x']][rowNo] == T && rowNo > 1){
+          inputToExecute <- object@output[[rowNo-1]]
+      }else{
+          inputToExecute <- object@input
+      }
+      object@output[[rowNo]] <- do.call(pipelineRegistryJoin[['operation']][[rowNo]],
+                                        append(list(inputToExecute),
+                                               pipelineRegistryJoin[['parameters']][[rowNo]]))
+    }
+  }else{
+    stop("No functions have been added to the pipeline")
+  }
+
+  return(object)
+}
+
