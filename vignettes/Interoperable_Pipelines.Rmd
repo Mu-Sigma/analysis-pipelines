@@ -214,3 +214,40 @@ opWith2Filters %>>% getOuputByOrderId(3)
 
 
 
+## Saving and reloading the pipeline
+
+First, we save the pipeline
+
+```{r}
+twoFilterPipeline %>>% savePipeline(RDSPath = "~/Downloads/twoFilterPipeline.Rda")
+```
+
+Then, we clear the R environment and restart the R session
+
+```{r}
+rm(list=ls(all=TRUE)) # Remove all objects in the R environment
+#.rs.restartR()
+```
+
+We then reload the package, and start the Spark connection
+
+```{r sourcing}
+library(analysisPipelines)
+sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
+sparkMaster <- "local[1]"
+sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
+
+sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
+
+inputDataset <- SparkR::read.df(path=system.file("hotel_new.csv", package = "analysisPipelines"),source="csv",header = TRUE, inferSchema = "true")
+```
+
+Then, we load the pipeline and execute on the new data which is the just the first hundred rows of the original dataset 
+
+```{r}
+pipelineObjLoaded <- loadPipeline(RDSPath = "~/Downloads/testing1.Rda", 
+                                  input = SparkR::as.data.frame(inputDataset)[1:100,])
+
+pipelineObjLoaded %>>% generateOutput()
+```
+

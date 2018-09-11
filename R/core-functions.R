@@ -498,7 +498,12 @@ setGeneric(
 .savePipeline = function(object, RDSPath){
   object@output <- list()
   object@input <- data.frame()
-  saveRDS(object, RDSPath)
+  listToBeSaved <- c("object", object@registry$functionName)
+  #saveRDS(object, RDSPath2)
+  #readRDS(file = RDSPath2)
+  save(list = listToBeSaved,file = RDSPath)
+  #load(file = RDSPath)
+  #saveRDS(object, RDSPath)
 }
 
 setMethod(
@@ -691,22 +696,27 @@ setMethod(
 #' @export
 
 loadPipeline <- function(RDSPath, input=data.frame(), filePath=""){
-  object <- readRDS(RDSPath)
+  #object <- readRDS(RDSPath)
+  load(RDSPath, envir = environment())
+  functionNames = setdiff(ls(envir = environment()), "object")
+  lapply(functionNames, function(x){
+    assign(x, get(x, environment()), globalenv())
+  })
   if(filePath == ""){
     object@input <- input
   }
   else{
-    object@input <- read.csv(filePath)
+    object@input <- read.csv(filesPath)
   }
   registeredFunctions <- object@registry
-  for(rowNo in 1:nrow(registeredFunctions)){
-    object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],
-                                 registeredFunctions[['heading']][[rowNo]],
-                                 registeredFunctions[['outAsIn']][[rowNo]],
-                                 registeredFunctions[['engine']][[rowNo]],
-                                 userDefined = registeredFunctions[['userDefined']][[rowNo]],
-                                 loadPipeline = T) -> object
-  }
+  # for(rowNo in 1:nrow(registeredFunctions)){
+  #   object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],
+  #                                registeredFunctions[['heading']][[rowNo]],
+  #                                registeredFunctions[['outAsIn']][[rowNo]],
+  #                                registeredFunctions[['engine']][[rowNo]],
+  #                                userDefined = registeredFunctions[['userDefined']][[rowNo]],
+  #                                loadPipeline = T) -> object
+  # }
   return(object)
 }
 
