@@ -16,12 +16,13 @@ Tibble describing the pipeline
 Obtains the pipeline from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble
 }
 \seealso{
-Other Package core functions: \code{\link{assessEngineSetUp}},
+Other Package core functions: \code{\link{AnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
   \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getRegistry}}, \code{\link{initialize}},
-  \code{\link{loadPipeline}}, \code{\link{readInput}},
+  \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

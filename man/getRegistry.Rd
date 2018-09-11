@@ -17,12 +17,13 @@ Obtains the function registry from the \code{AnalysisPipeline} or \code{Streamin
      including both predefined and user defined functions
 }
 \seealso{
-Other Package core functions: \code{\link{assessEngineSetUp}},
+Other Package core functions: \code{\link{AnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
   \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{initialize}},
-  \code{\link{loadPipeline}}, \code{\link{readInput}},
+  \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

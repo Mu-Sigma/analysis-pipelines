@@ -6,7 +6,7 @@
 #              Spark DataFrames including Structured Streaming
 ##################################################################################################
 
-#' @name readInput
+#' @name AnalysisPipeline
 #' @title Function to initialize \code{AnalysisPipeline} class with the input data frame
 #' @details The class which holds the metadata including the registry of available functions,
 #' the data on which the pipeline is to be applied, as well as the pipeline itself
@@ -19,10 +19,10 @@
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
 #' @family Package core functions
-#' @export readInput
+#' @export AnalysisPipeline
 #' @exportClass AnalysisPipeline
 
-readInput <- setClass("AnalysisPipeline",
+AnalysisPipeline <- setClass("AnalysisPipeline",
                        slots = c(
                          input = "data.frame",
                          filePath = "character",
@@ -231,6 +231,7 @@ setMethod(
 #' @param object object that contains input, pipeline, registry and output
 #' @return Tibble containing the details of available engines, whether they are required for a recipe, a logical reporting
 #'         whether the engine has been set up, and comments.
+#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -262,7 +263,7 @@ setGeneric(
                                          isSetup = isRSetup,
                                          comments = rComments)           -> engineAssessment
 
-    #Spark Batch
+    #Spark Batch and Structured Streaming
 
     isSparkSetup <- T
     sparkComments <- ""
@@ -282,6 +283,11 @@ setGeneric(
                                          isSetup = isSparkSetup,
                                          comments = sparkComments)           -> engineAssessment
 
+    engineAssessment %>>% dplyr::add_row(engine = "spark-structured-streaming",
+                                         requiredForPipeline = ifelse("spark-structured-streaming" %in% requiredEngines, T, F),
+                                         isSetup = isSparkSetup,
+                                         comments = sparkComments)           -> engineAssessment
+
     #TO DO -  Python
 
   }
@@ -293,6 +299,12 @@ setGeneric(
 setMethod(
   f = "assessEngineSetUp",
   signature = "AnalysisPipeline",
+  definition = .assessEngineSetUp
+)
+
+setMethod(
+  f = "assessEngineSetUp",
+  signature = "StreamingAnalysisPipeline",
   definition = .assessEngineSetUp
 )
 
@@ -356,6 +368,7 @@ setMethod(
 #'       are run and outputs generated, stored in a list
 #' @param object object that contains input, pipeline, registry and output
 #' @return A list of the outputs in the sequence in which the pipeline was created
+#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -439,11 +452,11 @@ setMethod(
   definition = .generateOutput
 )
 
-# setMethod(
-#   f = "generateOutput",
-#   signature = "StreamingAnalysisPipeline",
-#   definition = .generateOutput
-# )
+setMethod(
+  f = "generateOutput",
+  signature = "StreamingAnalysisPipeline",
+  definition = .generateStreamingOutput
+)
 
 setMethod(
   f = "generateOutput",
@@ -470,6 +483,7 @@ setMethod(
 #' @param object object that contains input, pipeline, registry and output
 #' @param RDSPath the path at which the .RDS file containing the pipeline should be stored
 #' @return Does not return a value
+#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -506,6 +520,7 @@ setMethod(
 #' @details
 #'      Obtains the pipeline from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble
 #' @return Tibble describing the pipeline
+#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -541,6 +556,7 @@ setMethod(
 #'      Obtains the function registry from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble,
 #'      including both predefined and user defined functions
 #' @return Tibble describing the registry
+#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -574,6 +590,7 @@ setMethod(
 #' @details
 #'      Obtains the input from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @return Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{StreamingAnalysisPipeline}
+#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -614,6 +631,7 @@ setMethod(
 #' @return If includeCall = T, it is a list containing to elements
 #'         - call: tibble with 1 row containing the function call for the output desired
 #'         - output: output generated
+#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 

@@ -2,7 +2,7 @@
 library(analysisPipelines)
 
 ## ----creating object, warning=F------------------------------------------
-obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
+obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 class(obj)
 
 ## ----printing object contents, warning=F---------------------------------
@@ -29,7 +29,7 @@ obj %>>% getPipeline
 length(obj@output)
 
 ## ----lazy eval 2, warning=F----------------------------------------------
-obj1 <- obj %>>% generateOutput()
+obj1 <- obj %>>% generateOutput
 length(obj1@output)
 
 ## ----lazy eval 2.5, warning=F--------------------------------------------

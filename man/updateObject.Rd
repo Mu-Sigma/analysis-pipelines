@@ -26,12 +26,13 @@ The specified operation along with the heading and parameters is updated in the 
      to be performed is stored
 }
 \seealso{
-Other Package core functions: \code{\link{assessEngineSetUp}},
+Other Package core functions: \code{\link{AnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
   \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
-  \code{\link{readInput}}, \code{\link{registerFunction}},
+  \code{\link{registerFunction}},
   \code{\link{savePipeline}}
 }

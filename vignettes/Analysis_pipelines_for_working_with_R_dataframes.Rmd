@@ -46,7 +46,7 @@ The analysisPipelines package has been written as per R's S4 object system stand
 To work with the package, one needs to call the constructor by specifying a file as an input.
 
 ```{r creating object, warning=F}
-obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
+obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 class(obj)
 ```
 
@@ -102,7 +102,7 @@ length(obj@output)
 However, a specific function call can generate the output of the pipeline stored in the object. Which is then stored in the <i>output</i> attribute of the object.
 
 ```{r lazy eval 2, warning=F}
-obj1 <- obj %>>% generateOutput()
+obj1 <- obj %>>% generateOutput
 length(obj1@output)
 ```
 

@@ -17,11 +17,12 @@ The sequence of operations stored in the\code{AnalysisPipeline} or \code{Streami
       are run and outputs generated, stored in a list
 }
 \seealso{
-Other Package core functions: \code{\link{assessEngineSetUp}},
+Other Package core functions: \code{\link{AnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
-  \code{\link{readInput}}, \code{\link{registerFunction}},
+  \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

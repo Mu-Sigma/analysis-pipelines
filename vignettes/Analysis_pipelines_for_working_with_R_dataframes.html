@@ -102,7 +102,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="creating-an-analysispipeline-object" class="section level1">
 <h1>Creating an analysisPipeline object</h1>
 <p>The analysisPipelines package has been written as per R’s S4 object system standard. <br> To work with the package, one needs to call the constructor by specifying a file as an input.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">obj &lt;-<span class="st"> </span><span class="kw">readInput</span>(<span class="dt">filePath =</span> <span class="kw">system.file</span>(<span class="st">&quot;hotel_new.csv&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;analysisPipelines&quot;</span>)) </code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">obj &lt;-<span class="st"> </span><span class="kw">AnalysisPipeline</span>(<span class="dt">filePath =</span> <span class="kw">system.file</span>(<span class="st">&quot;hotel_new.csv&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;analysisPipelines&quot;</span>)) </code></pre></div>
 <pre><code>## Creating a new generic function for 'univarCatDistPlots' in the global environment</code></pre>
 <pre><code>## Creating a new generic function for 'outlierPlot' in the global environment</code></pre>
 <pre><code>## Creating a new generic function for 'multiVarOutlierPlot' in the global environment</code></pre>
@@ -147,13 +147,13 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 ##  $ direct_web_booking_pct      : num  0.0304 0.0535 0.0916 0.1196 0.1128 ...
 ##  $ Class                       : Factor w/ 2 levels &quot;bad&quot;,&quot;good&quot;: 2 1 1 1 1 1 1 1 1 1 ...</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">obj <span class="op">%&gt;&gt;%</span><span class="st"> </span>getRegistry</code></pre></div>
-<pre><code>## # A tibble: 4 x 4
-##   functionName        heading                          outAsIn userDefined
-##   &lt;chr&gt;               &lt;chr&gt;                            &lt;lgl&gt;   &lt;lgl&gt;      
-## 1 univarCatDistPlots  Univariate Distribution Categor… FALSE   FALSE      
-## 2 outlierPlot         Univariate Outlier               FALSE   FALSE      
-## 3 multiVarOutlierPlot Multivariate Outlier             FALSE   FALSE      
-## 4 ignoreCols          &quot;&quot;                               TRUE    FALSE</code></pre>
+<pre><code>## # A tibble: 4 x 5
+##   functionName        heading                   outAsIn engine userDefined
+##   &lt;chr&gt;               &lt;chr&gt;                     &lt;lgl&gt;   &lt;chr&gt;  &lt;lgl&gt;      
+## 1 univarCatDistPlots  Univariate Distribution … FALSE   r      FALSE      
+## 2 outlierPlot         Univariate Outlier        FALSE   r      FALSE      
+## 3 multiVarOutlierPlot Multivariate Outlier      FALSE   r      FALSE      
+## 4 ignoreCols          &quot;&quot;                        TRUE    r      FALSE</code></pre>
 <p><br></p>
 </div>
 <div id="chaining-operations" class="section level1">
@@ -190,7 +190,7 @@ obj <span class="op">%&gt;&gt;%</span><span class="st"> </span>getPipeline</code
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">length</span>(obj<span class="op">@</span>output)</code></pre></div>
 <pre><code>## [1] 0</code></pre>
 <p>However, a specific function call can generate the output of the pipeline stored in the object. Which is then stored in the <i>output</i> attribute of the object.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">obj1 &lt;-<span class="st"> </span>obj <span class="op">%&gt;&gt;%</span><span class="st"> </span><span class="kw">generateOutput</span>()
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">obj1 &lt;-<span class="st"> </span>obj <span class="op">%&gt;&gt;%</span><span class="st"> </span>generateOutput
 <span class="kw">length</span>(obj1<span class="op">@</span>output)</code></pre></div>
 <pre><code>## [1] 3</code></pre>
 <p>Observe that the length of the output list of the first object (the chunk above) remains 0 since the generated output was assigned to a new object.</p>
@@ -207,13 +207,13 @@ obj1 <span class="op">%&gt;&gt;%</span><span class="st"> </span><span class="kw"
 <p>On invoking the constructor, i.e., creating an object of type AnalysisPipeline, the functions defined in the list are <i>registered</i> for the said object. The list of registered functions can be viewed as <i><a href="mailto:obj@registry">obj@registry</a></i>. The package has the option to add any user-defined function to this list of functions, <br> The only <b>constraint</b> for registering an user-defined function is that the first parameter in the argument list must be a data frame. <br> Let us demonstrate this with an example.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Currently registered functions</span>
 obj <span class="op">%&gt;&gt;%</span><span class="st"> </span>getRegistry</code></pre></div>
-<pre><code>## # A tibble: 4 x 4
-##   functionName        heading                          outAsIn userDefined
-##   &lt;chr&gt;               &lt;chr&gt;                            &lt;lgl&gt;   &lt;lgl&gt;      
-## 1 univarCatDistPlots  Univariate Distribution Categor… FALSE   FALSE      
-## 2 outlierPlot         Univariate Outlier               FALSE   FALSE      
-## 3 multiVarOutlierPlot Multivariate Outlier             FALSE   FALSE      
-## 4 ignoreCols          &quot;&quot;                               TRUE    FALSE</code></pre>
+<pre><code>## # A tibble: 4 x 5
+##   functionName        heading                   outAsIn engine userDefined
+##   &lt;chr&gt;               &lt;chr&gt;                     &lt;lgl&gt;   &lt;chr&gt;  &lt;lgl&gt;      
+## 1 univarCatDistPlots  Univariate Distribution … FALSE   r      FALSE      
+## 2 outlierPlot         Univariate Outlier        FALSE   r      FALSE      
+## 3 multiVarOutlierPlot Multivariate Outlier      FALSE   r      FALSE      
+## 4 ignoreCols          &quot;&quot;                        TRUE    r      FALSE</code></pre>
 <p>Currently, the package does not have a function to plot bivariate distributions. Let us define a function which can do it for us.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">bivariatePlots &lt;-<span class="st"> </span><span class="cf">function</span>(object, select_var_name_<span class="dv">1</span>, select_var_name_<span class="dv">2</span>, 
                        <span class="dt">priColor =</span> <span class="st">&quot;blue&quot;</span>, <span class="dt">secColor=</span><span class="st">'black'</span>) {
@@ -239,14 +239,14 @@ obj &lt;-<span class="st"> </span>obj <span class="op">%&gt;&gt;%</span><span cl
 
 <span class="co"># Printing the updated registry</span>
 obj <span class="op">%&gt;&gt;%</span><span class="st"> </span>getRegistry</code></pre></div>
-<pre><code>## # A tibble: 5 x 4
-##   functionName        heading                          outAsIn userDefined
-##   &lt;chr&gt;               &lt;chr&gt;                            &lt;lgl&gt;   &lt;lgl&gt;      
-## 1 univarCatDistPlots  Univariate Distribution Categor… FALSE   FALSE      
-## 2 outlierPlot         Univariate Outlier               FALSE   FALSE      
-## 3 multiVarOutlierPlot Multivariate Outlier             FALSE   FALSE      
-## 4 ignoreCols          &quot;&quot;                               TRUE    FALSE      
-## 5 bivariatePlots      Bivariate Plots                  FALSE   TRUE</code></pre>
+<pre><code>## # A tibble: 5 x 5
+##   functionName        heading                   outAsIn engine userDefined
+##   &lt;chr&gt;               &lt;chr&gt;                     &lt;lgl&gt;   &lt;chr&gt;  &lt;lgl&gt;      
+## 1 univarCatDistPlots  Univariate Distribution … FALSE   r      FALSE      
+## 2 outlierPlot         Univariate Outlier        FALSE   r      FALSE      
+## 3 multiVarOutlierPlot Multivariate Outlier      FALSE   r      FALSE      
+## 4 ignoreCols          &quot;&quot;                        TRUE    r      FALSE      
+## 5 bivariatePlots      Bivariate Plots           FALSE   r      TRUE</code></pre>
 <div id="using-newly-registered-function-with-lazy-eval-of-pipeline" class="section level3">
 <h3>Using newly registered function with lazy eval of pipeline</h3>
 <p>Now that a new user-defined function is also available along with the existing functions, all the features can be leveraged in unison.</p>
@@ -294,14 +294,14 @@ obj <span class="op">%&gt;&gt;%</span><span class="st"> </span><span class="kw">
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">obj2 &lt;-<span class="st"> </span><span class="kw">loadPipeline</span>(<span class="st">'pipeline.RDS'</span>,<span class="dt">filePath =</span> <span class="kw">system.file</span>(<span class="st">&quot;hotel_new.csv&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;analysisPipelines&quot;</span>)) 
 
 obj2 <span class="op">%&gt;%</span><span class="st"> </span>getRegistry</code></pre></div>
-<pre><code>## # A tibble: 5 x 4
-##   functionName        heading                          outAsIn userDefined
-##   &lt;chr&gt;               &lt;chr&gt;                            &lt;lgl&gt;   &lt;lgl&gt;      
-## 1 univarCatDistPlots  Univariate Distribution Categor… FALSE   FALSE      
-## 2 outlierPlot         Univariate Outlier               FALSE   FALSE      
-## 3 multiVarOutlierPlot Multivariate Outlier             FALSE   FALSE      
-## 4 ignoreCols          &quot;&quot;                               TRUE    FALSE      
-## 5 bivariatePlots      Bivariate Plots                  FALSE   TRUE</code></pre>
+<pre><code>## # A tibble: 5 x 5
+##   functionName        heading                   outAsIn engine userDefined
+##   &lt;chr&gt;               &lt;chr&gt;                     &lt;lgl&gt;   &lt;chr&gt;  &lt;lgl&gt;      
+## 1 univarCatDistPlots  Univariate Distribution … FALSE   r      FALSE      
+## 2 outlierPlot         Univariate Outlier        FALSE   r      FALSE      
+## 3 multiVarOutlierPlot Multivariate Outlier      FALSE   r      FALSE      
+## 4 ignoreCols          &quot;&quot;                        TRUE    r      FALSE      
+## 5 bivariatePlots      Bivariate Plots           FALSE   r      TRUE</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">obj2 <span class="op">%&gt;%</span><span class="st"> </span>getPipeline</code></pre></div>
 <pre><code>## # A tibble: 4 x 5
 ##   order operation          heading                      parameters outAsIn

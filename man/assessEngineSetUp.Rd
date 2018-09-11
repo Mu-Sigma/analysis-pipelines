@@ -17,11 +17,12 @@ Tibble containing the details of available engines, whether they are required fo
 Assesses whether engines required for executing functions in an \code{AnalysisPipeline} object have been set up
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
+Other Package core functions: \code{\link{AnalysisPipeline}},
+  \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
-  \code{\link{readInput}}, \code{\link{registerFunction}},
+  \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{updateObject}}
 }
