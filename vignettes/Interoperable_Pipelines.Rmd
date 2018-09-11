@@ -1,5 +1,5 @@
 ---
-title: "Interoperable pipelines across R and Spark"
+title: "Interoperable analysis pipelines across R and Spark"
 author: "Naren Srinivasan"
 date: "9/10/2018"
 output: html_document
