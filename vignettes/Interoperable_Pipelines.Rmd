@@ -52,7 +52,7 @@ inputDataset <- SparkR::read.df(path="../inst/hotel_new.csv",source="csv",header
 We then initialize an AnalysisPipeline, with the input dataset
 
 ```{r}
-obj <- AnalysisPipeline(input = SparkR::as.data.frame(inputDataset))
+pipelineObj <- AnalysisPipeline(input = SparkR::as.data.frame(inputDataset))
 ```
 
 
@@ -74,11 +74,11 @@ sparkFilterData <- function(inputDataset, condition) {
  return(filteredData)
 }
 
-obj %>>% registerFunction(functionName = "getSchema", engine = "spark") -> obj
-obj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark", outAsIn = T) -> obj
+pipelineObj %>>% registerFunction(functionName = "getSchema", engine = "spark") -> pipelineObj
+pipelineObj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark", outAsIn = T) -> pipelineObj
 
 
-obj %>>% getRegistry
+pipelineObj %>>% getRegistry
 ```
 
 # Registering R functions
@@ -165,9 +165,9 @@ rBivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor 
   return(bivarPlot)
 }
 
-obj %>>% registerFunction(functionName = "rBivarPlots", engine = "r", outAsIn = T) -> obj
+pipelineObj %>>% registerFunction(functionName = "rBivarPlots", engine = "r", outAsIn = T) -> pipelineObj
 
-obj %>>% getRegistry
+pipelineObj %>>% getRegistry
 ```
 
 
@@ -181,34 +181,36 @@ We first visualize the data without filtering:
 
 ```{r}
 
-obj %>>% rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
-                     priColor = "blue", secColor = "green") -> obj3
-obj3 %>>% getPipeline
-obj3 %>>% assessEngineSetUp
-obj3 %>>% generateOutput -> opWithoutFilter
+pipelineObj %>>% rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+                     priColor = "blue", secColor = "green") -> vizWithoutFilterPipeline
+vizWithoutFilterPipeline %>>% getPipeline
+vizWithoutFilterPipeline %>>% assessEngineSetUp
+vizWithoutFilterPipeline %>>% generateOutput -> opWithoutFilter
 opWithoutFilter %>>% getOuputByOrderId(1)
 ```
 
 We then perform filtering on one of the variables in Spark, before visualizing in R
 
 ```{r}
-obj %>>% sparkFilterData("Class == 'good'") %>>% 
+pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
-                     priColor = "blue", secColor = "green") -> obj4
-obj4 %>>% assessEngineSetUp
-obj4 %>>% generateOutput -> opWithFilter
+                     priColor = "blue", secColor = "green") -> singleFilterPipeline
+singleFilterPipeline %>>% assessEngineSetUp
+singleFilterPipeline %>>% generateOutput -> opWithFilter
 opWithFilter %>>% getOuputByOrderId(2)
 ```
 
 Finally, we show a case, where sequential filtering steps are performed in Spark, before visualizing in R
 
 ```{r}
-obj %>>% sparkFilterData("Class == 'good'") %>>% 
+pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
   sparkFilterData("Occupancy > 0.7") %>>%
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
-                     priColor = "blue", secColor = "green") -> obj4
-obj4 %>>% assessEngineSetUp
-obj4 %>>% generateOutput -> opWithFilter
-opWithFilter %>>% getOuputByOrderId(3)
+                     priColor = "blue", secColor = "green") -> twoFilterPipeline
+twoFilterPipeline %>>% assessEngineSetUp
+twoFilterPipeline %>>% generateOutput -> opWith2Filters
+opWith2Filters %>>% getOuputByOrderId(3)
 ```
+
+
 
