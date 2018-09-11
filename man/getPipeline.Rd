@@ -7,13 +7,13 @@
 getPipeline(object)
 }
 \arguments{
-\item{object}{The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object}
+\item{object}{The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object}
 }
 \value{
 Tibble describing the pipeline
 }
 \details{
-Obtains the pipeline from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble
+Obtains the pipeline from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble
 }
 \seealso{
 Other Package core functions: \code{\link{assessEngineSetUp}},

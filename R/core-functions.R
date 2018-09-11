@@ -19,7 +19,9 @@
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
 #' @family Package core functions
-#' @export
+#' @export readInput
+#' @exportClass AnalysisPipeline
+
 readInput <- setClass("AnalysisPipeline",
                        slots = c(
                          input = "data.frame",
@@ -81,10 +83,10 @@ setMethod(
 )
 
 #' @name updateObject
-#' @title Update the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object by adding an operation to the pipeline
+#' @title Update the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by adding an operation to the pipeline
 #' @details
 #'       The specified operation along with the heading and parameters is updated in the pipeline slot
-#'       of the  \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object, where the sequence of operations
+#'       of the  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations
 #'      to be performed is stored
 #' @param object object that contains input, pipeline, registry and output
 #' @param operation function name to be updated in tibble
@@ -129,7 +131,7 @@ setMethod(
 
 setMethod(
   f = "updateObject",
-  signature = "SparkAnalysisPipeline",
+  signature = "StreamingAnalysisPipeline",
   definition = .updateObject
 )
 
@@ -348,9 +350,9 @@ setMethod(
 )
 
 #' @name generateOutput
-#' @title Generate a list of outputs from an \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
+#' @title Generate a list of outputs from an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @details
-#'       The sequence of operations stored in the\code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
+#'       The sequence of operations stored in the\code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #'       are run and outputs generated, stored in a list
 #' @param object object that contains input, pipeline, registry and output
 #' @return A list of the outputs in the sequence in which the pipeline was created
@@ -437,11 +439,11 @@ setMethod(
   definition = .generateOutput
 )
 
-setMethod(
-  f = "generateOutput",
-  signature = "SparkAnalysisPipeline",
-  definition = .generateOutput
-)
+# setMethod(
+#   f = "generateOutput",
+#   signature = "StreamingAnalysisPipeline",
+#   definition = .generateOutput
+# )
 
 setMethod(
   f = "generateOutput",
@@ -462,7 +464,7 @@ setMethod(
 
 
 #' @name savePipeline
-#' @title Saves the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object to the file system without outputs
+#' @title Saves the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object to the file system without outputs
 #' @details
 #'       The \code{AnalysisPipeline} object is saved to the file system in the paths specified
 #' @param object object that contains input, pipeline, registry and output
@@ -482,7 +484,7 @@ setGeneric(
 .savePipeline = function(object, RDSPath){
   object@output <- list()
   object@input <- data.frame()
-  saveRDS(object,RDSPath)
+  saveRDS(object, RDSPath)
 }
 
 setMethod(
@@ -493,16 +495,16 @@ setMethod(
 
 setMethod(
   f = "savePipeline",
-  signature = "SparkAnalysisPipeline",
+  signature = "StreamingAnalysisPipeline",
   definition = .savePipeline
 )
 
 
 #' @name getPipeline
 #' @title Obtain the pipeline
-#' @param object The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object
+#' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object
 #' @details
-#'      Obtains the pipeline from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble
+#'      Obtains the pipeline from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble
 #' @return Tibble describing the pipeline
 #' @family Package core functions
 #' @export
@@ -527,16 +529,16 @@ setMethod(
 
 setMethod(
   f = "getPipeline",
-  signature = "SparkAnalysisPipeline",
+  signature = "StreamingAnalysisPipeline",
   definition = .getPipeline
 )
 
 
 #' @name getRegistry
 #' @title Obtains the function registry
-#' @param object The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object
+#' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object
 #' @details
-#'      Obtains the function registry from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble,
+#'      Obtains the function registry from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble,
 #'      including both predefined and user defined functions
 #' @return Tibble describing the registry
 #' @family Package core functions
@@ -562,16 +564,16 @@ setMethod(
 
 setMethod(
   f = "getRegistry",
-  signature = "SparkAnalysisPipeline",
+  signature = "StreamingAnalysisPipeline",
   definition = .getRegistry
 )
 
 #' @name getInput
 #' @title Obtains the initializedInput
-#' @param object The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
+#' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @details
-#'      Obtains the input from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
-#' @return Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{SparkAnalysisPipeline}
+#'      Obtains the input from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+#' @return Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{StreamingAnalysisPipeline}
 #' @family Package core functions
 #' @export
 
@@ -595,17 +597,17 @@ setMethod(
 
 setMethod(
   f = "getInput",
-  signature = "SparkAnalysisPipeline",
+  signature = "StreamingAnalysisPipeline",
   definition = .getInput
 )
 
 #' @name getOuputByOrderId
 #' @title Obtains a specific output
-#' @param object The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
+#' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @param position The position of the function for which the output is desired in the sequence of operations in the pipeline.
 #' @param includeCall Logical which defines whether the call used to generate the output should be returned. By, default this is false
 #' @details
-#'      Obtains a specific output from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object by passing the position
+#'      Obtains a specific output from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by passing the position
 #'      of the function for which the output is desired, in the sequence of operations in the pipeline. This can be obtained by passing the number
 #'      under the 'order' column in the pipeline table corresponding to the required function
 #' @return If includeCall = F, the output object generated by the function is returned
@@ -647,7 +649,7 @@ setMethod(
 
 setMethod(
   f = "getOuputByOrderId",
-  signature = "SparkAnalysisPipeline",
+  signature = "StreamingAnalysisPipeline",
   definition = .getOuputByOrderId
 )
 

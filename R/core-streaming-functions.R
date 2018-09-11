@@ -1,12 +1,12 @@
 ##################################################################################################
-# Title: Reusable pipelines for generating analysis reports
+# Title: Reusable pipelines for streaming analyses
 # Version: 18.08.01
 # Created on: July 12, 2018
-# Description: An R package version
+# Description: An R package version - Currently supports Apache Spark Structured Streaming
 ##################################################################################################
 
-#' @name readInputSpark
-#' @title Function to initialize \code{SparkAnalysisPipeline} class with the input Spark DataFrame
+#' @name readStreamingInput
+#' @title Function to initialize \code{StreamingAnalysisPipeline} class with the input Spark DataFrame
 #' @details The class which holds the metadata including the registry of available functions,
 #' the data on which the pipeline is to be applied, as well as the pipeline itself
 #' @details More details of how an object of this class should be initialized is provided in the
@@ -16,9 +16,11 @@
 #' @slot pipeline A tibble which holds functions to be called
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
-#' @family Package core functions for Spark
-#' @export
-readInputSpark <- setClass("SparkAnalysisPipeline",
+#' @family Package core functions for Streaming Analyses
+#' @export readStreamingInput
+#' @exportClass StreamingAnalysisPipeline
+
+readStreamingInput <- setClass("StreamingAnalysisPipeline",
                            slots = c(
                              input = "SparkDataFrame",
                              workingInput = "SparkDataFrame",
@@ -28,18 +30,19 @@ readInputSpark <- setClass("SparkAnalysisPipeline",
                            ))
 
 #' @name initialize
-#' @title Constructor for the \code{SparkAnalysisPipeline} object
-#' @param .Object The \code{SparkAnalysisPipeline} object
+#' @title Constructor for the \code{StreamingAnalysisPipeline} object
+#' @param .Object The \code{StreamingAnalysisPipeline} object
 #' @param input The Spark DataFrame on which operations need to be performed
 #' @details
 #'      \code{input} needs to be provded and the argument needs to be of class \code{SparkDataFrame}, which is
 #'      generally created through operations using SparkR
-#' @return an object of class "\code{SparkAnalysisPipeline}", initialized with the input Spark DataFrame provided
-#' @family Package core functions for Spark
+#' @return an object of class "\code{StreamingAnalysisPipeline}", initialized with the input Spark DataFrame provided
+#' @family Package core functions for Streaming Analyses
 #' @export
+
 setMethod(
   f = "initialize",
-  signature = "SparkAnalysisPipeline",
+  signature = "StreamingAnalysisPipeline",
   definition = function(.Object, input)
   {
     .Object@input <- input
@@ -55,14 +58,16 @@ setMethod(
       functionName = character(),
       heading = character(),
       outAsIn = logical(),
+      engine = character(),
       userDefined = logical()
 
     )
 
-    for(rowNo in 1:nrow(sparkPredefFunctions)){
-      .Object %>>% registerFunctionSpark(sparkPredefFunctions[['functionName']][[rowNo]],
-                                         sparkPredefFunctions[['heading']][[rowNo]],
-                                         sparkPredefFunctions[['outAsIn']][[rowNo]],
+    for(rowNo in 1:nrow(streamingPredefFunctions)){
+      .Object %>>% registerFunctionSpark(streamingPredefFunctions[['functionName']][[rowNo]],
+                                         streamingPredefFunctions[['heading']][[rowNo]],
+                                         streamingPredefFunctions[['outAsIn']][[rowNo]],
+                                         streamingPredefFunctions[['engine']][[rowNo]],
                                          userDefined = F) -> .Object
     }
     return(.Object)
@@ -70,36 +75,41 @@ setMethod(
 )
 
 
-#' @name registerFunctionSpark
-#' @title Register a user-defined function to be used with \code{SparkAnalysisPipeline} objects specifically for Spark
-#'        DataFrames
+#' @name registerStreamingFunction
+#' @title Register a user-defined function to be used with \code{StreamingAnalysisPipeline} objects,
+#'  currently for Spark Structured Streaming through Spark DataFrames
 #' @details
 #'       The specified operation along with the heading and parameters is updated in the pipeline slot
-#'       of the \code{SparkAnalysisPipeline} object, where the sequence of operations to be performed is stored. This function
-#'       is used to register functions which are designed to operate on Spark DataFrames
+#'       of the \code{StreamingAnalysisPipeline} object, where the sequence of operations to be performed is stored. This function
+#'       is used to register functions which are designed to operate on Spark Structured Streaming DataFrames
 #' @param object object that contains input, pipeline, registry and output
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
 #' @param outAsIn whether to use original input or output from previous function
 #' @param loadPipeline logical parameter to see if function is being used in loadPipeline or not
 #' @param session to load shiny session in the function (Currently not implemented)
-#' @return Updated \code{SparkAnalysisPipeline} object
-#' @family Package core functions for Spark
+#' @return Updated \code{StreamingAnalysisPipeline} object
+#' @family Package core functions for Streaming Analyses
 #' @export
 
 setGeneric(
-  name = "registerFunctionSpark",
-  def = function(object, functionName,  heading ="", outAsIn=F, loadPipeline=F,
+  name = "registerStreamingFunction",
+  def = function(object, functionName,  heading ="", outAsIn=F,
+                 engine = 'spark-structured-streaming',
+                 loadPipeline=F,
                  userDefined = T, session=session)
   {
-    standardGeneric("registerFunctionSpark")
+    standardGeneric("registerStreamingFunction")
   }
 )
 
+
+### TO DO - Parameterize the data frame class name, if other streaming data frame types are to be incorporated
 setMethod(
-  f = "registerFunctionSpark",
-  signature = "SparkAnalysisPipeline",
-  definition = function(object, functionName,  heading ="", outAsIn=F, loadPipeline=F,
+  f = "registerStreamingFunction",
+  signature = "StreamingAnalysisPipeline",
+  definition = function(object, functionName,  heading ="", outAsIn=F,
+                        engine = 'spark-structured-streaming', loadPipeline=F,
                         userDefined = T, session=session)
   {
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
@@ -122,7 +132,7 @@ setMethod(
 
                               setMethod(
                               f = \"",functionName,"\",
-                              signature = \"SparkAnalysisPipeline\",
+                              signature = \"StreamingAnalysisPipeline\",
                               definition = function(object",parametersName,")
                               {
                               parametersList <- unlist(strsplit(\"",sub(", ", "", parametersName),"\",\",\"))
@@ -142,6 +152,7 @@ setMethod(
       object@registry %>>% add_row(functionName = paste0(functionName),
                                    heading = heading,
                                    outAsIn = outAsIn,
+                                   engine = engine,
                                    userDefined = userDefined) -> object@registry
     }
     return(object)
@@ -150,24 +161,25 @@ setMethod(
 
 
 #'### TODO
-#'  @name loadPipelineSpark
-#' @title Loads the \code{SparkAnalysisPipeline} object from the file system
+#'  @name loadStreamingPipeline
+#' @title Loads the \code{StreamingAnalysisPipeline} object from the file system
 #' @details
-#'       The \code{SparkAnalysisPipeline} object is loaded into the file system from the file system
+#'       The \code{StreamingAnalysisPipeline} object is loaded into the file system from the file system
 #'       based on the path specified.
 #' @param RDSPath the path at which the .RDS file containing the pipeline is located
-#' @param input Spark DataFrame with which the pipeline object should be initialized
-#' @return An \code{SparkAnalysisPipeline} object, optinally initialized with the data frame provided
-#' @family Package core functions for Spark
+#' @param input Spark Sructuded Streaming DataFrame with which the pipeline object should be initialized
+#' @return An \code{StreamingAnalysisPipeline} object, optinally initialized with the data frame provided
+#' @family Package core functions for Streaming Analyses
 #' @export
-loadPipelineSpark <- function(RDSPath, input){
+loadStreamingPipeline <- function(RDSPath, input){
   object <- readRDS(RDSPath)
     object@input <- input
   registeredFunctions <- object@registry
   for(rowNo in 1:nrow(registeredFunctions)){
-    object %>>% registerFunctionSpark(registeredFunctions[['functionName']][[rowNo]],
+    object %>>% registerStreamingFunction(registeredFunctions[['functionName']][[rowNo]],
                                       registeredFunctions[['heading']][[rowNo]],
                                       registeredFunctions[['outAsIn']][[rowNo]],
+                                      registeredFunctions[['engine']][[rowNo]],
                                       userDefined =  registeredFunctions[['userDefined']][[rowNo]],
                                       loadPipeline = T) -> object
   }
