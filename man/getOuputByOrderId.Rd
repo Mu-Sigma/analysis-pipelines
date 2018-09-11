@@ -7,7 +7,7 @@
 getOuputByOrderId(object, position, includeCall = F)
 }
 \arguments{
-\item{object}{The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object}
+\item{object}{The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
 
 \item{position}{The position of the function for which the output is desired in the sequence of operations in the pipeline.}
 
@@ -21,7 +21,7 @@ If includeCall = T, it is a list containing to elements
         - output: output generated
 }
 \details{
-Obtains a specific output from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object by passing the position
+Obtains a specific output from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by passing the position
      of the function for which the output is desired, in the sequence of operations in the pipeline. This can be obtained by passing the number
      under the 'order' column in the pipeline table corresponding to the required function
 }

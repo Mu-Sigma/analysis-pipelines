@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{updateObject}
 \alias{updateObject}
-\title{Update the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object by adding an operation to the pipeline}
+\title{Update the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by adding an operation to the pipeline}
 \usage{
 updateObject(object, operation, heading = "", parameters, outAsIn = F)
 }
@@ -22,7 +22,7 @@ Updated \code{AnalysisPipeline} object
 }
 \details{
 The specified operation along with the heading and parameters is updated in the pipeline slot
-      of the  \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object, where the sequence of operations
+      of the  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations
      to be performed is stored
 }
 \seealso{

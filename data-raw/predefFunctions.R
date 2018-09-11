@@ -15,7 +15,7 @@
 batchPredefFunctions <- data.frame(functionName = c("univarCatDistPlots"),
                                 heading = c("Univariate Distribution Categorical"),
                                 outAsIn = c(FALSE),
-                                engine = "r",
+                                engine = c("r"),
                                 stringsAsFactors = F)
 
 batchPredefFunctions %>>% dplyr::add_row(functionName = "outlierPlot",
@@ -34,24 +34,26 @@ batchPredefFunctions %>>% dplyr::add_row(functionName = "ignoreCols",
 ##################################################################################################
 
 ##################################################################################################
-# Working with Spark Structured Streaming
+# Working with Streaming pipelines - Currently supports Apache Spark Structured Streaming
 ##################################################################################################
 
 ##################################################################################################
 # Kafka Streams as input
 ##################################################################################################
 
-structuredStreamingPredefFunctions <- data.frame(functionName = c("castKafkaStreamAsString"),
+streamingPredefFunctions <- data.frame(functionName = c("castKafkaStreamAsString"),
                                         heading = c(""),
+                                        engine = c("spark-structured-streaming"),
                                         outAsIn = c(TRUE), stringsAsFactors = F)
 
-structuredStreamingPredefFunctions %>>% dplyr::add_row(functionName = "convertKafkaValueFromJson",
+streamingPredefFunctions %>>% dplyr::add_row(functionName = "convertKafkaValueFromJson",
                                        heading = "",
-                                       outAsIn = TRUE)           -> structuredStreamingPredefFunctions
+                                       engine = c("spark-structured-streaming"),
+                                       outAsIn = TRUE)           -> streamingPredefFunctions
 
 # sparkPredefFunctions %>>% dplyr::add_row(functionName = "printStream",
 #                                        heading = "",
 #                                        outAsIn = TRUE)           -> sparkPredefFunctions
 
 
-devtools::use_data(batchPredefFunctions, structuredStreamingPredefFunctions, internal = TRUE, overwrite = T)
+devtools::use_data(batchPredefFunctions, streamingPredefFunctions, internal = TRUE, overwrite = T)

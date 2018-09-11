@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{savePipeline}
 \alias{savePipeline}
-\title{Saves the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object to the file system without outputs}
+\title{Saves the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object to the file system without outputs}
 \usage{
 savePipeline(object, RDSPath)
 }

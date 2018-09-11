@@ -7,13 +7,13 @@
 getInput(object)
 }
 \arguments{
-\item{object}{The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object}
+\item{object}{The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
 }
 \value{
-Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{SparkAnalysisPipeline}
+Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{StreamingAnalysisPipeline}
 }
 \details{
-Obtains the input from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
+Obtains the input from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 }
 \seealso{
 Other Package core functions: \code{\link{assessEngineSetUp}},

@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{generateOutput}
 \alias{generateOutput}
-\title{Generate a list of outputs from an \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object}
+\title{Generate a list of outputs from an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
 \usage{
 generateOutput(object)
 }
@@ -13,7 +13,7 @@ generateOutput(object)
 A list of the outputs in the sequence in which the pipeline was created
 }
 \details{
-The sequence of operations stored in the\code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object
+The sequence of operations stored in the\code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
       are run and outputs generated, stored in a list
 }
 \seealso{

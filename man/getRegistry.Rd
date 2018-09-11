@@ -7,13 +7,13 @@
 getRegistry(object)
 }
 \arguments{
-\item{object}{The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object}
+\item{object}{The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object}
 }
 \value{
 Tibble describing the registry
 }
 \details{
-Obtains the function registry from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble,
+Obtains the function registry from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble,
      including both predefined and user defined functions
 }
 \seealso{
