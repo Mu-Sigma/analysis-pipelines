@@ -5,6 +5,8 @@
 # Description: An R package version - Currently supports Apache Spark Structured Streaming
 ##################################################################################################
 
+###TO DO - Add schema checks
+
 #' @name StreamingAnalysisPipeline
 #' @title Function to initialize \code{StreamingAnalysisPipeline} class with the input Spark DataFrame
 #' @details The class which holds the metadata including the registry of available functions,

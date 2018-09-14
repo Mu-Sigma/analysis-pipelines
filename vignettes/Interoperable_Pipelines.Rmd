@@ -52,7 +52,7 @@ inputDataset <- SparkR::read.df(path="../inst/hotel_new.csv",source="csv",header
 We then initialize an AnalysisPipeline, with the input dataset
 
 ```{r}
-pipelineObj <- AnalysisPipeline(input = SparkR::as.data.frame(inputDataset))
+pipelineObj <- AnalysisPipeline(input = inputDataset)
 ```
 
 
@@ -245,8 +245,13 @@ inputDataset <- SparkR::read.df(path=system.file("hotel_new.csv", package = "ana
 Then, we load the pipeline and execute on the new data which is the just the first hundred rows of the original dataset 
 
 ```{r}
-pipelineObjLoaded <- loadPipeline(RDSPath = "~/Downloads/testing1.Rda", 
-                                  input = SparkR::as.data.frame(inputDataset)[1:100,])
+
+pipelineObjLoaded <- loadPipeline(RDSPath = "~/Downloads/twoFilterPipeline.Rda")
+pipelineObjLoaded %>>% checkSchemaMatch(newData = SparkR::as.data.frame(inputDataset)[1:100,]) -> schemaCheck
+schemaCheck
+
+pipelineObjLoaded %>>% setInput(input = inputDataset) -> pipelineObjLoaded
+                                  
 
 pipelineObjLoaded %>>% generateOutput()
 ```

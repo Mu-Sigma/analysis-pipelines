@@ -19,10 +19,12 @@ The sequence of operations stored in the\code{AnalysisPipeline} or \code{Streami
 \seealso{
 Other Package core functions: \code{\link{AnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{checkSchema}}, \code{\link{generateReport}},
+  \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
-  \code{\link{savePipeline}}, \code{\link{updateObject}}
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{updateObject}}
 }

@@ -13,7 +13,7 @@
 #' @details More details of how an object of this class should be initialized is provided in the
 #' constructor - \link{initialize}
 #' @slot input The input dataset on which analysis is to be performed
-#' @slot workingInput Internal slot for having a working version of the input
+#' @slot originalSchemaDf Empty data frame representing the schema of the input
 #' @slot filePath Path of the input dataset to be uploaded
 #' @slot pipeline A tibble which holds functions to be called
 #' @slot registry A tibble which holds all the registered functions
@@ -25,8 +25,7 @@
 AnalysisPipeline <- setClass("AnalysisPipeline",
                        slots = c(
                          input = "data.frame",
-                         filePath = "character",
-                         workingInput = "data.frame",
+                         originalSchemaDf = "data.frame",
                          pipeline = "tbl",
                          registry = "tbl",
                          output = "list"
@@ -47,12 +46,11 @@ setMethod(
   signature = "AnalysisPipeline",
   definition = function(.Object, input = data.frame(), filePath = "", workingInput = data.frame())
   {
-    if(filePath == ""){
-      .Object@input <- input
-    }
-    else{
-      .Object@input <- read.csv(filePath)
-    }
+    ##Check input class
+
+    .Object@input <- initDfBasedOnType(input, filePath)
+    .Object@originalSchemaDf <- .Object@input[0,]
+
     .Object@pipeline <- tibble(
       order = numeric(),
       operation = character(),
@@ -80,6 +78,45 @@ setMethod(
     }
     return(.Object)
   }
+)
+
+#' @name setInput
+#' @title Sets the input for an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+#' @details
+#'      Assigns the input to the pipeline for an  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object,
+#' @param object object that contains input, pipeline, registry and output
+#' @param input the input data frame
+#' @param filePath path to the file which needs to be read (currently supports .csv files)
+#' @return Updated \code{AnalysisPipeline} object
+#' @family Package core functions
+#' @export
+setGeneric(
+  name = "setInput",
+  def = function(object,
+                input,
+                filePath = "")
+  {
+    standardGeneric("setInput")
+  }
+)
+
+.setInput = function(object, input, filePath = "")
+{
+  input <- initDfBasedOnType(input, filePath)
+  object@input <- input
+  return(object)
+}
+
+setMethod(
+  f = "setInput",
+  signature = "AnalysisPipeline",
+  definition = .setInput
+)
+
+setMethod(
+  f = "setInput",
+  signature = "StreamingAnalysisPipeline",
+  definition = .setInput
 )
 
 #' @name updateObject
@@ -678,6 +715,37 @@ setMethod(
 
 
 
+#' @name checkSchemaMatch
+#' @title Checks the schema of a pipeline against the original
+#' @param object The \code{AnalysisPipeline} object
+#' @param newData The newData that the pipeline is to be initialized with
+#' @details Checks the schema of the new data frame that the pipeline is to be initialized with against
+#'          the original schema that the pipeline was saved with. Provides a detailed comparison
+#' @return Returns a list with details on added columns, removed columns, comparison between column classes, and a logical
+#'         whether the schema has remained the same from the old dataframe to the new one
+#' @family Package core functions
+#' @export
+
+setGeneric(
+  name = "checkSchemaMatch",
+  def = function(object, newData)
+  {
+    standardGeneric("checkSchemaMatch")
+  }
+)
+
+.checkSchemaMatch = function(object, newData){
+  schemaCheck <- checkSchema(object@originalSchemaDf, newData)
+  return(schemaCheck)
+}
+
+setMethod(
+  f = "checkSchemaMatch",
+  signature = "AnalysisPipeline",
+  definition = .checkSchemaMatch
+)
+
+
 #' @name loadPipeline
 #' @title Loads the \code{AnalysisPipeline} object from the file system
 #' @details
@@ -695,31 +763,183 @@ setMethod(
 #' @family Package core functions
 #' @export
 
-loadPipeline <- function(RDSPath, input=data.frame(), filePath=""){
+loadPipeline <- function(RDSPath, input = data.frame() , filePath=""){
   #object <- readRDS(RDSPath)
   load(RDSPath, envir = environment())
   functionNames = setdiff(ls(envir = environment()), "object")
+
   lapply(functionNames, function(x){
     assign(x, get(x, environment()), globalenv())
   })
-  if(filePath == ""){
-    object@input <- input
+
+  input <- initDfBasedOnType(input, filePath)
+  schemaCheck <- object %>>% checkSchemaMatch(input)
+  if(!schemaCheck$isSchemaSame){
+    if(length(schemaCheck$removedColumns) > 0){
+      warning(paste0("Some columns which were present in the original schema ",
+                      "for the pipeline, ",
+                      "are not present in the new data frame. Some pipeline functions ",
+                      "may not execute as expected. Use the checkSchemaMatch function to obtain ",
+                      "a detailed comparison"))
+    }
+
+    if(length(schemaCheck$addedColumns) > 0){
+      warning(paste0("Some new columns have been added to the new data frame ",
+                       "as compared to the original schema for the pipeline. ",
+                     "Use the checkSchemaMatch function to obtain ",
+                      "a detailed comparison"))
+    }
+
+    if(length(schemaCheck$addedColumns) == 0 && length(schemaCheck$removedColumns) == 0){
+      warning(paste0("Colummn names are the same but types have changed",
+                     "Some pipeline functions may not execute as expected. ",
+                     "Use the checkSchemaMatch function to obtain ",
+                      "a detailed comparison"))
+    }
+
   }
-  else{
-    object@input <- read.csv(filesPath)
-  }
-  registeredFunctions <- object@registry
-  # for(rowNo in 1:nrow(registeredFunctions)){
-  #   object %>>% registerFunction(registeredFunctions[['functionName']][[rowNo]],
-  #                                registeredFunctions[['heading']][[rowNo]],
-  #                                registeredFunctions[['outAsIn']][[rowNo]],
-  #                                registeredFunctions[['engine']][[rowNo]],
-  #                                userDefined = registeredFunctions[['userDefined']][[rowNo]],
-  #                                loadPipeline = T) -> object
-  # }
+
+  object@input <- input
   return(object)
 }
 
+
+#' @name checkSchema
+#' @title Compare the schemas of two dataframes
+#' @details
+#'       Compares the schemas of two dataframes, providing information on added and removed columns in the new dataframe
+#'       as compared to the old
+#' @param dfOld Old dataframe
+#' @param dfNew New dataframe
+#' @return Returns a list with details on added columns, removed columns, comparison between column classes, and a logical
+#'         whether the schema has remained the same from the old dataframe to the new one
+#' @family Package core functions
+#' @keywords internal
+#'
+checkSchema <- function(dfOld, dfNew){
+
+  schemaCheck <- list(addedColumns = list(),
+                      removedColumns = list(),
+                      colComparison = list(),
+                      isSchemaSame = logical())
+
+  colNamesOld <- colnames(dfOld)
+  colNamesNew <- colnames(dfNew)
+
+  addedColumns <- setdiff(colNamesNew, colNamesOld)
+  removedColumns <- setdiff(colNamesOld, colNamesNew)
+  isSchemaSame <- F
+
+  oldColComparison <- purrr::map(colNamesOld, function(x, dfOld, dfNew, colNamesNew, addedColumns, removedColumns){
+    colComparison <- list(colName = character(),
+                          oldClass = character(),
+                          newClass = character(),
+                          colType = character(),
+                          hasClassChanged = logical()
+    )
+
+    if(!((x %in% addedColumns) || (x %in% removedColumns))){
+      newColIndex <- match(x, colNamesNew)
+      colName <- x
+      oldClass <- class(dfOld[[colName]])
+      newClass <- class(dfNew[[colName]])
+      colType <- "common"
+      hasClassChanged <- ifelse(oldClass == newClass, F, T)
+    }else if(x %in% removedColumns){
+      colName <- x
+      oldClass <- class(dfOld[[colName]])
+      newClass <- NULL
+      colType <- "removed"
+      hasClassChanged <- NULL
+    }
+
+    colComparison <- list(colName = colName,
+                          oldClass = oldClass,
+                          newClass = newClass,
+                          colType = colType,
+                          hasClassChanged = hasClassChanged
+                       )
+    return(colComparison)
+
+  }, dfOld, dfNew, colNamesNew, addedColumns, removedColumns)
+
+  addedCols <- purrr::map(addedColumns, function(x, dfNew){
+    colComparison <- list(colName = character(),
+                          oldClass = character(),
+                          newClass = character(),
+                          colType = character(),
+                          hasClassChanged = logical()
+    )
+
+    colName <- x
+    oldClass <- NULL
+    newClass <- class(dfNew[[colName]])
+    colType <- "added"
+    hasClassChanged <- NULL
+
+    colComparison <- list(colName = colName,
+                          oldClass = oldClass,
+                          newClass = newClass,
+                          colType = colType,
+                          hasClassChanged = hasClassChanged
+    )
+
+    return(colComparison)
+
+  }, dfNew)
+
+  colComparison <- append(oldColComparison, addedCols)
+
+  if(length(addedColumns)  == 0 && length(removedColumns) == 0){
+    if(all(unlist(purrr::map(colComparison, function(x){
+                                              ##Returning true if class hasn't changed
+                                              return(!x$hasClassChanged)
+                                                    })))){
+      isSchemaSame <- T
+    }
+  }
+
+  schemaCheck <- list(addedColumns = addedColumns,
+                      removedColumns = removedColumns,
+                      colComparison = colComparison,
+                      isSchemaSame = isSchemaSame
+                      )
+  return(schemaCheck)
+}
+
+initDfBasedOnType <- function(input, filePath){
+
+  if(filePath == ""){
+    if(!all(dim(input) == c(0,0))){
+      #Check for R, Spark, Python data frame
+      if(class(input) == "SparkDataFrame"){
+        input <- SparkR::as.data.frame(input)
+      }else if(class(input) == "data.frame" || class(input) == "tibble"){
+        #do nothing for R
+      }else{
+        stop("The provided input is not of class - data.frame or SparkDataFrame")
+      }
+    }
+  }
+  else{
+    input <- read.csv(filePath)
+  }
+
+  return(input)
+}
+
+#' @name checkPipelineCompatibilityWithNewData
+#' @title Checks whether the pipeline is compatible new dataset
+#' @details
+#'      Internally compares the schema of the new dataset with the original dataset with which the pipeline
+#'      was initialized. Additionally, it checks whether all functions in the pipeline are compatible with the new
+#'      dataset.
+#' @param pipeline An \code{AnalysisPipeline} object
+#' @param dfToBeChecked Dataframe to be checked for compatibility
+#' @return logical value (T or R) specifying whether the new dataset is compatible with the pipeline
+#' @family Package core functions
+#' @keywords internal
+#'
 
 #' @name updatePackageRegistry
 #' @title Updates the package registry
