@@ -421,6 +421,10 @@ setGeneric(
 {
   inputToExecute <- object@input
 
+  if(all(dim(input) == c(0,0))){
+    stop("This pipeline has not been initialized with a dataframe. Please use the setInput() function to do so.")
+  }
+
   ## Check engine setup
   object %>>% assessEngineSetUp ->  engineAssessment
   engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
