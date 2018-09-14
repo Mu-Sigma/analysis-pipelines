@@ -20,11 +20,12 @@ The \code{AnalysisPipeline} object is saved to the file system in the paths spec
 \seealso{
 Other Package core functions: \code{\link{AnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
-  \code{\link{generateOutput}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{checkSchema}}, \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
-  \code{\link{registerFunction}},
+  \code{\link{registerFunction}}, \code{\link{setInput}},
   \code{\link{updateObject}}
 }

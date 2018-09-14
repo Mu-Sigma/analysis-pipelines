@@ -16,7 +16,7 @@ constructor - \link{initialize}
 \describe{
 \item{\code{input}}{The input dataset on which analysis is to be performed}
 
-\item{\code{workingInput}}{Internal slot for having a working version of the input}
+\item{\code{originalSchemaDf}}{Empty data frame representing the schema of the input}
 
 \item{\code{filePath}}{Path of the input dataset to be uploaded}
 
@@ -29,11 +29,13 @@ constructor - \link{initialize}
 
 \seealso{
 Other Package core functions: \code{\link{assessEngineSetUp}},
-  \code{\link{generateOutput}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{checkSchema}}, \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
-  \code{\link{savePipeline}}, \code{\link{updateObject}}
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{updateObject}}
 }

@@ -18,11 +18,13 @@ Assesses whether engines required for executing functions in an \code{AnalysisPi
 }
 \seealso{
 Other Package core functions: \code{\link{AnalysisPipeline}},
-  \code{\link{generateOutput}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{checkSchema}}, \code{\link{generateOutput}},
   \code{\link{generateReport}}, \code{\link{getInput}},
   \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
-  \code{\link{savePipeline}}, \code{\link{updateObject}}
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{updateObject}}
 }
