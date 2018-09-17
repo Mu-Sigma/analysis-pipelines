@@ -64,7 +64,9 @@ setMethod(
       heading = character(),
       outAsIn = logical(),
       engine = character(),
+      exceptionHandlingFunction = character(),
       userDefined = logical()
+
 
     )
     .Object@output <- list()
@@ -74,6 +76,7 @@ setMethod(
                                     batchPredefFunctions[['heading']][[rowNo]],
                                     batchPredefFunctions[['outAsIn']][[rowNo]],
                                     batchPredefFunctions[['engine']][[rowNo]],
+                                    batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
                                     userDefined = F) -> .Object
     }
     return(.Object)
@@ -172,6 +175,21 @@ setMethod(
   definition = .updateObject
 )
 
+#' @name genericPipelineException
+#' @title Default exception for pipeline functions
+#' @details This functions defines the default function which will be called in case of an exception occurring while
+#' executing any of the pipeline functions. While a function is registered, a custom function to deal with exceptions
+#' incurred during the call of the function being registered can be passed by the user. If passed, the custom function
+#' will be called instead of this function
+#' @param error Error encountered during the execution of a particular pipeline function
+#' @family Package core functions
+#' @export
+genericPipelineException <- function(error){
+  message <- error$message
+  print("generic exception")
+  stop(paste0("EXCEPTION OCCURED WHILE RUNNING THE PIPELINE FUNCTION WITH PROVIDED PARAMETERS: ", message))
+}
+
 #' @name registerFunction
 #' @title Register a user-defined function to be used with \code{AnalysisPipeline} objects
 #' @details
@@ -190,9 +208,10 @@ setMethod(
 
 setGeneric(
   name = "registerFunction",
-  def = function(object, functionName,  heading ="", outAsIn=F,
+  def = function(object, functionName,  heading = "", outAsIn = F,
                  engine = "r", #options are 'r', 'spark', 'python'
-                 loadPipeline=F, userDefined = T, session=session)
+                 exceptionFunction = substitute(genericPipelineException),
+                 loadPipeline = F, userDefined = T, session = session)
   {
     standardGeneric("registerFunction")
   }
@@ -201,9 +220,10 @@ setGeneric(
 setMethod(
   f = "registerFunction",
   signature = "AnalysisPipeline",
-  definition = function(object, functionName,  heading ="", outAsIn=F, engine = "r",
-                        loadPipeline=F,
-                        userDefined = T, session=session)
+  definition = function(object, functionName, heading = "", outAsIn = F,
+                        engine = "r",
+                        exceptionFunction = substitute(genericPipelineException),
+                        loadPipeline = F, userDefined = T, session = session)
   {
 
     #Define data frame class according to engine type
@@ -223,6 +243,12 @@ setMethod(
     methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
     methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
     methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
+
+
+    ##Assigning the exception function to the global Environment
+    assign(exceptionFunction, get(x = as.character(exceptionFunction), envir = environment()),   envir = globalenv())
+
+    #Register function
     registerFunText <- paste0("setGeneric(
                               name = \"",functionName,"\",
                               def = function(object",parametersName,")
@@ -249,11 +275,14 @@ setMethod(
                               ")
 
     eval(parse(text = registerFunText), envir=.GlobalEnv)
+
+
     if(loadPipeline==F){
       object@registry %>>% add_row(functionName = paste0(functionName),
                                    heading = heading,
                                    outAsIn = outAsIn,
                                    engine = engine,
+                                   exceptionHandlingFunction = exceptionFunction,
                                    userDefined = userDefined) -> object@registry
     }
     return(object)
@@ -421,7 +450,7 @@ setGeneric(
 {
   inputToExecute <- object@input
 
-  if(all(dim(input) == c(0,0))){
+  if(all(dim(inputToExecute) == c(0,0))){
     stop("This pipeline has not been initialized with a dataframe. Please use the setInput() function to do so.")
   }
 
@@ -476,9 +505,13 @@ setGeneric(
             inputToExecute <- SparkR::as.DataFrame(object@input)
           }
       }
-      object@output[[rowNo]] <- do.call(pipelineRegistryJoin[['operation']][[rowNo]],
+      object@output[[rowNo]] <- tryCatch({do.call(pipelineRegistryJoin[['operation']][[rowNo]],
                                         append(list(inputToExecute),
-                                               pipelineRegistryJoin[['parameters']][[rowNo]]))
+                                               pipelineRegistryJoin[['parameters']][[rowNo]]))},
+                                        error = function(e){
+                                          do.call(pipelineRegistryJoin[['exceptionHandlingFunction']][[rowNo]],
+                                                  list(error = e))
+                                        })
     }
   }else{
     stop("No functions have been added to the pipeline")
@@ -539,7 +572,7 @@ setGeneric(
 .savePipeline = function(object, RDSPath){
   object@output <- list()
   object@input <- data.frame()
-  listToBeSaved <- c("object", object@registry$functionName)
+  listToBeSaved <- c("object", object@registry$functionName, object@registry$exceptionHandlingFunction)
   #saveRDS(object, RDSPath2)
   #readRDS(file = RDSPath2)
   save(list = listToBeSaved,file = RDSPath)
@@ -770,7 +803,7 @@ setMethod(
 loadPipeline <- function(RDSPath, input = data.frame() , filePath=""){
   #object <- readRDS(RDSPath)
   load(RDSPath, envir = environment())
-  functionNames = setdiff(ls(envir = environment()), "object")
+  functionNames = setdiff(ls(envir = environment()), c("RDSPath", "object", "input", "filePath"))
 
   lapply(functionNames, function(x){
     assign(x, get(x, environment()), globalenv())

@@ -72,19 +72,19 @@ The pipe (%>>%) operator used here works in a similar manner to the tidyverse pa
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
 
-obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
-obj %>>% getPipeline
+obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
+obj1 %>>% getPipeline
 ```
 
 ```{r pipe demo 2, warning=F}
 # Running univariate categorical distribution plot and then 
 # outlier detection on the constructed object
 
-obj <- obj %>>% 
-  univarCatDistPlots(uniCol = "location_type", priColor = "blue", optionalPlots = 0) %>>% 
+obj2 <- obj1 %>>% 
+  univarCatDistPlots(uniCol = "location_type", priColor = "xy", optionalPlots = 0) %>>% 
   outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
-obj %>>% getPipeline
+obj2 %>>% getPipeline
 ```
 
 <br>
@@ -96,27 +96,27 @@ The sequence of operations is stored as metadata. It is only processed when an e
 If noticed, the <i>output</i> attribute of the EDA object is empty so far.
 
 ```{r lazy eval 1}
-length(obj@output)
+length(obj1@output)
 ```
 
 However, a specific function call can generate the output of the pipeline stored in the object. Which is then stored in the <i>output</i> attribute of the object.
 
 ```{r lazy eval 2, warning=F}
-obj1 <- obj %>>% generateOutput
-length(obj1@output)
+obj1Output <- obj1 %>>% generateOutput
+length(obj1Output@output)
 ```
 
 Observe that the length of the output list of the first object (the chunk above) remains 0 since the generated output was assigned to a new object.
 
 ```{r lazy eval 2.5, warning=F}
-length(obj@output)
+length(obj1@output)
 ```
 
 A specific output can be viewed by providing the position of the function generating the output in the sequence of operations in the pipeline. This can be obtained from the "order" column in the "pipeline" table corresponding to the function whose output is desired
 
 ```{r lazy eval 3, warning=F}
 # The index can range from 1 to length(obj@output)
-obj1 %>>% getOuputByOrderId(3)
+obj1Output %>>% getOuputByOrderId(1)
 ```
 
 <br>
@@ -130,7 +130,7 @@ Let us demonstrate this with an example.
 
 ```{r current register, warning=FALSE}
 # Currently registered functions
-obj %>>% getRegistry
+obj2 %>>% getRegistry
 ```
 
 Currently, the package does not have a function to plot bivariate distributions. Let us define a function which can do it for us.
@@ -160,10 +160,14 @@ This user-defined function can now be registered as part of the AnalysisPipeline
 ```{r register function, warning=F}
 # The first parameter provides the function name
 # The second parameter allows for a header that will feature in the report
-obj <- obj %>>% registerFunction('bivariatePlots', "Bivariate Plots")
+# The exceptionFunction parameter allows the user to define a custom exception function in case there is an error during execution
+bivarException <- function(error){
+  stop("There was an error while plotting bivariate plots due to the provided parameters")
+}
+obj2 <- obj2 %>>% registerFunction('bivariatePlots', "Bivariate Plots", exceptionFunction = "bivarException")
 
 # Printing the updated registry
-obj %>>% getRegistry
+obj2 %>>% getRegistry
 ```
 
 ### Using newly registered function with lazy eval of pipeline
@@ -172,19 +176,19 @@ Now that a new user-defined function is also available along with the existing f
 
 ```{r register function 2, warning=F}
 # Chaining the user-defined function to the object's pipeline where it was registered
-obj <- obj %>>% 
+obj2 <- obj2 %>>% 
   bivariatePlots(select_var_name_1 = 'Occupancy', select_var_name_2 = 'max_rooms_capacity', 
                  priColor = "blue", secColor = "black")
 
 # Printing the updated pipeline
-obj %>>% getPipeline
+obj2 %>>% getPipeline
 ```
 
 The newly added function will also lazy evaluate depending on the trigger.
 
 ```{r register function 3, warning=F}
-obj2 <- obj %>>% generateOutput()
-obj2 %>>% getOuputByOrderId(4)
+obj2Output <- obj2 %>>% generateOutput()
+obj2Output %>>% getOuputByOrderId(4)
 ```
 
 <br>
@@ -203,10 +207,10 @@ In the above case, since the object had the output evaluated and stored in the <
 In the example below, the object has an empty output attribute. The function call, in this case, evaluates the outputs and then knits them into an HTML file.
 
 ```{r generate report and tabs 2, message=FALSE, warning=FALSE, eval=FALSE}
-obj <- obj %>>% bivariatePlots('Occupancy', 'PercentTransientNights', 
+objRep <- obj %>>% bivariatePlots('Occupancy', 'PercentTransientNights', 
                            priColor = "blue", secColor = "black")
 
-obj %>>% generateReport('~/Desktop')
+objRep %>>% generateReport('~/Desktop')
 ```
 
 <b>NOTE</b>: A sample of the above report can be found in the <i>support/</i> folder of the utility.
@@ -219,7 +223,7 @@ The pipelines stored as an attribute in the object are effectively meta pipeline
 
 ```{r save pipelines, message=FALSE, warning=FALSE, eval=TRUE}
 # Saves the pipeline and registry of the EDA object
-savePipeline(obj, 'pipeline.RDS')
+savePipeline(obj2, 'pipeline.RDS')
 ```
 
 This pipeline can be loaded and re-used with any other data set.

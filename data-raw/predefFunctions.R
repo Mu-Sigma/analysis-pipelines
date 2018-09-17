@@ -16,20 +16,24 @@ batchPredefFunctions <- data.frame(functionName = c("univarCatDistPlots"),
                                 heading = c("Univariate Distribution Categorical"),
                                 outAsIn = c(FALSE),
                                 engine = c("r"),
+                                exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
                                 stringsAsFactors = F)
 
 batchPredefFunctions %>>% dplyr::add_row(functionName = "outlierPlot",
                                    heading = "Univariate Outlier",
                                    outAsIn = FALSE,
-                                   engine = "r")           -> batchPredefFunctions
+                                   engine = "r",
+                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))           -> batchPredefFunctions
 batchPredefFunctions %>>% dplyr::add_row(functionName = "multiVarOutlierPlot",
                                    heading = "Multivariate Outlier",
                                    outAsIn = FALSE,
-                                   engine = "r")           -> batchPredefFunctions
+                                   engine = "r",
+                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))           -> batchPredefFunctions
 batchPredefFunctions %>>% dplyr::add_row(functionName = "ignoreCols",
                                    heading = "",
                                    outAsIn = TRUE,
-                                   engine = "r")            -> batchPredefFunctions
+                                   engine = "r",
+                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))            -> batchPredefFunctions
 
 ##################################################################################################
 

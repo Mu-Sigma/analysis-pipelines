@@ -5,7 +5,8 @@
 \title{Register a user-defined function to be used with \code{AnalysisPipeline} objects}
 \usage{
 registerFunction(object, functionName, heading = "", outAsIn = F,
-  engine = "r", loadPipeline = F, userDefined = T, session = session)
+  engine = "r", exceptionFunction = substitute(genericPipelineException),
+  loadPipeline = F, userDefined = T, session = session)
 }
 \arguments{
 \item{object}{object that contains input, pipeline, registry and output}
@@ -34,8 +35,9 @@ Other Package core functions: \code{\link{AnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
   \code{\link{checkSchemaMatch}},
   \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
+  \code{\link{generateReport}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{loadPipeline}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
