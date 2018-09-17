@@ -8,7 +8,7 @@
 \usage{
 \S4method{initialize}{StreamingAnalysisPipeline}(.Object, input)
 
-\S4method{initialize}{AnalysisPipeline}(.Object, input = NULL,
+\S4method{initialize}{AnalysisPipeline}(.Object, input = data.frame(),
   filePath = "", workingInput = data.frame())
 }
 \arguments{
@@ -43,8 +43,9 @@ Other Package core functions: \code{\link{AnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
   \code{\link{checkSchemaMatch}},
   \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
+  \code{\link{generateReport}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{loadPipeline}},
   \code{\link{registerFunction}},

@@ -8,6 +8,7 @@
 #' TO DO
 #' - Add schema checks
 #' - Add ability to initialized without input and check for generate output if there is not input initialized
+#' - Remove workingInput
 
 
 #' @name StreamingAnalysisPipeline

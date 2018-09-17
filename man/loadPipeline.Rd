@@ -4,7 +4,7 @@
 \alias{loadPipeline}
 \title{Loads the \code{AnalysisPipeline} object from the file system}
 \usage{
-loadPipeline(RDSPath, input = NULL, filePath = "")
+loadPipeline(RDSPath, input = data.frame(), filePath = "")
 }
 \arguments{
 \item{RDSPath}{the path at which the .RDS file containing the pipeline is located}
@@ -31,8 +31,9 @@ Other Package core functions: \code{\link{AnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
   \code{\link{checkSchemaMatch}},
   \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
+  \code{\link{generateReport}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initialize}}, \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},

@@ -4,6 +4,12 @@
 \name{StreamingAnalysisPipeline}
 \alias{StreamingAnalysisPipeline}
 \title{Function to initialize \code{StreamingAnalysisPipeline} class with the input Spark DataFrame}
+\description{
+TO DO
+- Add schema checks
+- Add ability to initialized without input and check for generate output if there is not input initialized
+- Remove workingInput
+}
 \details{
 The class which holds the metadata including the registry of available functions,
 the data on which the pipeline is to be applied, as well as the pipeline itself
