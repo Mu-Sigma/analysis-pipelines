@@ -219,7 +219,7 @@ opWith2Filters %>>% getOuputByOrderId(3)
 First, we save the pipeline
 
 ```{r}
-twoFilterPipeline %>>% savePipeline(RDSPath = "~/Downloads/twoFilterPipeline.Rda")
+twoFilterPipeline %>>% savePipeline(path = "~/Downloads/twoFilterPipeline.Rda")
 ```
 
 Then, we clear the R environment and restart the R session
@@ -246,7 +246,7 @@ Then, we load the pipeline and execute on the new data which is the just the fir
 
 ```{r}
 
-pipelineObjLoaded <- loadPipeline(RDSPath = "~/Downloads/twoFilterPipeline.Rda")
+pipelineObjLoaded <- loadPipeline(path = "~/Downloads/twoFilterPipeline.Rda")
 pipelineObjLoaded %>>% checkSchemaMatch(newData = SparkR::as.data.frame(inputDataset)[1:100,]) -> schemaCheck
 schemaCheck
 

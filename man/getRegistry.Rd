@@ -15,16 +15,19 @@ Tibble describing the registry
 \details{
 Obtains the function registry from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble,
      including both predefined and user defined functions
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{AnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
-  \code{\link{checkSchemaMatch}},
-  \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}},
+  \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
   \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
-  \code{\link{getPipeline}}, \code{\link{initialize}},
+  \code{\link{getPipeline}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
   \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},

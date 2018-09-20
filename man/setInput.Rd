@@ -14,21 +14,24 @@ setInput(object, input, filePath = "")
 \item{filePath}{path to the file which needs to be read (currently supports .csv files)}
 }
 \value{
-Updated \code{AnalysisPipeline} object
+Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 }
 \details{
-Assigns the input to the pipeline for an  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object,
+Assigns the input to the pipeline for an  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{AnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
-  \code{\link{checkSchemaMatch}},
-  \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}},
+  \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
   \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadPipeline}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{updateObject}}
 }

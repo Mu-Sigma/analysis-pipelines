@@ -1,56 +1,48 @@
 ##################################################################################################
 # Title: Reusable pipelines for generating analyses outputs and reports
-# Version: 18.08.01
+# Version: 18.09.01
 # Created on: July 12, 2018
 # Description: An R package version which works both on R data frames, and a Spark environment i.e.
 #              Spark DataFrames including Structured Streaming
 ##################################################################################################
-
-#' @name AnalysisPipeline
-#' @title Function to initialize \code{AnalysisPipeline} class with the input data frame
+#' @name BaseAnalysisPipeline
+#' @title Base class for \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} objects
 #' @details The class which holds the metadata including the registry of available functions,
-#' the data on which the pipeline is to be applied, as well as the pipeline itself
-#' @details More details of how an object of this class should be initialized is provided in the
-#' constructor - \link{initialize}
-#' @slot input The input dataset on which analysis is to be performed
-#' @slot originalSchemaDf Empty data frame representing the schema of the input
-#' @slot filePath Path of the input dataset to be uploaded
+#' the data on which the pipeline is to be applied, as well as the pipeline itself, and serves
+#' as the base class for various types of Pipeline objects such as Batch and Streaming.
+#' @details This base class which contains the slots related to the registry, pipeline and output can be extended
+#' to create custom class for specific scenarios if required.
+#' @details The details of the constructor for this class can be found at \link{initializeBaseAnalysisPipeline}
+#' @details In the documentation, objects of classes which are subclasses of this class are referred to as 'Pipeline' objects
 #' @slot pipeline A tibble which holds functions to be called
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
 #' @family Package core functions
-#' @export AnalysisPipeline
-#' @exportClass AnalysisPipeline
+#' @exportClass BaseAnalysisPipeline
+#' @export BaseAnalysisPipeline
 
-AnalysisPipeline <- setClass("AnalysisPipeline",
-                       slots = c(
-                         input = "data.frame",
-                         originalSchemaDf = "data.frame",
-                         pipeline = "tbl",
-                         registry = "tbl",
-                         output = "list"
-                       ))
+BaseAnalysisPipeline <- setClass("BaseAnalysisPipeline",
+                             slots = c(
+                               pipeline = "tbl",
+                               registry = "tbl",
+                               output = "list"
+                             ))
 
-#' @name initialize
-#' @title Constructor for the \code{AnalysisPipeline} object
-#' @param .Object The \code{AnalysisPipeline} object
-#' @param input The data frame on which operations need to be performed
-#' @param filePath File path for a .csv file to directly read in the dataset from
+#' @name initializeBaseAnalysisPipeline
+#' @title This is the constructor for the \link{BaseAnalysisPipeline} class
+#' @param .Object The \code{BaseAnalysisPipeline} object
 #' @details
-#'      Either one of \code{input} or \code{filePath} need to be provided i.e. either the
-#'      data frame or the file path to a csv file
-#' @return an object of class "\code{AnalysisPipeline}", initialized with the input data frame provided
+#'      This is a constructor function for the base class for various types of Analysis Pipelines. This method gets
+#'      internally called by \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} constructors.
+#' @return an object of class "\code{BaseAnalysisPipeline}"
 #' @family Package core functions
+#' @export
+
 setMethod(
   f = "initialize",
-  signature = "AnalysisPipeline",
-  definition = function(.Object, input = data.frame(), filePath = "", workingInput = data.frame())
+  signature = "BaseAnalysisPipeline",
+  definition = function(.Object)
   {
-    ##Check input class
-
-    .Object@input <- initDfBasedOnType(input, filePath)
-    .Object@originalSchemaDf <- .Object@input[0,]
-
     .Object@pipeline <- tibble(
       order = numeric(),
       operation = character(),
@@ -71,26 +63,124 @@ setMethod(
     )
     .Object@output <- list()
 
-    for(rowNo in 1:nrow(batchPredefFunctions)){
-      .Object %>>% registerFunction(batchPredefFunctions[['functionName']][[rowNo]],
-                                    batchPredefFunctions[['heading']][[rowNo]],
-                                    batchPredefFunctions[['outAsIn']][[rowNo]],
-                                    batchPredefFunctions[['engine']][[rowNo]],
-                                    batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
-                                    userDefined = F) -> .Object
-    }
     return(.Object)
   }
 )
 
+#' @name registerFunction
+#' @title Register a user-defined function to be used with a \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+#' @details
+#'       The specified operation along with the heading and parameters is updated in the pipeline slot
+#'       of the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations to be performed is stored
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
+#' @param object object that contains input, pipeline, registry and output
+#' @param functionName name of function to be registered
+#' @param heading heading of that section in report
+#' @param outAsIn whether to use original input or output from previous function
+#' @param engine specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"
+#' @param loadPipeline logical parameter to see if function is being used in loadPipeline or not
+#' @param session to load shiny session in the function
+#' @return Updated \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+#' @family Package core functions
+#' @export
+
+setGeneric(
+  name = "registerFunction",
+  def = function(object, functionName,  heading = "", outAsIn = F,
+                 engine = "r", #options are 'r', 'spark', 'python'
+                 exceptionFunction = substitute(genericPipelineException),
+                 loadPipeline = F, userDefined = T, session = session)
+  {
+    standardGeneric("registerFunction")
+  }
+)
+
+setMethod(
+  f = "registerFunction",
+  signature = "BaseAnalysisPipeline",
+  definition = function(object, functionName, heading = "", outAsIn = F,
+                        engine = "r",
+                        exceptionFunction = as.character(substitute(genericPipelineException)),
+                        loadPipeline = F, userDefined = T, session = session)
+  {
+
+    #Define data frame class according to engine type
+    dataFrameClass <- "data.frame"
+    if(engine == "spark"){
+      dataFrameClass <- "SparkDataFrame"
+    }
+
+
+    parametersName <- names(as.list(args(eval(parse(text=functionName)))))
+    parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
+    if(parametersName != ""){
+      parametersName <- paste0(", ", parametersName)
+    }
+    methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
+    firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
+    methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
+    methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
+    methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
+
+
+    ##Assigning the exception function to the global Environment
+    assign(exceptionFunction, get(x = exceptionFunction,
+                                                envir = environment()),
+           envir = globalenv())
+
+    #Register function
+    registerFunText <- paste0("setGeneric(
+                                                                         name = \"",functionName,"\",
+                                                                         def = function(object",parametersName,")
+                                                                         {
+                                                                         standardGeneric(\"",functionName,"\")
+                                                                         }
+                                                                         )
+
+                                                                         setMethod(
+                                                                         f = \"",functionName,"\",
+                                                                         signature = \"AnalysisPipeline\",
+                                                                         definition = function(object",parametersName,")
+                                                                         {
+                                                                         parametersList <- unlist(strsplit(\"",sub(", ", "", parametersName),"\",\",\"))
+                                                                         parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
+
+                                                                         return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
+                                                                         }
+                                                                         )
+                                                                         setMethod(
+                                                                         f = \"",functionName,"\",
+                                                                         signature = \"", dataFrameClass, "\",
+                                                                         definition = function(object ", methodArg, "", methodBody,")
+                                                                         ")
+
+    eval(parse(text = registerFunText), envir=.GlobalEnv)
+
+
+    if(loadPipeline==F){
+      object@registry %>>% add_row(functionName = paste0(functionName),
+                                   heading = heading,
+                                   outAsIn = outAsIn,
+                                   engine = engine,
+                                   exceptionHandlingFunction = exceptionFunction,
+                                   userDefined = userDefined) -> object@registry
+    }
+    return(object)
+  }
+)
+
+
 #' @name setInput
 #' @title Sets the input for an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @details
-#'      Assigns the input to the pipeline for an  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object,
+#'      Assigns the input to the pipeline for an  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
 #' @param object object that contains input, pipeline, registry and output
 #' @param input the input data frame
 #' @param filePath path to the file which needs to be read (currently supports .csv files)
-#' @return Updated \code{AnalysisPipeline} object
+#' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
 #' @export
 setGeneric(
@@ -112,13 +202,7 @@ setGeneric(
 
 setMethod(
   f = "setInput",
-  signature = "AnalysisPipeline",
-  definition = .setInput
-)
-
-setMethod(
-  f = "setInput",
-  signature = "StreamingAnalysisPipeline",
+  signature = "BaseAnalysisPipeline",
   definition = .setInput
 )
 
@@ -128,12 +212,14 @@ setMethod(
 #'       The specified operation along with the heading and parameters is updated in the pipeline slot
 #'       of the  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations
 #'      to be performed is stored
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
 #' @param object object that contains input, pipeline, registry and output
 #' @param operation function name to be updated in tibble
 #' @param heading heading of that section in report
 #' @param parameters parameters passed to that function
 #' @param outAsIn whether to use original input or output from previous function
-#' @return Updated \code{AnalysisPipeline} object
+#' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
 #' @export
 setGeneric(
@@ -165,139 +251,20 @@ setGeneric(
 
 setMethod(
   f = "updateObject",
-  signature = "AnalysisPipeline",
+  signature = "BaseAnalysisPipeline",
   definition = .updateObject
 )
-
-setMethod(
-  f = "updateObject",
-  signature = "StreamingAnalysisPipeline",
-  definition = .updateObject
-)
-
-#' @name genericPipelineException
-#' @title Default exception for pipeline functions
-#' @details This functions defines the default function which will be called in case of an exception occurring while
-#' executing any of the pipeline functions. While a function is registered, a custom function to deal with exceptions
-#' incurred during the call of the function being registered can be passed by the user. If passed, the custom function
-#' will be called instead of this function
-#' @param error Error encountered during the execution of a particular pipeline function
-#' @family Package core functions
-#' @export
-genericPipelineException <- function(error){
-  message <- error$message
-  print("generic exception")
-  stop(paste0("EXCEPTION OCCURED WHILE RUNNING THE PIPELINE FUNCTION WITH PROVIDED PARAMETERS: ", message))
-}
-
-#' @name registerFunction
-#' @title Register a user-defined function to be used with \code{AnalysisPipeline} objects
-#' @details
-#'       The specified operation along with the heading and parameters is updated in the pipeline slot
-#'       of the AnalysisPipeline object, where the sequence of operations to be performed is stored
-#' @param object object that contains input, pipeline, registry and output
-#' @param functionName name of function to be registered
-#' @param heading heading of that section in report
-#' @param outAsIn whether to use original input or output from previous function
-#' @param engine specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"
-#' @param loadPipeline logical parameter to see if function is being used in loadPipeline or not
-#' @param session to load shiny session in the function
-#' @return Updated \code{AnalysisPipeline} object
-#' @family Package core functions
-#' @export
-
-setGeneric(
-  name = "registerFunction",
-  def = function(object, functionName,  heading = "", outAsIn = F,
-                 engine = "r", #options are 'r', 'spark', 'python'
-                 exceptionFunction = substitute(genericPipelineException),
-                 loadPipeline = F, userDefined = T, session = session)
-  {
-    standardGeneric("registerFunction")
-  }
-)
-
-setMethod(
-  f = "registerFunction",
-  signature = "AnalysisPipeline",
-  definition = function(object, functionName, heading = "", outAsIn = F,
-                        engine = "r",
-                        exceptionFunction = substitute(genericPipelineException),
-                        loadPipeline = F, userDefined = T, session = session)
-  {
-
-    #Define data frame class according to engine type
-    dataFrameClass <- "data.frame"
-    if(engine == "spark"){
-      dataFrameClass <- "SparkDataFrame"
-    }
-
-
-    parametersName <- names(as.list(args(eval(parse(text=functionName)))))
-    parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
-    if(parametersName != ""){
-      parametersName <- paste0(", ", parametersName)
-    }
-    methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
-    firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
-    methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
-    methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
-    methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
-
-
-    ##Assigning the exception function to the global Environment
-    assign(exceptionFunction, get(x = as.character(exceptionFunction), envir = environment()),   envir = globalenv())
-
-    #Register function
-    registerFunText <- paste0("setGeneric(
-                              name = \"",functionName,"\",
-                              def = function(object",parametersName,")
-                              {
-                              standardGeneric(\"",functionName,"\")
-                              }
-                              )
-
-                              setMethod(
-                              f = \"",functionName,"\",
-                              signature = \"AnalysisPipeline\",
-                              definition = function(object",parametersName,")
-                              {
-                              parametersList <- unlist(strsplit(\"",sub(", ", "", parametersName),"\",\",\"))
-                              parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
-
-                              return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
-                              }
-                              )
-                              setMethod(
-                              f = \"",functionName,"\",
-                              signature = \"", dataFrameClass, "\",
-                              definition = function(object ", methodArg, "", methodBody,")
-                              ")
-
-    eval(parse(text = registerFunText), envir=.GlobalEnv)
-
-
-    if(loadPipeline==F){
-      object@registry %>>% add_row(functionName = paste0(functionName),
-                                   heading = heading,
-                                   outAsIn = outAsIn,
-                                   engine = engine,
-                                   exceptionHandlingFunction = exceptionFunction,
-                                   userDefined = userDefined) -> object@registry
-    }
-    return(object)
-                              }
-                              )
-
 
 #' @name assessEngineSetUp
-#' @title Assesses engine (R, Spark, Python) set up
+#' @title Assesses engine (R, Spark, Python, Spark Structured Streaming) set up
 #' @details
-#'       Assesses whether engines required for executing functions in an \code{AnalysisPipeline} object have been set up
+#'       Assesses whether engines required for executing functions in an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}
+#'       object have been set up
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
 #' @param object object that contains input, pipeline, registry and output
 #' @return Tibble containing the details of available engines, whether they are required for a recipe, a logical reporting
 #'         whether the engine has been set up, and comments.
-#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -362,244 +329,57 @@ setGeneric(
 
 }
 
-setMethod(
-  f = "assessEngineSetUp",
-  signature = "AnalysisPipeline",
-  definition = .assessEngineSetUp
-)
 
 setMethod(
   f = "assessEngineSetUp",
-  signature = "StreamingAnalysisPipeline",
+  signature = "BaseAnalysisPipeline",
   definition = .assessEngineSetUp
-)
-
-
-
-#' @name generateReport
-#' @title Generate a HTML report from an \code{AnalysisPipeline} object
-#' @details
-#'       The sequence of operations stored in the \code{AnalysisPipeline} object are run, outputs generated,
-#'       and a HTML report is generated with outputs in the same sequence as the pipeline created by the user
-#' @param object object that contains input, pipeline, registry and output
-#' @param path path on the file system, where the generated html report should be stored
-#' @return Updated \code{AnalysisPipeline} object
-#' @family Package core functions
-#' @export
-
-setGeneric(
-  name = "generateReport",
-  def = function(object,path)
-  {
-    standardGeneric("generateReport")
-  }
-)
-
-setMethod(
-  f = "generateReport",
-  signature = c("AnalysisPipeline", "character"),
-  definition = function(object,path)
-  {
-    require(rmarkdown)
-    if(length(object@output) == 0){
-      object <- generateOutput(object)
-    }
-    object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
-
-
-    rmarkdown::render(
-      system.file("report.Rmd", package = "analysisPipelines"),
-      params = list(
-        input = object@input,
-        pipeline = object@pipeline,
-        output = object@output
-      ),
-      html_document(
-        css = system.file("styles.css", package = "analysisPipelines"),
-        toc = T,
-        toc_float = T
-      ),
-
-      output_dir = path ,
-      output_file = paste('EDA_report_',Sys.time(),'.html', sep = '')
-    )
-
-  }
-)
-
-#' @name generateOutput
-#' @title Generate a list of outputs from an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
-#' @details
-#'       The sequence of operations stored in the\code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
-#'       are run and outputs generated, stored in a list
-#' @param object object that contains input, pipeline, registry and output
-#' @return A list of the outputs in the sequence in which the pipeline was created
-#' @include core-streaming-functions.R
-#' @family Package core functions
-#' @export
-
-setGeneric(
-  name = "generateOutput",
-  def = function(object)
-  {
-    standardGeneric("generateOutput")
-  }
-)
-
-.generateOutput = function(object)
-{
-  inputToExecute <- object@input
-
-  if(all(dim(inputToExecute) == c(0,0))){
-    stop("This pipeline has not been initialized with a dataframe. Please use the setInput() function to do so.")
-  }
-
-  ## Check engine setup
-  object %>>% assessEngineSetUp ->  engineAssessment
-  engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
-
-  if(!all(requiredEngines$isSetup)){
-    stop(paste0("All engines required for the pipelines have not been configured. ",
-          "Please use the analysisPipelines::assessEngine() function to check"))
-  }
-  pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
-
-  if(nrow(pipelineRegistryJoin) > 0){
-    for(rowNo in 1:nrow(pipelineRegistryJoin)){
-
-      #Check engine
-
-      if(rowNo > 1){
-        prevEngine <- pipelineRegistryJoin[["engine"]][rowNo - 1]
-        currEngine <- pipelineRegistryJoin[["engine"]][rowNo]
-      }else{
-        prevEngine <- currEngine <-  pipelineRegistryJoin[["engine"]][rowNo]
-      }
-
-
-      ## Check outAsIn and engine conversion accordingly
-      if(pipelineRegistryJoin[['outAsIn.x']][rowNo] == T && rowNo > 1){
-        #object@workingInput <- do.call(object@pipeline[['operation']][[rowNo]], append(list(input), object@pipeline[['parameters']][[rowNo]]))
-        if(prevEngine != currEngine){
-
-          if(prevEngine == 'spark'){
-
-            if(currEngine == 'r'){
-              inputToExecute <- SparkR::as.data.frame(object@output[[rowNo-1]])
-            }
-
-          }else if(prevEngine == 'r'){
-            if(currEngine == "spark"){
-              inputToExecute <- SparkR::as.DataFrame(object@output[[rowNo-1]])
-            }
-
-          }
-        }else{
-          inputToExecute <- object@output[[rowNo-1]]
-        }
-      }else{
-
-          if(currEngine == 'r'){
-            inputToExecute <- object@input
-          }else if(currEngine == 'spark'){
-            inputToExecute <- SparkR::as.DataFrame(object@input)
-          }
-      }
-      object@output[[rowNo]] <- tryCatch({do.call(pipelineRegistryJoin[['operation']][[rowNo]],
-                                        append(list(inputToExecute),
-                                               pipelineRegistryJoin[['parameters']][[rowNo]]))},
-                                        error = function(e){
-                                          do.call(pipelineRegistryJoin[['exceptionHandlingFunction']][[rowNo]],
-                                                  list(error = e))
-                                        })
-    }
-  }else{
-    stop("No functions have been added to the pipeline")
-  }
-
-  return(object)
-}
-
-setMethod(
-  f = "generateOutput",
-  signature = "AnalysisPipeline",
-  definition = .generateOutput
-)
-
-setMethod(
-  f = "generateOutput",
-  signature = "StreamingAnalysisPipeline",
-  definition = .generateStreamingOutput
-)
-
-setMethod(
-  f = "generateOutput",
-  signature = "tbl",
-  definition = function(object)
-  {
-    input <- input
-    outList <- list()
-    for(rowNo in 1:nrow(object)){
-      if(object[['outAsIn']][rowNo] == T){
-        input <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
-      }
-      outList[[rowNo]] <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
-    }
-    return(outList)
-  }
 )
 
 
 #' @name savePipeline
-#' @title Saves the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object to the file system without outputs
+#' @title Saves the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object to the file system without outputs
 #' @details
-#'       The \code{AnalysisPipeline} object is saved to the file system in the paths specified
+#'       The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object is saved to the file system in the paths specified
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
 #' @param object object that contains input, pipeline, registry and output
-#' @param RDSPath the path at which the .RDS file containing the pipeline should be stored
+#' @param path the path at which the .Rda file containing the pipeline should be stored, along with the name of the file including
+#' a .Rda extension
 #' @return Does not return a value
-#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
 setGeneric(
   name = "savePipeline",
-  def = function(object, RDSPath)
+  def = function(object, path)
   {
     standardGeneric("savePipeline")
   }
 )
 
-.savePipeline = function(object, RDSPath){
+.savePipeline = function(object, path){
   object@output <- list()
   object@input <- data.frame()
   listToBeSaved <- c("object", object@registry$functionName, object@registry$exceptionHandlingFunction)
-  #saveRDS(object, RDSPath2)
-  #readRDS(file = RDSPath2)
-  save(list = listToBeSaved,file = RDSPath)
-  #load(file = RDSPath)
-  #saveRDS(object, RDSPath)
+  save(list = listToBeSaved,file = path)
 }
 
 setMethod(
   f = "savePipeline",
-  signature = "AnalysisPipeline",
-  definition = .savePipeline
-)
-
-setMethod(
-  f = "savePipeline",
-  signature = "StreamingAnalysisPipeline",
+  signature = "BaseAnalysisPipeline",
   definition = .savePipeline
 )
 
 
 #' @name getPipeline
 #' @title Obtain the pipeline
-#' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object
+#' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @details
 #'      Obtains the pipeline from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
 #' @return Tibble describing the pipeline
-#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -617,13 +397,7 @@ setGeneric(
 
 setMethod(
   f = "getPipeline",
-  signature = "AnalysisPipeline",
-  definition = .getPipeline
-)
-
-setMethod(
-  f = "getPipeline",
-  signature = "StreamingAnalysisPipeline",
+  signature = "BaseAnalysisPipeline",
   definition = .getPipeline
 )
 
@@ -634,8 +408,9 @@ setMethod(
 #' @details
 #'      Obtains the function registry from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble,
 #'      including both predefined and user defined functions
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
 #' @return Tibble describing the registry
-#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -653,13 +428,7 @@ setGeneric(
 
 setMethod(
   f = "getRegistry",
-  signature = "AnalysisPipeline",
-  definition = .getRegistry
-)
-
-setMethod(
-  f = "getRegistry",
-  signature = "StreamingAnalysisPipeline",
+  signature = "BaseAnalysisPipeline",
   definition = .getRegistry
 )
 
@@ -668,8 +437,9 @@ setMethod(
 #' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @details
 #'      Obtains the input from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
 #' @return Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{StreamingAnalysisPipeline}
-#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -687,13 +457,7 @@ setGeneric(
 
 setMethod(
   f = "getInput",
-  signature = "AnalysisPipeline",
-  definition = .getInput
-)
-
-setMethod(
-  f = "getInput",
-  signature = "StreamingAnalysisPipeline",
+  signature = "BaseAnalysisPipeline",
   definition = .getInput
 )
 
@@ -706,11 +470,12 @@ setMethod(
 #'      Obtains a specific output from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by passing the position
 #'      of the function for which the output is desired, in the sequence of operations in the pipeline. This can be obtained by passing the number
 #'      under the 'order' column in the pipeline table corresponding to the required function
+#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+#' which extend this class
 #' @return If includeCall = F, the output object generated by the function is returned
 #' @return If includeCall = T, it is a list containing to elements
 #'         - call: tibble with 1 row containing the function call for the output desired
 #'         - output: output generated
-#' @include core-streaming-functions.R
 #' @family Package core functions
 #' @export
 
@@ -740,29 +505,45 @@ setGeneric(
 
 setMethod(
   f = "getOuputByOrderId",
-  signature = "AnalysisPipeline",
+  signature = "BaseAnalysisPipeline",
   definition = .getOuputByOrderId
 )
 
-setMethod(
-  f = "getOuputByOrderId",
-  signature = "StreamingAnalysisPipeline",
-  definition = .getOuputByOrderId
+########### Changing generics ############################################
+#' @rdname generateOutput
+#' @name generateOutput
+#' @title Generate a list of outputs from Pipeline objects
+#' @details \code{generateOutput} is a generic function that is implemented for various types of pipeline objects
+#' such as \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline}
+#' @details
+#'       The sequence of operations stored in the pipeline object
+#'       are run and outputs generated, stored in a list
+#' @param object object that contains input, pipeline, registry and output
+#' @return Updated Pipeline object with the outputs at each step stored in the \code{output} slot.
+#' @return Specific outputs can be obtained by using the \link{getOuputByOrderId} function
+#' @family Package core functions
+#' @include core-functions.R
+#' @exportMethod generateOutput
+
+setGeneric(
+  name = "generateOutput",
+  def = function(object)
+  {
+    standardGeneric("generateOutput")
+  }
 )
 
-
-
+#' @rdname checkSchemaMatch
 #' @name checkSchemaMatch
-#' @title Checks the schema of a pipeline against the original
-#' @param object The \code{AnalysisPipeline} object
+#' @title Checks the schema of the input to a Pipeline object against the original
+#' @param object A Pipeline object
 #' @param newData The newData that the pipeline is to be initialized with
 #' @details Checks the schema of the new data frame that the pipeline is to be initialized with against
 #'          the original schema that the pipeline was saved with. Provides a detailed comparison
 #' @return Returns a list with details on added columns, removed columns, comparison between column classes, and a logical
 #'         whether the schema has remained the same from the old dataframe to the new one
-#' @family Package core functions
-#' @export
-
+#' @family Package core functions for batch/one-time analyses
+#' @exportMethod checkSchemaMatch
 setGeneric(
   name = "checkSchemaMatch",
   def = function(object, newData)
@@ -771,38 +552,44 @@ setGeneric(
   }
 )
 
-.checkSchemaMatch = function(object, newData){
-  schemaCheck <- checkSchema(object@originalSchemaDf, newData)
-  return(schemaCheck)
+######## Auxiliary functions ############################################
+
+#' @name genericPipelineException
+#' @title Default exception for pipeline functions
+#' @details This functions defines the default function which will be called in case of an exception occurring while
+#' executing any of the pipeline functions. While a function is registered, a custom function to deal with exceptions
+#' incurred during the call of the function being registered can be passed by the user. If passed, the custom function
+#' will be called instead of this function
+#' @param error Error encountered during the execution of a particular pipeline function
+#' @family Package core functions
+#' @export
+genericPipelineException <- function(error){
+  message <- error$message
+  print("generic exception")
+  stop(paste0("EXCEPTION OCCURED WHILE RUNNING THE PIPELINE FUNCTION WITH PROVIDED PARAMETERS: ", message))
 }
 
-setMethod(
-  f = "checkSchemaMatch",
-  signature = "AnalysisPipeline",
-  definition = .checkSchemaMatch
-)
-
-
 #' @name loadPipeline
-#' @title Loads the \code{AnalysisPipeline} object from the file system
+#' @title Loads the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object from the file system
 #' @details
-#'       The \code{AnalysisPipeline} object is loaded into the file system from the file system
+#'       The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object is loaded into the file system from the file system
 #'       based on the path specified.
 #' @details Optionally, the \code{input} parameter can be provided to
-#'       initialize the \code{AnalysisPipeline} object with a data frame present in the R session.
-#'       Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
+#'       initialize the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object with an R data frame
+#'       or Streaming Spark DataFrame (in case of \code{StreamingAnalysisPipeline} object) present in the R session.
+#' @details Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
 #'       and the object will be initialized with this data frame. The \code{filePath} parameter takes precedence over
-#'       \code{input} parameter
-#' @param RDSPath the path at which the .RDS file containing the pipeline is located
+#'       \code{input} parameter. This is applicable only from \code{AnalysisPipeline} objects
+#' @param path the path at which the .Rda file containing the pipeline is located
 #' @param input (optional) data frame with which the pipeline object should be initialized
 #' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
-#' @return An \code{AnalysisPipeline} object, optinally initialized with the data frame provided
+#' @return An \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, optinally initialized with the data frame provided
 #' @family Package core functions
 #' @export
 
-loadPipeline <- function(RDSPath, input = data.frame() , filePath=""){
-  #object <- readRDS(RDSPath)
-  load(RDSPath, envir = environment())
+loadPipeline <- function(path, input = data.frame() , filePath = ""){
+
+  load(path, envir = environment())
   functionNames = setdiff(ls(envir = environment()), c("RDSPath", "object", "input", "filePath"))
 
   lapply(functionNames, function(x){
@@ -841,108 +628,16 @@ loadPipeline <- function(RDSPath, input = data.frame() , filePath=""){
 }
 
 
-#' @name checkSchema
-#' @title Compare the schemas of two dataframes
+#' @name initDfBasedOnType
+#' @title initializes the \code{AnalysisPipeline} object with the input based on the provided type
 #' @details
-#'       Compares the schemas of two dataframes, providing information on added and removed columns in the new dataframe
-#'       as compared to the old
-#' @param dfOld Old dataframe
-#' @param dfNew New dataframe
-#' @return Returns a list with details on added columns, removed columns, comparison between column classes, and a logical
-#'         whether the schema has remained the same from the old dataframe to the new one
+#'      Transforms provided inputs into R data frame regardless of the input provided, be it Spark DataFrames
+#'      or Python data frames
+#' @param input Input dataframe
+#' @param filePath File path where the .csv file is stored
+#' @return \code{AnalysisPipeline} object initialized with input
 #' @family Package core functions
 #' @keywords internal
-#'
-checkSchema <- function(dfOld, dfNew){
-
-  schemaCheck <- list(addedColumns = list(),
-                      removedColumns = list(),
-                      colComparison = list(),
-                      isSchemaSame = logical())
-
-  colNamesOld <- colnames(dfOld)
-  colNamesNew <- colnames(dfNew)
-
-  addedColumns <- setdiff(colNamesNew, colNamesOld)
-  removedColumns <- setdiff(colNamesOld, colNamesNew)
-  isSchemaSame <- F
-
-  oldColComparison <- purrr::map(colNamesOld, function(x, dfOld, dfNew, colNamesNew, addedColumns, removedColumns){
-    colComparison <- list(colName = character(),
-                          oldClass = character(),
-                          newClass = character(),
-                          colType = character(),
-                          hasClassChanged = logical()
-    )
-
-    if(!((x %in% addedColumns) || (x %in% removedColumns))){
-      newColIndex <- match(x, colNamesNew)
-      colName <- x
-      oldClass <- class(dfOld[[colName]])
-      newClass <- class(dfNew[[colName]])
-      colType <- "common"
-      hasClassChanged <- ifelse(oldClass == newClass, F, T)
-    }else if(x %in% removedColumns){
-      colName <- x
-      oldClass <- class(dfOld[[colName]])
-      newClass <- NULL
-      colType <- "removed"
-      hasClassChanged <- NULL
-    }
-
-    colComparison <- list(colName = colName,
-                          oldClass = oldClass,
-                          newClass = newClass,
-                          colType = colType,
-                          hasClassChanged = hasClassChanged
-                       )
-    return(colComparison)
-
-  }, dfOld, dfNew, colNamesNew, addedColumns, removedColumns)
-
-  addedCols <- purrr::map(addedColumns, function(x, dfNew){
-    colComparison <- list(colName = character(),
-                          oldClass = character(),
-                          newClass = character(),
-                          colType = character(),
-                          hasClassChanged = logical()
-    )
-
-    colName <- x
-    oldClass <- NULL
-    newClass <- class(dfNew[[colName]])
-    colType <- "added"
-    hasClassChanged <- NULL
-
-    colComparison <- list(colName = colName,
-                          oldClass = oldClass,
-                          newClass = newClass,
-                          colType = colType,
-                          hasClassChanged = hasClassChanged
-    )
-
-    return(colComparison)
-
-  }, dfNew)
-
-  colComparison <- append(oldColComparison, addedCols)
-
-  if(length(addedColumns)  == 0 && length(removedColumns) == 0){
-    if(all(unlist(purrr::map(colComparison, function(x){
-                                              ##Returning true if class hasn't changed
-                                              return(!x$hasClassChanged)
-                                                    })))){
-      isSchemaSame <- T
-    }
-  }
-
-  schemaCheck <- list(addedColumns = addedColumns,
-                      removedColumns = removedColumns,
-                      colComparison = colComparison,
-                      isSchemaSame = isSchemaSame
-                      )
-  return(schemaCheck)
-}
 
 initDfBasedOnType <- function(input, filePath){
 
@@ -964,6 +659,7 @@ initDfBasedOnType <- function(input, filePath){
 
   return(input)
 }
+
 
 #' @name checkPipelineCompatibilityWithNewData
 #' @title Checks whether the pipeline is compatible new dataset

@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{registerFunction}
 \alias{registerFunction}
-\title{Register a user-defined function to be used with \code{AnalysisPipeline} objects}
+\title{Register a user-defined function to be used with a \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
 \usage{
 registerFunction(object, functionName, heading = "", outAsIn = F,
   engine = "r", exceptionFunction = substitute(genericPipelineException),
@@ -24,22 +24,24 @@ registerFunction(object, functionName, heading = "", outAsIn = F,
 \item{session}{to load shiny session in the function}
 }
 \value{
-Updated \code{AnalysisPipeline} object
+Updated \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 }
 \details{
 The specified operation along with the heading and parameters is updated in the pipeline slot
-      of the AnalysisPipeline object, where the sequence of operations to be performed is stored
+      of the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations to be performed is stored
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{AnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
-  \code{\link{checkSchemaMatch}},
-  \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}},
+  \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
   \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadPipeline}},
-  \code{\link{savePipeline}}, \code{\link{setInput}},
-  \code{\link{updateObject}}
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}}, \code{\link{savePipeline}},
+  \code{\link{setInput}}, \code{\link{updateObject}}
 }

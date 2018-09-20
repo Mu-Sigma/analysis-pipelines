@@ -2,40 +2,42 @@
 % Please edit documentation in R/core-functions.R
 \name{loadPipeline}
 \alias{loadPipeline}
-\title{Loads the \code{AnalysisPipeline} object from the file system}
+\title{Loads the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object from the file system}
 \usage{
-loadPipeline(RDSPath, input = data.frame(), filePath = "")
+loadPipeline(path, input = data.frame(), filePath = "")
 }
 \arguments{
-\item{RDSPath}{the path at which the .RDS file containing the pipeline is located}
+\item{path}{the path at which the .Rda file containing the pipeline is located}
 
 \item{input}{(optional) data frame with which the pipeline object should be initialized}
 
 \item{filePath}{(optional) path where a dataset in .CSV format is present which is to be loaded}
 }
 \value{
-An \code{AnalysisPipeline} object, optinally initialized with the data frame provided
+An \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, optinally initialized with the data frame provided
 }
 \details{
-The \code{AnalysisPipeline} object is loaded into the file system from the file system
+The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object is loaded into the file system from the file system
       based on the path specified.
 
 Optionally, the \code{input} parameter can be provided to
-      initialize the \code{AnalysisPipeline} object with a data frame present in the R session.
-      Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
+      initialize the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object with an R data frame
+      or Streaming Spark DataFrame (in case of \code{StreamingAnalysisPipeline} object) present in the R session.
+
+Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
       and the object will be initialized with this data frame. The \code{filePath} parameter takes precedence over
-      \code{input} parameter
+      \code{input} parameter. This is applicable only from \code{AnalysisPipeline} objects
 }
 \seealso{
-Other Package core functions: \code{\link{AnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
-  \code{\link{checkSchemaMatch}},
-  \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}},
+  \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
   \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{registerFunction}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
   \code{\link{updateObject}}
 }

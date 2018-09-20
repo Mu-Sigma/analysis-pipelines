@@ -23,7 +23,8 @@ RoxygenNote: 6.0.1
 VignetteBuilder: knitr
 Collate: 
     'analysisPipelines_package.R'
-    'core-streaming-functions.R'
     'core-functions.R'
+    'core-functions-batch.R'
+    'core-streaming-functions.R'
     'r-batch-eda-utilities.R'
     'spark-structured-streaming-utilities.R'
