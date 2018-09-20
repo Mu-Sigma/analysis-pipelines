@@ -18,23 +18,26 @@ updateObject(object, operation, heading = "", parameters, outAsIn = F)
 \item{outAsIn}{whether to use original input or output from previous function}
 }
 \value{
-Updated \code{AnalysisPipeline} object
+Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 }
 \details{
 The specified operation along with the heading and parameters is updated in the pipeline slot
       of the  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations
      to be performed is stored
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{AnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
-  \code{\link{checkSchemaMatch}},
-  \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}},
+  \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
   \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadPipeline}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}}
 }

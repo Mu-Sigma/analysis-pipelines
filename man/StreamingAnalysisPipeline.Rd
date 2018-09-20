@@ -3,36 +3,24 @@
 \docType{class}
 \name{StreamingAnalysisPipeline}
 \alias{StreamingAnalysisPipeline}
-\title{Function to initialize \code{StreamingAnalysisPipeline} class with the input Spark DataFrame}
-\description{
-TO DO
-- Add schema checks
-- Add ability to initialized without input and check for generate output if there is not input initialized
-- Remove workingInput
-}
+\title{Class for constructing Analysis Pipelines for streaming analyeses}
 \details{
-The class which holds the metadata including the registry of available functions,
+Inherits the base class \link{BaseAnalysisPipeline} class which holds the metadata including the registry of available functions,
 the data on which the pipeline is to be applied, as well as the pipeline itself
 
+This class currently only supports Apache Spark Structured Streaming, implemented through the SparkR interface
+
 More details of how an object of this class should be initialized is provided in the
-constructor - \link{initialize}
+constructor - \link{initializeStreamingAnalysisPipeline}
 }
 \section{Slots}{
 
 \describe{
 \item{\code{input}}{The input Spark DataFrame on which analysis is to be performed}
 
-\item{\code{workingInput}}{Internal slot for having a working version of the input}
-
-\item{\code{pipeline}}{A tibble which holds functions to be called}
-
-\item{\code{registry}}{A tibble which holds all the registered functions}
-
-\item{\code{output}}{A list which holds all the functions output}
+\item{\code{originalSchemaDf}}{Empty Spark DataFrame representing the schema of the input}
 }}
 
 \seealso{
-Other Package core functions for Streaming Analyses: \code{\link{initialize}},
-  \code{\link{loadStreamingPipeline}},
-  \code{\link{registerStreamingFunction}}
+Other Package core functions for Streaming Analyses: \code{\link{initializeStreamingAnalysisPipeline}}
 }

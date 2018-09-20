@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions.R
 \name{assessEngineSetUp}
 \alias{assessEngineSetUp}
-\title{Assesses engine (R, Spark, Python) set up}
+\title{Assesses engine (R, Spark, Python, Spark Structured Streaming) set up}
 \usage{
 assessEngineSetUp(object)
 }
@@ -14,17 +14,21 @@ Tibble containing the details of available engines, whether they are required fo
         whether the engine has been set up, and comments.
 }
 \details{
-Assesses whether engines required for executing functions in an \code{AnalysisPipeline} object have been set up
+Assesses whether engines required for executing functions in an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}
+      object have been set up
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{AnalysisPipeline}},
-  \code{\link{checkSchemaMatch}},
-  \code{\link{checkSchema}}, \code{\link{generateOutput}},
-  \code{\link{generateReport}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
+  \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
   \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadPipeline}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
   \code{\link{updateObject}}
