@@ -21,7 +21,17 @@ list_to_df <- function(listfordf){
 
 
 
-
+# Removing linear dependent columns from the data
+#' @name removeLinearDependentCols
+#' @title Removes linear dependent columns from the data
+#' @details Removes the columns which are linearly dependent on each other from the given data
+#' @param dataset the data from which linearly dependent columns should be removed
+#' @param depVar the dependent variable in the data for  building a linear model
+#' @param removeMissingValues boolean to say if the missing values are to be removed or not
+#' @param positiveClass the positive class from the dependent variable
+#' @return returns a dataset with linearly dependent columns removed
+#' @family Package Classification Utilites functions
+#' @export
 
 removeLinearDependentCols <- function(dataset,
            depVar,
@@ -108,19 +118,30 @@ removeLinearDependentCols <- function(dataset,
     #cols_with_singularity <- as.data.frame(reactData$rem_col)
   }
 
-#' @param fsWindow Number of features to be displayed in graph
-#' @param y predictedVariable
-logisticRegressionFS <-
+# Select features using logistic regression
+#' @name logisticRegressionFeatureSelection
+#' @title Get importance of features using logistic regression
+#' @details Get the rank of importance of each of the feature in the data using logistic regresssion
+#' @param dataset the data from which linearly dependent columns are removed
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param fsWindow number of features to be displayed in graph
+#' @param depVar predicted Variable
+#' @param color the color of the graph
+#' @return gives a graph showing the rank of importance of the features
+#' @family Package classification Utilites functions
+#' @export
+
+logisticRegressionFeatureSelection <-
   function(dataset,factorLabels,
-           y ,
+           depVar ,
            fsWindow,
-           color)
+           color="blue")
   {
 
     
     reactDataComponents <- list()
     logisticModel <-
-      stats::glm(as.formula(paste0(y, "~.")),
+      stats::glm(as.formula(paste0(depVar, "~.")),
                  data = dataset,
                  family = binomial(link = "logit"))
     
@@ -159,13 +180,19 @@ logisticRegressionFS <-
   }
 
 
-#Function to balance classes
+# Split the data into train, test and validation
+#' @name splitTrainValidation
+#' @title Split the data into train, test and validation
+#' @details Split the given data into train, test and validation 
+#' @param dataset the data from which linearly dependent columns are removed
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param TrainTestSplitPercent the percentage of data to be used for training
+#' @param depVar predicted Variable
+#' @return Gives the training and testing data
+#' @family Package Classification Utilites functions
+#' @export
 
-#this part is to split the data into train and test based on the traintest split given by the user
-
-splitTrainValidation <-
-  function(dataset,factorLabels,
-           TrainTestSplitPercent ,
+splitTrainValidation <- function(dataset,factorLabels,TrainTestSplitPercent ,
            depVar) {
     
     #TrainTestSplitPercent=70
@@ -204,22 +231,25 @@ splitTrainValidation <-
     )
     return(list_to_df(outputtbl))
   }
-
+# Fit a Logistic Regression Model
+#' @name lrfit
+#' @title Fit a Logistic Regression Model
+#' @details Fit a Logistic Regression Model for the given data and cross validation value
 #' @param train training data
 #' @param test test data
 #' @param xSelected important varibales
-#' @param y dependent variable
-#' @param factorLabels modLevels
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
 #' @param cvK cross validation  K value
-#'
-lrFit <-
-  function(train,test,factorLabels,
-           xSelected,
-           depVar ,
-           cvK = 3,
-           modelColours,
-           primaryColor,
-           secondaryColor )
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
+lrFit <- function(train,test,factorLabels,xSelected,depVar ,cvK = 3,
+                  modelColours ="yellow",primaryColor="red",
+                  secondaryColor="blue" )
   {
     caretOut <- lrTrain(train, xSelected, depVar, cvK, factorLabels)
     model <- caretOut$finalModel
@@ -346,8 +376,21 @@ lrFit <-
     return(list_to_df(outputtbl))
   }
 
+# Set the threshold for predicting the test data
+#' @name lrsetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using logistic regression
+#' @param modelSubmitTrain list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param modelSubmit list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
 
-lrSubmit <- function(modelSubmitTrain,factorLabels,modelSubmit, xSelected, thresh,  positiveClass)
+lrsetThreshold <- function(modelSubmitTrain,factorLabels,modelSubmit, xSelected, thresh,  positiveClass)
 {
   reactDataComponents = list()
   modelSubmitTrain$LR$pred = predictClass(modelSubmitTrain$LR$predProb,
@@ -397,17 +440,29 @@ lrSubmit <- function(modelSubmitTrain,factorLabels,modelSubmit, xSelected, thres
   return(list_to_df(outputtbl))
 }
 
+# Select features using logistic regression
+#' @name partialLeastSquaresFeatureSelection
+#' @title Get importance of features using Partial Least Squares
+#' @details Get the rank of importance of each of the feature in the data using Partial Least Squares
+#' @param dataset the data from which linearly dependent columns are removed
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param fsWindow number of features to be displayed in graph
+#' @param depVar predicted Variable
+#' @param color the color of the graph
+#' @return gives a graph showing the rank of importance of the features
+#' @family Package classification Utilites functions
+#' @export
 
 
-partialLeastSquaresFS <-
+partialLeastSquaresFeatureSelection <-
   function(dataset,factorLabels,
-           y,
+           depVar,
            fsWindow,
            color)
   {
     reactDataComponents <- list()
     model <-
-      caret::plsda(dataset[, setdiff(colnames(dataset), y), drop = F], dataset[, y], ncomp =
+      caret::plsda(dataset[, setdiff(colnames(dataset), depVar), drop = F], dataset[, depVar], ncomp =
                      2, probMethod = "softmax")
     res <- data.frame(plsVarSel::VIP(model, 2))
     colnames(res) <- "Importance"
@@ -446,9 +501,26 @@ partialLeastSquaresFS <-
     return(list_to_df(outputtbl))
   }
 
+# Fit a Partial Least Squares Model
+#' @name plsfit
+#' @title Fit a Partial Least Squares Model
+#' @details Fit a Partial Least Squares Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param ncomp Number of components
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
 plsFit <- function(train,test,factorLabels,
                    xSelected,
-                   y,
+                   depVar,
                    cvK = 3,
                    modelColours,
                    ncomp = 2,
@@ -457,7 +529,7 @@ plsFit <- function(train,test,factorLabels,
 {
   caretOut <-
     plsTrain(train[, xSelected, drop = F],
-             factor(train[, y], levels = factorLabels),
+             factor(train[, depVar], levels = factorLabels),
              cvK,
              factorLabels,
              ncomp = 2)
@@ -520,7 +592,7 @@ plsFit <- function(train,test,factorLabels,
     plsPredictProb(model, train[, xSelected, drop = F], factorLabels)
   plsOutput <-
     allAnalysisOnPreds(
-      factor(train[, y], levels = factorLabels),
+      factor(train[, depVar], levels = factorLabels),
       pred,
       modelColours,
       factorLabels,
@@ -530,18 +602,18 @@ plsFit <- function(train,test,factorLabels,
   modelSubmitTrain <- list(
     model = model,
     predProb = pred,
-    label = factor(train[, y], levels = factorLabels),
+    label = factor(train[, depVar], levels = factorLabels),
     rocLinePlot = plsOutput[[6]],
     auc = plsOutput[[2]]
   )
   ### Pretty plots
   reactDataComponents$plsFancyProbDenPlot <-
-    densityFunc(factor(train[, y], levels = factorLabels),
+    densityFunc(factor(train[, depVar], levels = factorLabels),
                 pred,
                 primaryColor,
                 secondaryColor)
   accPresRecallPlots <-
-    customPlots(factor(train[, y], levels = factorLabels),
+    customPlots(factor(train[, depVar], levels = factorLabels),
                 pred,
                 factorLabels,
                 primaryColor)
@@ -598,7 +670,7 @@ plsFit <- function(train,test,factorLabels,
     plsPredictProb(modelSubmitTrain$model, test[, xSelected, drop = F], factorLabels)
   plsAnalysis <-
     allAnalysisOnPreds(
-      factor(test[, y], levels = factorLabels),
+      factor(test[, depVar], levels = factorLabels),
       predValid,
       modelColours,
       factorLabels,
@@ -608,7 +680,7 @@ plsFit <- function(train,test,factorLabels,
   modelSubmit <- list(
     model = modelSubmitTrain$model,
     predProb = predValid,
-    label = factor(test[, y], levels = factorLabels),
+    label = factor(test[, depVar], levels = factorLabels),
     rocLinePlot = plsAnalysis[[6]],
     auc = plsAnalysis[[2]]
   )
@@ -636,7 +708,21 @@ plsFit <- function(train,test,factorLabels,
   return(list_to_df(outputtbl))
 }
 
-plsSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  positiveClass)
+# Set the threshold for predicting the test data
+#' @name plssetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using partial least squares
+#' @param modelSubmitTrain list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param modelSubmit list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
+
+plssetThreshold <- function(mst,ms,factorLabels, xSelected, thresh,  positiveClass)
 {
   modelSubmitTrain <- list()
   modelSubmit <- list()
@@ -698,13 +784,27 @@ plsSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  positiveClass)
   return(list_to_df(outputtbl))
 }
 
-marsFS <-function(dataset,factorLabels,
-                  y,
+# Select features using logistic regression
+#' @name marsFeatureSelection
+#' @title Get importance of features using MARS
+#' @details Get the rank of importance of each of the feature in the data using MARS
+#' @param dataset the data from which linearly dependent columns are removed
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param fsWindow number of features to be displayed in graph
+#' @param depVar predicted Variable
+#' @param color the color of the graph
+#' @return gives a graph showing the rank of importance of the features
+#' @family Package classification Utilites functions
+#' @export
+
+
+marsFeatureSelection <-function(dataset,factorLabels,
+                  depVar,
                   fsWindow,
                   color )
 {
   reactDataComponents <- list()
-  ev <- MARSRegression(dataset, y, factorLabels)
+  ev <- MARSRegression(dataset, depVar, factorLabels)
   ranks <-  ev[, 4, drop = F]
   plotDataFrame <- as.data.frame(ev[, 4], drop = F)
   colnames(plotDataFrame)[1] <- "Importance"
@@ -745,15 +845,32 @@ marsFS <-function(dataset,factorLabels,
   return(list_to_df(outputtbl))
 }
 
+# Fit a MARS Model
+#' @name marsfit
+#' @title Fit a MARS Model
+#' @details Fit a MARS Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
+
 marsFit <- function(train,test,factorLabels,
                     xSelected,
-                    y,
+                    depVar,
                     cvK = 3,
                     modelColours,
                     primaryColor,
                     secondaryColor)
 {
-  caretOut <- marsTrain(train, xSelected, y, cvK, factorLabels)
+  caretOut <- marsTrain(train, xSelected, depVar, cvK, factorLabels)
   model <- caretOut$finalModel
   
   # generate cross validation plots
@@ -766,16 +883,16 @@ marsFit <- function(train,test,factorLabels,
   }
   
   pred <- marsPredictProb(model, train[,xSelected,drop=F], factorLabels)
-  analysis <- allAnalysisOnPreds(factor(train[,y], levels=factorLabels), pred, modelColours, 
+  analysis <- allAnalysisOnPreds(factor(train[,depVar], levels=factorLabels), pred, modelColours, 
                                  factorLabels, primaryColor, secondaryColor)
   
   reactDataComponents = list()
   reactDataComponents$marscvPlot <- cvPlot
   reactDataComponents$marscvCM <- cvCM
   
-  reactDataComponents$marsFancyProbDenPlot <- densityFunc(factor(train[,y], levels=factorLabels), 
+  reactDataComponents$marsFancyProbDenPlot <- densityFunc(factor(train[,depVar], levels=factorLabels), 
                                                           pred, primaryColor, secondaryColor)
-  accPresRecallPlots <- customPlots(factor(train[,y], levels=factorLabels),pred, factorLabels, primaryColor)
+  accPresRecallPlots <- customPlots(factor(train[,depVar], levels=factorLabels),pred, factorLabels, primaryColor)
   plotTheme <- ggplot2::theme(legend.position=c(0.8,0.8),
                               legend.background = ggplot2::element_rect(fill=ggplot2::alpha('white', 0)),
                               legend.direction = "vertical",
@@ -797,18 +914,18 @@ marsFit <- function(train,test,factorLabels,
   modelSubmitTrain <- list(
     model = model,
     predProb = analysis[[5]],
-    label = factor(train[,y], levels=factorLabels),
+    label = factor(train[,depVar], levels=factorLabels),
     rocLinePlot = analysis[[6]],
     auc = analysis[[2]]
   )
   ### validation
   predValid <- marsPredictProb(model, test[,xSelected,drop=F], factorLabels)
-  analysisValid <- allAnalysisOnPreds(factor(test[,y], levels=factorLabels), predValid, modelColours, 
+  analysisValid <- allAnalysisOnPreds(factor(test[,depVar], levels=factorLabels), predValid, modelColours, 
                                       factorLabels, primaryColor, secondaryColor)
   modelSubmit <- list(
     model = model,
     predProb = analysisValid[[5]],
-    label = factor(test[,y], levels=factorLabels),
+    label = factor(test[,depVar], levels=factorLabels),
     rocLinePlot = analysisValid[[6]],
     auc = analysisValid[[2]]
   )
@@ -816,8 +933,21 @@ marsFit <- function(train,test,factorLabels,
   outputtbl <- list(msTrain=modelSubmitTrain, ms=modelSubmit, rd=reactDataComponents,factorLabels=factorLabels)
   return(list_to_df(outputtbl))
 }
+# Set the threshold for predicting the test data
+#' @name marssetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using MARS
+#' @param modelSubmitTrain list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param modelSubmit list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param y the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
 
-marsSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  y)
+marssetThreshold <- function(mst,ms,factorLabels, xSelected, thresh,  y)
 {
   modelSubmitTrain <- list()
   modelSubmit <- list()
@@ -851,13 +981,27 @@ marsSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  y)
 }
 
 
-larsFS <- function(dataset,factorLabels,
-                   y,
+# Select features using LARS
+#' @name larsFeatureSelection
+#' @title Get importance of features using Partial Least Squares
+#' @details Get the rank of importance of each of the feature in the data using LARS
+#' @param dataset the data from which linearly dependent columns are removed
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param fsWindow number of features to be displayed in graph
+#' @param depVar predicted Variable
+#' @param color the color of the graph
+#' @return gives a graph showing the rank of importance of the features
+#' @family Package classification Utilites functions
+#' @export
+
+
+larsFeatureSelection <- function(dataset,factorLabels,
+                   depVar,
                    fsWindow,
                    color )
 {
   reactDataComponents <- list()
-  plotDataFrame <- LARSRegression(dataset, y, factorLabels) 
+  plotDataFrame <- LARSRegression(dataset, depVar, factorLabels) 
   rowNamesForLarsFS <- plotDataFrame[,1]
   plotDataFrame = as.data.frame(plotDataFrame[,2])
   colnames(plotDataFrame)[1] <- "Importance"
@@ -883,13 +1027,26 @@ larsFS <- function(dataset,factorLabels,
 }
 
 
+# Select features using random forest
+#' @name randomForestFeatureSelection
+#' @title Get importance of features using random forest
+#' @details Get the rank of importance of each of the feature in the data using random forest
+#' @param dataset the data from which linearly dependent columns are removed
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param fsWindow number of features to be displayed in graph
+#' @param depVar predicted Variable
+#' @param color the color of the graph
+#' @return gives a graph showing the rank of importance of the features
+#' @family Package classification Utilites functions
+#' @export
 
-randomForestFS <- function(dataset,factorLabels, y ,
+
+randomForestFeatureSelection <- function(dataset,factorLabels, depVar ,
                            fsWindow,
                            color , ntrees=100, mtry=6, minNode=1, imp="impurity", rep=T)
 {
   reactDataComponents <- list()
-  rfVarImp <- RandomForestVariableImportance(dataset, setdiff(colnames(dataset), y), y, 
+  rfVarImp <- RandomForestVariableImportance(dataset, setdiff(colnames(dataset), depVar), depVar, 
                                              numTrees=ntrees, mTry=mtry, minNodeSize=as.integer(minNode), 
                                              Importance= imp, replace=rep) 
   rows = rev(rownames(rfVarImp)[order(rfVarImp[,1])])
@@ -916,6 +1073,28 @@ randomForestFS <- function(dataset,factorLabels, y ,
   return(list_to_df(outputtbl))
 }
 
+
+# Fit a Random forest Model
+#' @name rffit
+#' @title Fit a Random forest Model
+#' @details Fit a Random forest Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param ntree number of trees in the forest
+#' @param mtry maximum feaatures to consider for split
+#' @param nodesize minimum size of terminal nodes
+#' @param RFImportance variable importance mode
+#' @param RFReplace boolean to say whether to replace while sampling
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
 rfFit <- function(train,test,factorLabels, xSelected, ntree, mtry,nodesize, RFImportance, RFReplace,y ,
                   cvK = 3,
                   modelColours,
@@ -1009,8 +1188,23 @@ rfFit <- function(train,test,factorLabels, xSelected, ntree, mtry,nodesize, RFIm
   return(list_to_df(outputtbl))
 }
 
+# Set the threshold for predicting the test data
+#' @name rfsetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using Random forest
+#' @param modelSubmitTrain list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param modelSubmit list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @param test the test data
+#' @param rfPred Random forest prediction probabilities
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
 
-rfSubmit <- function( mst,ms,factorLabels, xSelected, thresh,  positiveClass,test,rfPred)
+rfsetThreshold <- function( mst,ms,factorLabels, xSelected, thresh,  positiveClass,test,rfPred)
 {
   modelSubmitTrain <- list()
   modelSubmit <- list()
@@ -1056,15 +1250,29 @@ rfSubmit <- function( mst,ms,factorLabels, xSelected, thresh,  positiveClass,tes
   return(list_to_df(outputtbl))
 }
 
-xgboostFS <- function(dataset,factorLabels,
-                      y,
+# Select features using XG Boost
+#' @name xgboostFeatureSelection
+#' @title Get importance of features using XG Boost
+#' @details Get the rank of importance of each of the feature in the data using XG Boost
+#' @param dataset the data from which linearly dependent columns are removed
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param fsWindow number of features to be displayed in graph
+#' @param depVar predicted Variable
+#' @param color the color of the graph
+#' @return gives a graph showing the rank of importance of the features
+#' @family Package classification Utilites functions
+#' @export
+
+
+xgboostFeatureSelection <- function(dataset,factorLabels,
+                      depVar,
                       fsWindow ,
                       color ,maxDepth=4, learnRate=0.3, iters=10)
 {
   
   reactDataComponents <- list()
-  caretOut <- xgbTrain(dataset, y, factorLabels, 1, maxDepth, learnRate, iters)
-  reactDataComponents$xgboostImpVar <- xgboost::xgb.importance(feature_names = setdiff(colnames(dataset),y), 
+  caretOut <- xgbTrain(dataset, depVar, factorLabels, 1, maxDepth, learnRate, iters)
+  reactDataComponents$xgboostImpVar <- xgboost::xgb.importance(feature_names = setdiff(colnames(dataset),depVar), 
                                                                model = caretOut$finalModel)
   t <- as.data.frame(reactDataComponents$xgboostImpVar)
   t <- data.frame(t[,"Gain"], row.names=t[,"Feature"])
@@ -1086,7 +1294,27 @@ xgboostFS <- function(dataset,factorLabels,
   return(list_to_df(outputtbl))
 }
 
-xgbFit<-function(train,test,factorLabels, xSelected, y,
+
+# Fit a XG BOOST Model
+#' @name xgbfit
+#' @title Fit a XG BOOST Model
+#' @details Fit a XG BOOST Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param xgboostMaxDepth number of trees in the forest
+#' @param xgboostNoOfIterations maximum feaatures to consider for split
+#' @param xgboostLeraningRate minimum size of terminal nodes
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
+xgbFit<-function(train,test,factorLabels, xSelected, depVar,
                  cvK = 3,xgboostMaxDepth =4, 
                  xgboostLeraningRate =0.3, xgboostNoOfIterations=10,
                  modelColours,
@@ -1097,9 +1325,9 @@ xgbFit<-function(train,test,factorLabels, xSelected, y,
   
   
   reactDataComponents<-list()
-  train[,y] = factor(train[,y], levels=factorLabels)
+  train[,depVar] = factor(train[,depVar], levels=factorLabels)
   
-  caretOut <- xgbTrain(train[,c(xSelected,y),drop=F], y, factorLabels, cvK, xgboostMaxDepth, 
+  caretOut <- xgbTrain(train[,c(xSelected,depVar),drop=F], depVar, factorLabels, cvK, xgboostMaxDepth, 
                        xgboostLeraningRate, xgboostNoOfIterations)
   xgbModelOutput <- caretOut$finalModel
   
@@ -1116,19 +1344,19 @@ xgbFit<-function(train,test,factorLabels, xSelected, y,
   reactDataComponents$xgbcvCM <- cvCM
   
   pred <- xgbPredictProb(xgbModelOutput, as.matrix(sapply(train[,xSelected,drop=F], function(x) as.numeric(x))))
-  xgboostOutput <- allAnalysisOnPreds(factor(train[,y], levels=factorLabels), pred, modelColours$XGB, 
+  xgboostOutput <- allAnalysisOnPreds(factor(train[,depVar], levels=factorLabels), pred, modelColours$XGB, 
                                       factorLabels, primaryColor, secondaryColor)
   modelSubmitTrain<- list(
     model = xgbModelOutput,
     predProb = pred,
-    label = factor(train[,y], levels=factorLabels),
+    label = factor(train[,depVar], levels=factorLabels),
     rocLinePlot = xgboostOutput[[6]],
     auc = xgboostOutput[[2]]
   )
   ### Pretty plot
-  reactDataComponents$xgbFancyProbDenPlot <- densityFunc(factor(train[,y],levels = factorLabels), 
+  reactDataComponents$xgbFancyProbDenPlot <- densityFunc(factor(train[,depVar],levels = factorLabels), 
                                                          pred, primaryColor, secondaryColor)
-  accPresRecallPlots <- customPlots(factor(train[,y],levels = factorLabels), pred, factorLabels, primaryColor)
+  accPresRecallPlots <- customPlots(factor(train[,depVar],levels = factorLabels), pred, factorLabels, primaryColor)
   plotTheme <- ggplot2::theme(legend.position=c(0.8,0.8),
                               legend.background = ggplot2::element_rect(fill = ggplot2::alpha('white', 0)),
                               legend.direction = "vertical",
@@ -1145,12 +1373,12 @@ xgbFit<-function(train,test,factorLabels, xSelected, y,
   reactDataComponents$xgboostAOCTable <- data.frame(Metric, Values)
   reactDataComponents$xgboostOptTh <- round(xgboostOutput[[4]],2)
   predValid <- xgbPredictProb(xgbModelOutput, as.matrix(sapply(test[,xSelected,drop=F], function(x) as.numeric(x))))
-  xgbAnalysis <- allAnalysisOnPreds(factor(test[,y], levels=factorLabels), predValid, modelColours$XGB, 
+  xgbAnalysis <- allAnalysisOnPreds(factor(test[,depVar], levels=factorLabels), predValid, modelColours$XGB, 
                                     factorLabels, primaryColor, secondaryColor)
   modelSubmit <- list(
     model = xgbModelOutput,
     predProb = predValid,
-    label = factor(test[,y], levels=factorLabels),
+    label = factor(test[,depVar], levels=factorLabels),
     rocLinePlot = xgbAnalysis[[6]],
     auc = xgbAnalysis[[2]]
   )
@@ -1166,8 +1394,21 @@ xgbFit<-function(train,test,factorLabels, xSelected, y,
   return(list_to_df(outputtbl))
   
 }
+# Set the threshold for predicting the test data
+#' @name xgbsetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using Xg boost
+#' @param mst list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param ms list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
 
-xgbSubmit<-function( mst,ms,factorLabels, xSelected, thresh,  positiveClass)
+xgbsetThreshold<-function( mst,ms,factorLabels, xSelected, thresh,  positiveClass)
 {
   modelSubmitTrain <- list()
   modelSubmit <- list()
@@ -1210,9 +1451,28 @@ xgbSubmit<-function( mst,ms,factorLabels, xSelected, thresh,  positiveClass)
   outputtbl <-list(msTrain = modelSubmitTrain, ms = modelSubmit, rd = reactDataComponents,factorLabels=factorLabels)
   return(list_to_df(outputtbl))
 }
+# Fit a GAM Model
+#' @name gamfit
+#' @title Fit a GAM Model
+#' @details Fit a GAM Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param splines the splines method to smooth
+#' @param colsToSmooth the columns which are to be smoothed
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
+
 gamFit <- function(train,test,factorLabels,
                    xSelected,
-                   y,
+                   depVar,
                    cvK = 3,
                    modelColours,
                    primaryColor,
@@ -1221,10 +1481,10 @@ gamFit <- function(train,test,factorLabels,
 {
   
   reactDataComponents <- list()
-  formula<-gamCreateFormula(train[,c(xSelected,y),drop=F],y,colsToSmooth,splines)
-  train[,y] <- factor(train[,y], levels=factorLabels)
+  formula<-gamCreateFormula(train[,c(xSelected,depVar),drop=F],depVar,colsToSmooth,splines)
+  train[,depVar] <- factor(train[,depVar], levels=factorLabels)
   
-  caretOut <- gamTrainWithCV(data = train[,c(xSelected,y),drop=F], y = y, cvK = cvK, formula = formula, 
+  caretOut <- gamTrainWithCV(data = train[,c(xSelected,depVar),drop=F], y = depVar, cvK = cvK, formula = formula, 
                              method = "REML", family = 'binomial')
   model <- caretOut$finalModel
   
@@ -1244,7 +1504,7 @@ gamFit <- function(train,test,factorLabels,
   
   if((length(colsToSmooth)!=0))
   {
-    model$data <- train[,c(xSelected,y),drop=F]
+    model$data <- train[,c(xSelected,depVar),drop=F]
     plotdata <- visreg::visreg(model, type = "contrast", plot = FALSE)
     model$data <- NULL
     if(length(xSelected)==1) {
@@ -1284,11 +1544,11 @@ gamFit <- function(train,test,factorLabels,
   }
   ####
   pred<-gamPredictProb(model, train[,xSelected,drop=F], "response")
-  gamOutput <- allAnalysisOnPreds(train[,y], pred, modelColours$GAM, factorLabels, primaryColor, secondaryColor)
+  gamOutput <- allAnalysisOnPreds(train[,depVar], pred, modelColours$GAM, factorLabels, primaryColor, secondaryColor)
   modelSubmitTrain <- list(
     model = model,
     predProb = pred,
-    label = factor(train[,y],levels = factorLabels),
+    label = factor(train[,depVar],levels = factorLabels),
     rocLinePlot = gamOutput[[6]],
     auc = gamOutput[[2]]
   )
@@ -1315,9 +1575,9 @@ gamFit <- function(train,test,factorLabels,
   reactDataComponents$gamModelSummary<-summ1
   reactDataComponents$gamOptTh <- round(gamOutput[[4]],2)
   pred = gamOutput[[5]]
-  reactDataComponents$gamFancyProbDenPlot <- densityFunc(factor(train[,y], levels=factorLabels), 
+  reactDataComponents$gamFancyProbDenPlot <- densityFunc(factor(train[,depVar], levels=factorLabels), 
                                                          pred, primaryColor, secondaryColor)
-  accPresRecallPlots <- customPlots(factor(train[,y], levels=factorLabels),pred,factorLabels, primaryColor)
+  accPresRecallPlots <- customPlots(factor(train[,depVar], levels=factorLabels),pred,factorLabels, primaryColor)
   plotTheme <- ggplot2::theme(legend.position=c(0.8,0.8),
                               legend.background = ggplot2::element_rect(fill=ggplot2::alpha('white', 0)),
                               legend.direction = "vertical",
@@ -1329,12 +1589,12 @@ gamFit <- function(train,test,factorLabels,
   reactDataComponents$gamFitError <- ""
   ### validation
   predValid <- gamPredictProb(modelSubmitTrain$model, test[,xSelected,drop=F], "response")
-  gamAnalysis <- allAnalysisOnPreds(factor(test[,y],levels = factorLabels), predValid, modelColours$GAM, 
+  gamAnalysis <- allAnalysisOnPreds(factor(test[,depVar],levels = factorLabels), predValid, modelColours$GAM, 
                                     factorLabels, primaryColor, secondaryColor)
   modelSubmit <- list(
     model = modelSubmitTrain$model,
     predProb = predValid,
-    label = factor(test[,y],levels = factorLabels),
+    label = factor(test[,depVar],levels = factorLabels),
     rocLinePlot = gamAnalysis[[6]],
     auc = gamAnalysis[[2]]
   )
@@ -1343,7 +1603,21 @@ gamFit <- function(train,test,factorLabels,
   return(list_to_df(outputtbl))
 }
 
-gamSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  positiveClass)
+# Set the threshold for predicting the test data
+#' @name gamsetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using GAM
+#' @param mst list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param ms list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
+
+gamsetThreshold <- function(mst,ms,factorLabels, xSelected, thresh,  positiveClass)
 {
   modelSubmitTrain <- list()
   modelSubmit <- list()
@@ -1380,29 +1654,46 @@ gamSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  positiveClass)
   return(list_to_df(outputtbl))
 }
 
+# Fit a K-NN Model
+#' @name knnfit
+#' @title Fit a K-NN Model
+#' @details Fit a K-NN Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param k k number of nearest neighbour
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
 
 
 knnFit <- function(train,test,factorLabels,
                    xSelected,
-                   y,
+                   depVar,
                    cvK = 3,k=3,
                    modelColours,
                    primaryColor,
                    secondaryColor)
 {
-  train[,y] <- factor(train[,y],levels = factorLabels)
+  train[,depVar] <- factor(train[,depVar],levels = factorLabels)
   reactDataComponents <- list()
   
   if (as.numeric(k) > 1)
   {
-    reactDataComponents$knnPlots <- knnPlots(train, train, xSelected, y, as.numeric(k), 
+    reactDataComponents$knnPlots <- knnPlots(train, train, xSelected, depVar, as.numeric(k), 
                                              factorLabels, primaryColor, secondaryColor)
   }else
   {
     reactDataComponents$knnPlots <- NULL
   }
   
-  caretOut <- knnTrain(train, xSelected, y, cvK, as.numeric(k), factorLabels)
+  caretOut <- knnTrain(train, xSelected, depVar, cvK, as.numeric(k), factorLabels)
   model <- caretOut$finalModel
   
   # generate cross validation plots
@@ -1417,19 +1708,19 @@ knnFit <- function(train,test,factorLabels,
   reactDataComponents$knncvCM <- cvCM
   
   pred <- knnPredictProb(model, train[,xSelected,drop=F], factorLabels)
-  analysis <- allAnalysisOnPreds(train[,y], pred, modelColours$KNN, factorLabels, primaryColor, secondaryColor)
+  analysis <- allAnalysisOnPreds(train[,depVar], pred, modelColours$KNN, factorLabels, primaryColor, secondaryColor)
   
   reactDataComponents$knnOptTh = round(analysis[[4]], 2)
   modelSubmitTrain <-  list(
     model = model,
     predProb = pred,
-    label = train[,y],
+    label = train[,depVar],
     rocLinePlot = analysis[[6]],
     auc = analysis[[2]]
   )
   
-  reactDataComponents$knnFancyProbDenPlot <- densityFunc(train[,y], pred, primaryColor, secondaryColor)
-  accPresRecallPlots <- customPlots(train[,y],pred,factorLabels,primaryColor)
+  reactDataComponents$knnFancyProbDenPlot <- densityFunc(train[,depVar], pred, primaryColor, secondaryColor)
+  accPresRecallPlots <- customPlots(train[,depVar],pred,factorLabels,primaryColor)
   plotTheme <- ggplot2::theme(legend.position=c(0.8,0.8),
                               legend.background = ggplot2::element_rect(fill=ggplot2::alpha('white', 0)),
                               legend.direction = "vertical",
@@ -1447,13 +1738,13 @@ knnFit <- function(train,test,factorLabels,
   reactDataComponents$knnOptTh <- round(analysis[[4]],2)
   # validation
   predictionsValid = knnPredictProb(model, test[,xSelected,drop=F], factorLabels)
-  analysisValid = allAnalysisOnPreds(factor(test[,y], levels=factorLabels), predictionsValid, modelColours$KNN, 
+  analysisValid = allAnalysisOnPreds(factor(test[,depVar], levels=factorLabels), predictionsValid, modelColours$KNN, 
                                      factorLabels, primaryColor, secondaryColor)
   
   modelSubmit <-  list(
     model = model,
     predProb = predictionsValid,
-    label = factor(test[,y], levels=factorLabels),
+    label = factor(test[,depVar], levels=factorLabels),
     rocLinePlot = analysisValid[[6]],
     auc = analysisValid[[2]]
   )
@@ -1463,7 +1754,22 @@ knnFit <- function(train,test,factorLabels,
   return(list_to_df(outputtbl))
 }
 
-knnSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  y)
+# Set the threshold for predicting the test data
+#' @name knnsetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using K-NN
+#' @param modelSubmitTrain list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param modelSubmit list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @param y the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
+
+knnsetThreshold <- function(mst,ms,factorLabels, xSelected, thresh,  y)
 {
   modelSubmitTrain <- list()
   modelSubmit <- list()
@@ -1499,6 +1805,24 @@ knnSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  y)
   return(list_to_df(outputtbl))
 }
 
+# Fit a LVQ Model
+#' @name lvqfit
+#' @title Fit a LVQ Model
+#' @details Fit a LVQ Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param k k value
+#' @param size number of codebooks
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
 
 lvqFit <- function(train,test,factorLabels,
                    xSelected,
@@ -1602,7 +1926,22 @@ lvqFit <- function(train,test,factorLabels,
   return(list_to_df(outputtbl))
 }
 
-lvqSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  y)
+# Set the threshold for predicting the test data
+#' @name lvqsetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using LVQ
+#' @param modelSubmitTrain list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param modelSubmit list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @param y the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
+
+lvqsetThreshold <- function(mst,ms,factorLabels, xSelected, thresh,  y)
 {
   modelSubmitTrain <- list()
   modelSubmit <- list()
@@ -1687,6 +2026,26 @@ lvqSubmit <- function(mst,ms,factorLabels, xSelected, thresh,  y)
   outputtbl <- list(ms=modelSubmit, msTrain=modelSubmitTrain, rd=reactDataComponents,factorLabels=factorLabels)
   return(list_to_df(outputtbl))
 }
+# Fit a SVM Model
+#' @name svmfit
+#' @title Fit a SVM Model
+#' @details Fit a SVM Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param svmKernel the type of kernel
+#' @param svmGamma gamma value
+#' @param svmDegree degree value
+#' @param svmCoef0 coefficient value
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
 
 svmFit <- function(train,test,factorLabels,
                    xSelected,
@@ -1766,8 +2125,22 @@ svmFit <- function(train,test,factorLabels,
   outputtbl <- list(msTrain=modelSubmitTrain, ms=modelSubmit, rd=reactDataComponents,factorLabels=factorLabels,test=test)
   return(list_to_df(outputtbl))
 }
+# Set the threshold for predicting the test data
+#' @name svmsetThreshold
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using SVM
+#' @param mst list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param ms list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @param y the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
 
-svmSubmit <-function(mst,ms,factorLabels,test, xSelected, thresh,  y)
+svmsetThreshold <-function(mst,ms,factorLabels,test, xSelected, thresh,  y)
 {
   modelSubmitTrain <- list()
   modelSubmit <- list()
@@ -1818,6 +2191,24 @@ svmSubmit <-function(mst,ms,factorLabels,test, xSelected, thresh,  y)
   outputtbl <-list(msTrain=modelSubmitTrain, ms=modelSubmit, rd=reactDataComponents,factorLabels=factorLabels)
   return(list_to_df(outputtbl))
 }
+# Fit a Decision tree Model
+#' @name pdtfit
+#' @title Fit a Decision tree Model
+#' @details Fit a Decision tree Model for the given data and cross validation value
+#' @param train training data
+#' @param test test data
+#' @param xSelected important varibales
+#' @param depVar dependent variable
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param cvK cross validation  K value
+#' @param modelColours model color
+#' @param primaryColor primary color for displaying the graph
+#' @param secondaryColor secondary color for displaying the graph
+#' @return Returns the list of graphs and model fitted
+#' @family Package classification Utilites functions
+#' @export
+
+
 pdtFit <- function(train, test, xSelected, y, factorLabels, cvK, modelColours, primaryColor, secondaryColor)
 {
   
@@ -1894,7 +2285,22 @@ pdtFit <- function(train, test, xSelected, y, factorLabels, cvK, modelColours, p
   return(list_to_df(outputtbl))
 }
 
-pdtSubmit <- function(xSelected, y, factorLabels, thresh, modelSubmitTrain, modelSubmit,positiveClass)
+# Set the threshold for predicting the test data
+#' @name pdtSubmit
+#' @title Set the threshold for predicting the test data 
+#' @details Set the threshold for predicting the test data using Decision tree
+#' @param modelSubmitTrain list of the model, prediction probability and labels
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param modelSubmit list of the model, prediction probability for validation and labels
+#' @param xSelected the list of independent variables selected
+#' @param thresh the threshold for probability above which the dependent variable is classified as positive class
+#' @param positiveClass the positive class of the dependent variable
+#' @param y the dependent variable
+#' @return Returns a list of model fitted, confusion matrix and other statistics of the model
+#' @family Package classification Utilites functions
+#' @export
+
+pdtsetThreshold <- function(xSelected, y, factorLabels, thresh, modelSubmitTrain, modelSubmit,positiveClass)
 {
   reactDataComponents = list()
   modelSubmitTrain$PDT$pred <- predictClass(modelSubmitTrain$PDT$predProb, factorLabels, as.numeric(thresh))
@@ -1945,6 +2351,20 @@ pdtSubmit <- function(xSelected, y, factorLabels, thresh, modelSubmitTrain, mode
   return(list_to_df(outputtbl))
 }
 
+# Predict the test data
+#' @name predictTestData
+#' @title Classify the dependent variable in the test dataset
+#' @details Classify the dependent variable in the test dataset
+#' @param factorLabels the levels of factors present in dependent variable
+#' @param modelSubmit list of the model, prediction probability for validation and labels
+#' @param testdataset the test dataset
+#' @param selectModel string having the model name 
+#' @param selectImpVar the important variables to used for predicting
+#' @param depVar the dependent variable
+#' @param checkGroundTruth compare the prediction with the original classes
+#' @return Returns the test data with dependent variable classified
+#' @family Package classification Utilites functions
+#' @export
 
 predictTestData <-function(modelSubmit,factorLabels,
                            testdataset,
