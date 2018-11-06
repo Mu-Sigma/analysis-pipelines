@@ -4,7 +4,8 @@
 \alias{updateObject}
 \title{Update the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by adding an operation to the pipeline}
 \usage{
-updateObject(object, operation, heading = "", parameters, outAsIn = F)
+updateObject(object, operation, heading = "", parameters, outAsIn = F,
+  storeOutput = F)
 }
 \arguments{
 \item{object}{object that contains input, pipeline, registry and output}
@@ -16,6 +17,8 @@ updateObject(object, operation, heading = "", parameters, outAsIn = F)
 \item{parameters}{parameters passed to that function}
 
 \item{outAsIn}{whether to use original input or output from previous function}
+
+\item{storeOutput}{whether the output of this operation is to be stored}
 }
 \value{
 Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
@@ -33,11 +36,12 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
   \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
-  \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
+  \code{\link{getInput}}, \code{\link{getOutputById}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
   \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{loadPipeline}},
+  \code{\link{loadPipeline}}, \code{\link{prepExecution}},
   \code{\link{registerFunction}},
-  \code{\link{savePipeline}}, \code{\link{setInput}}
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{visualizePipeline}}
 }

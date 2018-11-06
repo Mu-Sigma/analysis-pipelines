@@ -25,6 +25,7 @@ BaseAnalysisPipeline <- setClass("BaseAnalysisPipeline",
                              slots = c(
                                pipeline = "tbl",
                                registry = "tbl",
+                               pipelineExecutor = "list",
                                output = "list"
                              ))
 
@@ -44,14 +45,28 @@ setMethod(
   definition = function(.Object)
   {
     .Object@pipeline <- tibble(
-      order = numeric(),
+      id = character(),
       operation = character(),
       heading = character(),
       parameters = list(),
-      outAsIn = logical()
-
+      outAsIn = logical(),
+      storeOutput = F
     )
+
+    .Object@pipelineExecutor <- list(
+      topologicalOrdering = tibble(id = character(),
+                                   level = character()),
+      dependencyLinks = tibble(from = character(),
+                               to = character())
+      # parallelizationDetails = list()
+      # outputStorageDetails = tibble(id = numeric(),
+      #                                isRequiredUntilLevel = character(),
+      #                                isToBeStoredPermanently = logical()),
+      # cache = list()
+    )
+
     .Object@registry <- tibble(
+      ##id required?
       functionName = character(),
       heading = character(),
       outAsIn = logical(),
@@ -90,7 +105,8 @@ setGeneric(
   def = function(object, functionName,  heading = "", outAsIn = F,
                  engine = "r", #options are 'r', 'spark', 'python'
                  exceptionFunction = substitute(genericPipelineException),
-                 loadPipeline = F, userDefined = T, session = session)
+                 loadPipeline = F, userDefined = T,
+                 storeOutput = F, session = session)
   {
     standardGeneric("registerFunction")
   }
@@ -99,17 +115,29 @@ setGeneric(
 setMethod(
   f = "registerFunction",
   signature = "BaseAnalysisPipeline",
-  definition = function(object, functionName, heading = "", outAsIn = F,
+  definition = function(object, functionName, heading = "",
+                        # outAsIn = F,
                         engine = "r",
                         exceptionFunction = as.character(substitute(genericPipelineException)),
-                        loadPipeline = F, userDefined = T, session = session)
+                        loadPipeline = F, userDefined = T
+                        # storeOutput = F,
+                        # session = session
+                        )
   {
 
     #Define data frame class according to engine type
+    childClass <- class(object)
+    attr(childClass, "package") <- NULL
+
     dataFrameClass <- "data.frame"
     if(engine == "spark"){
       dataFrameClass <- "SparkDataFrame"
     }
+
+    ##Assigning the original function to a variable
+    # assign("origFunction", get(x = functionName,
+                                  # envir = environment()),
+           # envir = environment())
 
 
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
@@ -118,8 +146,14 @@ setMethod(
       parametersName <- paste0(", ", parametersName)
     }
     methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
-    firstArg <- names(as.list(args(eval(parse(text=functionName)))))[1]
-    methodBody <- paste0("{",firstArg,"=object",substring(methodBody,2))
+
+    originalArgs <- names(as.list(args(eval(parse(text=functionName)))))
+    firstArg <- originalArgs[1]
+
+    methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object"), x = methodBody)
+
+    # originalArgsString <- paste0(originalArgs[c(-1,-length(originalArgs))],collapse=",")
+
     methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
     methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
 
@@ -130,30 +164,32 @@ setMethod(
            envir = globalenv())
 
     #Register function
-    registerFunText <- paste0("setGeneric(
-                                                                         name = \"",functionName,"\",
-                                                                         def = function(object",parametersName,")
-                                                                         {
-                                                                         standardGeneric(\"",functionName,"\")
-                                                                         }
-                                                                         )
+    registerFunText <- # Generic
+                            paste0('setGeneric(name = "', functionName,'",',
+                                  'signature = "object",',
+                                 'def = function(object ', ', ... ', ', outAsIn = F, storeOutput = F)',
+                                 # 'def = function(object, ',firstArg, ', ...)',
+                                 'standardGeneric("', functionName,'"));',
 
-                                                                         setMethod(
-                                                                         f = \"",functionName,"\",
-                                                                         signature = \"AnalysisPipeline\",
-                                                                         definition = function(object",parametersName,")
-                                                                         {
-                                                                         parametersList <- unlist(strsplit(\"",sub(", ", "", parametersName),"\",\",\"))
-                                                                         parametersPassed <- lapply(parametersList,function(x){eval(parse(text = x))})
+                        # Adding to pipeline when run on a Analysis Pipeline object
+                                 'setMethod(f = "', functionName,'",',
+                                            'signature = "', childClass, '",',
+                                            'definition = function(object',
+                                                                  parametersName, ',',
+                                                                  'outAsIn, storeOutput){',
+                                             'parametersList <- unlist(strsplit(x = "', sub(", ", "", parametersName), '", split = ","' ,'));',
+                                             'parametersPassed <- lapply(parametersList, function(x){eval(parse(text = x))});',
+                                             'return(updateObject(object,
+                                                                  operation = "', functionName, '",',
+                                                                  'heading = "', heading, '",',
+                                                                  'parameters = parametersPassed, outAsIn = outAsIn, storeOutput = storeOutput));});',
 
-                                                                         return(updateObject(object, \"",functionName,"\", \"",heading,"\", parametersPassed ,",outAsIn,"))
-                                                                         }
-                                                                         )
-                                                                         setMethod(
-                                                                         f = \"",functionName,"\",
-                                                                         signature = \"", dataFrameClass, "\",
-                                                                         definition = function(object ", methodArg, "", methodBody,")
-                                                                         ")
+                        #Executing the actual function when data is passed
+                                'setMethod(f = "',functionName,'",',
+                                 'signature = "', dataFrameClass, '",',
+                                 'definition = function(object ', parametersName,')',
+                                                    methodBody, ')'
+    )
 
     eval(parse(text = registerFunText), envir=.GlobalEnv)
 
@@ -161,7 +197,7 @@ setMethod(
     if(loadPipeline==F){
       object@registry %>>% add_row(functionName = paste0(functionName),
                                    heading = heading,
-                                   outAsIn = outAsIn,
+                                   # outAsIn = outAsIn,
                                    engine = engine,
                                    exceptionHandlingFunction = exceptionFunction,
                                    userDefined = userDefined) -> object@registry
@@ -219,6 +255,7 @@ setMethod(
 #' @param heading heading of that section in report
 #' @param parameters parameters passed to that function
 #' @param outAsIn whether to use original input or output from previous function
+#' @param storeOutput whether the output of this operation is to be stored
 #' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
 #' @export
@@ -228,24 +265,26 @@ setGeneric(
                  operation,
                  heading = "",
                  parameters,
-                 outAsIn = F)
+                 outAsIn = F,
+                 storeOutput = F)
   {
     standardGeneric("updateObject")
   }
 )
 
-.updateObject = function(object, operation, heading="", parameters, outAsIn = F)
+.updateObject = function(object, operation, heading = "", parameters, outAsIn = F,  storeOutput = F)
 {
   if(nrow(object@pipeline) == 0){
-    order = 1
+    id = 1
   }else{
-    order = max(object@pipeline$order) + 1
+    id = max(as.numeric(object@pipeline$id)) + 1
   }
-  object@pipeline %>>% add_row(order = order,
+  object@pipeline %>>% add_row(id = id,
                              operation = operation,
                              heading = heading,
                              parameters = list(parameters),
-                             outAsIn = outAsIn) -> object@pipeline
+                             outAsIn = outAsIn,
+                             storeOutput = storeOutput) -> object@pipeline
   return(object)
 }
 
@@ -278,6 +317,9 @@ setGeneric(
 
 .assessEngineSetUp = function(object)
 {
+  startEngineAssessment <- Sys.time()
+  flog.info("||  Engine Assessment for pipeline STARTED  ||" , name='logger.engine')
+
   engineAssessment <- tibble(engine = character(),
                              requiredForPipeline = logical(),
                              isSetup = logical(),
@@ -325,6 +367,11 @@ setGeneric(
 
   }
 
+
+  endEngineAssessment <- Sys.time()
+  engineAssessmentTime <- endEngineAssessment - startEngineAssessment
+  flog.info("||  Engine Assessment COMPLETE. Time taken : %s seconds||", engineAssessmentTime, name='logger.engine')
+
   return(engineAssessment)
 
 }
@@ -335,7 +382,6 @@ setMethod(
   signature = "BaseAnalysisPipeline",
   definition = .assessEngineSetUp
 )
-
 
 #' @name savePipeline
 #' @title Saves the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object to the file system without outputs
@@ -461,15 +507,15 @@ setMethod(
   definition = .getInput
 )
 
-#' @name getOuputByOrderId
+#' @name getOutputById
 #' @title Obtains a specific output
 #' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
-#' @param position The position of the function for which the output is desired in the sequence of operations in the pipeline.
+#' @param id The position of the function for which the output is desired in the sequence of operations in the pipeline.
 #' @param includeCall Logical which defines whether the call used to generate the output should be returned. By, default this is false
 #' @details
 #'      Obtains a specific output from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by passing the position
 #'      of the function for which the output is desired, in the sequence of operations in the pipeline. This can be obtained by passing the number
-#'      under the 'order' column in the pipeline table corresponding to the required function
+#'      under the 'id' column in the pipeline table corresponding to the required function
 #' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
 #' which extend this class
 #' @return If includeCall = F, the output object generated by the function is returned
@@ -480,18 +526,18 @@ setMethod(
 #' @export
 
 setGeneric(
-  name = "getOuputByOrderId",
-  def = function(object, position, includeCall = F)
+  name = "getOutputById",
+  def = function(object, id, includeCall = F)
   {
-    standardGeneric("getOuputByOrderId")
+    standardGeneric("getOutputById")
   }
 )
 
-.getOuputByOrderId = function(object, position, includeCall = F){
+.getOutputById = function(object, id, includeCall = F){
   op <- list(call = data.frame(),
              output = list())
-  object@pipeline %>% dplyr::filter(order == position) -> call
-  object@output[[position]] -> output
+  object@pipeline %>% dplyr::filter(id == id) -> call
+  unlist(object@output[[paste0("f", id, ".out")]], recursive = F) -> output
 
   if(includeCall){
     op <- list(call = call,
@@ -504,12 +550,86 @@ setGeneric(
 }
 
 setMethod(
-  f = "getOuputByOrderId",
+  f = "getOutputById",
   signature = "BaseAnalysisPipeline",
-  definition = .getOuputByOrderId
+  definition = .getOutputById
+)
+
+#' @name visualizePipeline
+#' @title Visualizes the pipeline as a graph, showing dependencies
+#' @details
+#' @param
+#' @family Package core functions
+#' @export
+
+setGeneric(
+  name = "visualizePipeline",
+  def = function(object)
+  {
+    standardGeneric("visualizePipeline")
+  }
+)
+
+.visualizePipeline <- function(object){
+
+  if(nrow(object@pipelineExecutor$dependencyLinks) == 0){
+    object %>>% prepExecution -> object
+  }
+
+  node_df <- object@pipeline
+  node_df %>>% dplyr::mutate(group = ifelse(storeOutput == T, "Stored output", "Auxiliary step")) %>>%
+    dplyr::select(id, operation, group) -> node_df
+  colnames(node_df) <- c("id", "label", "group")
+
+  edge_df <- object@pipelineExecutor$dependencyLinks
+
+
+  lnodes <- data.frame(label = c("Stored output", "Auxiliary step"),
+                       shape = c("dot"), color = c("#A1AEFF","#ff4d4d"),
+                       title = "Pipeline")
+
+
+  vis <-visNetwork(node_df, edge_df) %>%
+    visGroups(groupname = "Stored output", color = "#A1AEFF", shadow=T) %>%
+    visGroups(groupname = "Auxiliary step", color = "#ff4d4d", shadow=T) %>%
+    visLegend(addNodes = lnodes, position = "right", ncol = 3,
+              zoom = F, useGroups = F)%>%
+    visNodes(font = list(size =18)) %>%
+    visEdges(arrows=list(to=list(enabled = T, scaleFactor = 0.25)),
+             widthConstraint = 1.2,
+             length = c(3)) %>%
+    visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+    visLayout(randomSeed = 6, improvedLayout = T) %>%
+    # to stop auto update and making nodes sticky
+    visPhysics(enabled = F) %>%
+    visInteraction(navigationButtons = TRUE)
+
+  return(vis)
+}
+
+setMethod(
+  f = "visualizePipeline",
+  signature = "BaseAnalysisPipeline",
+  definition = .visualizePipeline
 )
 
 ########### Changing generics ############################################
+
+#' @rdname prepExecution
+#' @name prepExecution
+#' @title
+#' @details
+#' @family Package core functions
+#' @exportMethod prepExecution
+
+setGeneric(
+  name = "prepExecution",
+  def = function(object)
+  {
+    standardGeneric("prepExecution")
+  }
+)
+
 #' @rdname generateOutput
 #' @name generateOutput
 #' @title Generate a list of outputs from Pipeline objects
@@ -707,11 +827,6 @@ initDfBasedOnType <- function(input, filePath){
 #   })
 # }
 
-#' @name explainFunction
-#' @title Explain the parameters, and outputs of a specific predefined package function
-#' @details
-#' @param
-#' @family Package core functions
-#' @export
+
 
 

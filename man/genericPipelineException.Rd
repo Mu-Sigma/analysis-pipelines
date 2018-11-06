@@ -19,12 +19,13 @@ will be called instead of this function
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
   \code{\link{generateOutput}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
-  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
   \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{loadPipeline}},
+  \code{\link{loadPipeline}}, \code{\link{prepExecution}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
-  \code{\link{updateObject}}
+  \code{\link{updateObject}},
+  \code{\link{visualizePipeline}}
 }

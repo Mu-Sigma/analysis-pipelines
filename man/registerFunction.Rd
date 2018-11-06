@@ -6,7 +6,7 @@
 \usage{
 registerFunction(object, functionName, heading = "", outAsIn = F,
   engine = "r", exceptionFunction = substitute(genericPipelineException),
-  loadPipeline = F, userDefined = T, session = session)
+  loadPipeline = F, userDefined = T, storeOutput = F, session = session)
 }
 \arguments{
 \item{object}{object that contains input, pipeline, registry and output}
@@ -38,10 +38,12 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
   \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
-  \code{\link{getInput}}, \code{\link{getOuputByOrderId}},
+  \code{\link{getInput}}, \code{\link{getOutputById}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
   \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{loadPipeline}}, \code{\link{savePipeline}},
-  \code{\link{setInput}}, \code{\link{updateObject}}
+  \code{\link{loadPipeline}}, \code{\link{prepExecution}},
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{updateObject}},
+  \code{\link{visualizePipeline}}
 }
