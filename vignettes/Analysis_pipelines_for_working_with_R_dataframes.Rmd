@@ -72,7 +72,7 @@ The pipe (%>>%) operator used here works in a similar manner to the tidyverse pa
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
 
-obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
+obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0, storeOutput = T)
 obj1 %>>% getPipeline
 ```
 
@@ -80,10 +80,9 @@ obj1 %>>% getPipeline
 # Running univariate categorical distribution plot and then 
 # outlier detection on the constructed object
 
-obj2 <- obj1 %>>% 
-  univarCatDistPlots(uniCol = "location_type", priColor = "xy", optionalPlots = 0) %>>% 
-  outlierPlot(method = "iqr", columnName = "Occupancy", 
-              cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
+obj %>>% univarCatDistPlots(uniCol = "location_type", priColor = "xy", optionalPlots = 0, storeOutput = T) %>>% 
+         outlierPlot(method = "iqr", columnName = "Occupancy", 
+              cutoffValue = 0.01, priColor = "blue", optionalPlots = 0, storeOutput = T) -> obj2
 obj2 %>>% getPipeline
 ```
 
@@ -192,6 +191,10 @@ obj2Output %>>% getOuputByOrderId(4)
 ```
 
 <br>
+
+# Using the outputs of previous functions in the pipeline, as inputs to arbitrary parameters of subsequent functions
+
+
 
 # Generate Report
 
