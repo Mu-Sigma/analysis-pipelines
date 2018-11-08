@@ -192,7 +192,9 @@ checkSchema <- function(dfOld, dfNew){
   inputToExecute <- object@input
 
   if(all(dim(inputToExecute) == c(0,0))){
-    stop("This pipeline has not been initialized with a dataframe. Please use the setInput() function to do so.")
+    m <- "This pipeline has not been initialized with a dataframe. Please use the setInput() function to do so."
+    futile.logger::flog.error(m, name = 'logger.pipeline')
+    stop(m)
   }
 
   ## Check engine setup
@@ -200,8 +202,10 @@ checkSchema <- function(dfOld, dfNew){
   engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
 
   if(!all(requiredEngines$isSetup)){
-    stop(paste0("All engines required for the pipelines have not been configured. ",
-                "Please use the analysisPipelines::assessEngine() function to check"))
+    m <- paste0("All engines required for the pipelines have not been configured. ",
+                "Please use the analysisPipelines::assessEngine() function to check")
+    futile.logger::flog.error(m, name = 'logger.engine.assessment')
+    stop(m)
   }
 
   if(nrow(object@pipelineExecutor$topologicalOrdering) == 0){
@@ -216,16 +220,15 @@ checkSchema <- function(dfOld, dfNew){
 #' @name .prepExecution
 #' @keywords internal
 .prepExecution <- function(object){
+
   startPipelinePrep <- Sys.time()
-  flog.info("||  Pipeline Prep. STARTED  ||" , name='logger.prep')
+  futile.logger::flog.info(msg = "||  Pipeline Prep. STARTED  ||", name='logger.prep')
 
 
   object@pipeline$dependencies <- rep(NA, nrow(object@pipeline))
   object@pipeline %>>% setUpstreamDependencies -> object@pipeline #Parents
 
   pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
-  # pipelineRegistryJoin$dependencies <- rep(NA, nrow(pipelineRegistryJoin))
-  # pipelineRegistryJoin %>>% setDependencies -> pipelineRegistryJoin
 
   pipelineRegistryJoin %>>% computeEdges -> edgeDf
   pipelineRegistryJoin$id %>>% as.character %>>% getStartingPoints(edgeDf) -> startingPoints
@@ -237,7 +240,7 @@ checkSchema <- function(dfOld, dfNew){
 
   endPipelinePrep <- Sys.time()
   prepTime <- endPipelinePrep - startPipelinePrep
-  flog.info("||  Pipeline Prep. COMPLETE. Time taken : %s seconds||", prepTime, name='logger.prep')
+  futile.logger::flog.info(msg = "||  Pipeline Prep. COMPLETE. Time taken : %s seconds||", prepTime, name='logger.prep')
 
   return(object)
 }
@@ -251,7 +254,7 @@ setMethod(
 .executeByBatch <- function(object){
 
   startPipelineExecution <- Sys.time()
-  flog.info("||  Pipeline Execution STARTED  ||" , name='logger.execution')
+  futile.logger::flog.info("||  Pipeline Execution STARTED  ||" , name='logger.execution')
 
   outputCache <- new.env()
 
@@ -278,7 +281,7 @@ setMethod(
 
     startBatch <- Sys.time()
     pipelineRegistryOrderingJoin %>>% dplyr::filter(level == x) -> functionsInBatch
-    flog.info("||  Executing Batch Number : %s/%s containing functions '%s' ||",
+    futile.logger::flog.info("||  Executing Batch Number : %s/%s containing functions '%s' ||",
               x, numBatches, paste(functionsInBatch$operation, collapse = ", "),
               name='logger.batch')
 
@@ -301,7 +304,7 @@ setMethod(
       })
       # object@pipelineExecutor$cache[unrequiredCachedOutputNames] <<- NULL
 
-      flog.info("||  Cleared intermediate outputs which are not required  ||", name = "logger.pipeline")
+      futile.logger::flog.info("||  Cleared intermediate outputs which are not required  ||", name = "logger.pipeline")
 
     }
 
@@ -313,15 +316,15 @@ setMethod(
 
       functionsInBatch %>>% dplyr::filter(id == y) %>>% as.list -> funcDetails
 
-      flog.info("||  Function ID '%s' named '%s' STARTED on the '%s' engine ||",
+      futile.logger::flog.info("||  Function ID '%s' named '%s' STARTED on the '%s' engine ||",
                 funcDetails$id, funcDetails$operation, funcDetails$engine,
                   name='logger.func')
 
       # Set Input data
       inputToExecute <- object@input
 
-      ###TODO: Change from outAsIn.x to outAsIn
-      if(funcDetails$outAsIn.x){
+
+      if(funcDetails$outAsIn){
         # inputToExecute <- object@pipelineExecutor$cache$workingInput
         inputToExecute <- outputCache$workingInput
       }
@@ -381,7 +384,7 @@ setMethod(
                                   args = append(list(inputToExecute),
                                                 params))},
                          error = function(e){
-                           flog.error("||  ERROR Occurred in Function ID '%s' named '%s'. EXITING PIPELINE EXECUTION. Calling Exception Function - '%s'  ||",
+                           futile.logger::flog.error("||  ERROR Occurred in Function ID '%s' named '%s'. EXITING PIPELINE EXECUTION. Calling Exception Function - '%s'  ||",
                                       funcDetails$id, funcDetails$operation, funcDetails$exceptionHandlingFunction,
                                       name='logger.func')
                            do.call(funcDetails$exceptionHandlingFunction,
@@ -390,7 +393,7 @@ setMethod(
                          })
 
       ##outAsIn
-      if(funcDetails$outAsIn.x){
+      if(funcDetails$outAsIn){
         # object@pipelineExecutor$cache$workingInput <<- output
         outputCache$workingInput <- output
       }
@@ -411,7 +414,7 @@ setMethod(
       endFunc <- Sys.time()
       funcExecTime <- endFunc - startFunc
 
-      flog.info("||  Function ID '%s' named '%s' COMPLETED. Time taken : %s seconds  ||", funcDetails$id, funcDetails$operation, funcExecTime,
+      futile.logger::flog.info("||  Function ID '%s' named '%s' COMPLETED. Time taken : %s seconds  ||", funcDetails$id, funcDetails$operation, funcExecTime,
                 name='logger.func')
 
     }, object, functionsInBatch)
@@ -420,12 +423,12 @@ setMethod(
     endBatch <- Sys.time()
     batchExecTime <- endBatch - startBatch
 
-    flog.info("||  Batch Number %s/%s COMPLETE. Time taken : %s seconds  ||", x, numBatches, batchExecTime, name='logger.batch')
+    futile.logger::flog.info("||  Batch Number %s/%s COMPLETE. Time taken : %s seconds  ||", x, numBatches, batchExecTime, name='logger.batch')
 
   }, object, pipelineRegistryOrderingJoin)
 
 
-  flog.info("||  Performing final garbage cleaning and collection of outputs  ||",
+  futile.logger::flog.info("||  Performing final garbage cleaning and collection of outputs  ||",
             name='logger.pipeline')
 
   #Final garbage cleaning
@@ -451,8 +454,7 @@ setMethod(
   endPipelineExecution <- Sys.time()
   executionTime <- endPipelineExecution - startPipelineExecution
 
-  flog.info("||  Pipeline Execution COMPLETE. Time taken : %s seconds||", executionTime, name='logger.execution')
-  ##TODO: Change getOutputByOrderId function
+  futile.logger::flog.info("||  Pipeline Execution COMPLETE. Time taken : %s seconds||", executionTime, name='logger.execution')
   return(object)
 }
 ######################## Execution helper functions ############

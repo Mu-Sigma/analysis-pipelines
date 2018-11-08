@@ -32,6 +32,7 @@ BaseAnalysisPipeline <- setClass("BaseAnalysisPipeline",
 #' @name initializeBaseAnalysisPipeline
 #' @title This is the constructor for the \link{BaseAnalysisPipeline} class
 #' @param .Object The \code{BaseAnalysisPipeline} object
+#' @param loggerDetails Provide logger details
 #' @details
 #'      This is a constructor function for the base class for various types of Analysis Pipelines. This method gets
 #'      internally called by \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} constructors.
@@ -57,26 +58,25 @@ setMethod(
       topologicalOrdering = tibble(id = character(),
                                    level = character()),
       dependencyLinks = tibble(from = character(),
-                               to = character())
-      # parallelizationDetails = list()
-      # outputStorageDetails = tibble(id = numeric(),
-      #                                isRequiredUntilLevel = character(),
-      #                                isToBeStoredPermanently = logical()),
-      # cache = list()
+                               to = character()),
+      loggerDetails <- list()
     )
 
     .Object@registry <- tibble(
       ##id required?
       functionName = character(),
       heading = character(),
-      outAsIn = logical(),
+      # outAsIn = logical(),
       engine = character(),
       exceptionHandlingFunction = character(),
-      userDefined = logical()
-
-
+      userDefined = logical(),
+      dataFunction = logical()
     )
+
     .Object@output <- list()
+
+    .Object %>>% setLoggerDetails -> .Object
+    initializeLoggers(.Object)
 
     return(.Object)
   }
@@ -134,12 +134,6 @@ setMethod(
       dataFrameClass <- "SparkDataFrame"
     }
 
-    ##Assigning the original function to a variable
-    # assign("origFunction", get(x = functionName,
-                                  # envir = environment()),
-           # envir = environment())
-
-
     parametersName <- names(as.list(args(eval(parse(text=functionName)))))
     parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
     if(parametersName != ""){
@@ -151,8 +145,6 @@ setMethod(
     firstArg <- originalArgs[1]
 
     methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object"), x = methodBody)
-
-    # originalArgsString <- paste0(originalArgs[c(-1,-length(originalArgs))],collapse=",")
 
     methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
     methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
@@ -318,14 +310,16 @@ setGeneric(
 .assessEngineSetUp = function(object)
 {
   startEngineAssessment <- Sys.time()
-  flog.info("||  Engine Assessment for pipeline STARTED  ||" , name='logger.engine')
+  futile.logger::flog.info("||  Engine Assessment for pipeline STARTED  ||" , name='logger.engine.assessment')
 
   engineAssessment <- tibble(engine = character(),
                              requiredForPipeline = logical(),
                              isSetup = logical(),
                              comments = character())
   if(nrow(object@pipeline) == 0){
-    stop("No functions have been added to the pipeline")
+    m <- "No functions have been added to the pipeline"
+    futile.logger::flog.error(m)
+    stop(m)
   }else{
     pipelineRegistryJoin = dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
     requiredEngines <- unique(pipelineRegistryJoin$engine)
@@ -370,7 +364,7 @@ setGeneric(
 
   endEngineAssessment <- Sys.time()
   engineAssessmentTime <- endEngineAssessment - startEngineAssessment
-  flog.info("||  Engine Assessment COMPLETE. Time taken : %s seconds||", engineAssessmentTime, name='logger.engine')
+  futile.logger::flog.info("||  Engine Assessment COMPLETE. Time taken : %s seconds||", engineAssessmentTime, name='logger.engine.assessment')
 
   return(engineAssessment)
 
@@ -589,20 +583,20 @@ setGeneric(
                        title = "Pipeline")
 
 
-  vis <-visNetwork(node_df, edge_df) %>%
-    visGroups(groupname = "Stored output", color = "#A1AEFF", shadow=T) %>%
-    visGroups(groupname = "Auxiliary step", color = "#ff4d4d", shadow=T) %>%
-    visLegend(addNodes = lnodes, position = "right", ncol = 3,
+  vis <- visNetwork::visNetwork(node_df, edge_df) %>%
+    visNetwork::visGroups(groupname = "Stored output", color = "#A1AEFF", shadow=T) %>%
+    visNetwork::visGroups(groupname = "Auxiliary step", color = "#ff4d4d", shadow=T) %>%
+    visNetwork::visLegend(addNodes = lnodes, position = "right", ncol = 3,
               zoom = F, useGroups = F)%>%
-    visNodes(font = list(size =18)) %>%
-    visEdges(arrows=list(to=list(enabled = T, scaleFactor = 0.25)),
+    visNetwork::visNodes(font = list(size =18)) %>%
+    visNetwork::visEdges(arrows=list(to=list(enabled = T, scaleFactor = 0.25)),
              widthConstraint = 1.2,
              length = c(3)) %>%
-    visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
-    visLayout(randomSeed = 6, improvedLayout = T) %>%
+    visNetwork::visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+    visNetwork::visLayout(randomSeed = 6, improvedLayout = T) %>%
     # to stop auto update and making nodes sticky
-    visPhysics(enabled = F) %>%
-    visInteraction(navigationButtons = TRUE)
+    visNetwork::visPhysics(enabled = F) %>%
+    visNetwork::visInteraction(navigationButtons = TRUE)
 
   return(vis)
 }
@@ -672,6 +666,44 @@ setGeneric(
   }
 )
 
+######### Logging functions ###################
+#' @name setLoggerDetails
+#'
+setLoggerDetails <- function(object, loggerDetails = list(target = 'console',
+                                                          targetFile = 'pipelineExecution.out',
+                                                          layout = 'layout.simple')){
+  object@pipelineExecutor$loggerDetails <- loggerDetails
+  return(object)
+}
+
+#' @name getLoggerDetails
+#'
+getLoggerDetails <- function(object){
+  return(object@pipelineExecutor$loggerDetails )
+}
+
+#' @name initializeLoggers
+#' @keywords internal
+initializeLoggers <- function(object){
+
+  #TODO: Externalize this
+  # loggerNames <- c('engine.assessment', 'prep', 'pipeline', 'batch', 'func')
+  appender.fn <- futile.logger::appender.console()
+  # Define target
+  fileName <- object@pipelineExecutor$loggerDetails$targetFile
+  if(object@pipelineExecutor$loggerDetails$target == 'file'){
+    appender.fn <- futile.logger::appender.file(fileName)
+  }else if(object@pipelineExecutor$loggerDetails$target == 'console&file'){
+    appender.fn <- futile.logger::appender.tee(fileName)
+  }
+
+  #TODO: pass layout as parameter
+  # layout <- layout.simple()
+
+  futile.logger::flog.appender(appender.fn)
+
+}
+
 ######## Auxiliary functions ############################################
 
 #' @name genericPipelineException
@@ -685,8 +717,9 @@ setGeneric(
 #' @export
 genericPipelineException <- function(error){
   message <- error$message
-  print("generic exception")
-  stop(paste0("EXCEPTION OCCURED WHILE RUNNING THE PIPELINE FUNCTION WITH PROVIDED PARAMETERS: ", message))
+  m <- paste0("EXCEPTION OCCURED WHILE RUNNING THE PIPELINE FUNCTION WITH PROVIDED PARAMETERS: ", message)
+  futile.logger::flog.error(m, name = 'logger.func')
+  stop(m)
 }
 
 #' @name loadPipeline
@@ -720,25 +753,31 @@ loadPipeline <- function(path, input = data.frame() , filePath = ""){
   schemaCheck <- object %>>% checkSchemaMatch(input)
   if(!schemaCheck$isSchemaSame){
     if(length(schemaCheck$removedColumns) > 0){
-      warning(paste0("Some columns which were present in the original schema ",
-                      "for the pipeline, ",
-                      "are not present in the new data frame. Some pipeline functions ",
-                      "may not execute as expected. Use the checkSchemaMatch function to obtain ",
-                      "a detailed comparison"))
+      m <- paste0("Some columns which were present in the original schema ",
+                  "for the pipeline, ",
+                  "are not present in the new data frame. Some pipeline functions ",
+                  "may not execute as expected. Use the checkSchemaMatch function to obtain ",
+                  "a detailed comparison")
+      futile.logger::flog.warn(m, name = 'logger.pipeline')
+      warning(m)
     }
 
     if(length(schemaCheck$addedColumns) > 0){
-      warning(paste0("Some new columns have been added to the new data frame ",
-                       "as compared to the original schema for the pipeline. ",
-                     "Use the checkSchemaMatch function to obtain ",
-                      "a detailed comparison"))
+      m <- paste0("Some new columns have been added to the new data frame ",
+                  "as compared to the original schema for the pipeline. ",
+                  "Use the checkSchemaMatch function to obtain ",
+                  "a detailed comparison")
+      futile.logger::flog.warn(m, name = 'logger.pipeline')
+      warning(m)
     }
 
     if(length(schemaCheck$addedColumns) == 0 && length(schemaCheck$removedColumns) == 0){
-      warning(paste0("Colummn names are the same but types have changed",
-                     "Some pipeline functions may not execute as expected. ",
-                     "Use the checkSchemaMatch function to obtain ",
-                      "a detailed comparison"))
+      m <- paste0("Colummn names are the same but types have changed",
+             "Some pipeline functions may not execute as expected. ",
+             "Use the checkSchemaMatch function to obtain ",
+             "a detailed comparison")
+      futile.logger::flog.warn(m, name = 'logger.pipeline')
+      warning(m)
     }
 
   }
@@ -769,7 +808,9 @@ initDfBasedOnType <- function(input, filePath){
       }else if(class(input) == "data.frame" || class(input) == "tibble"){
         #do nothing for R
       }else{
-        stop("The provided input is not of class - data.frame or SparkDataFrame")
+        m <- "The provided input is not of class - data.frame or SparkDataFrame"
+        futile.logger::flog.error(m, name = 'logger.pipeline')
+        stop(m)
       }
     }
   }
