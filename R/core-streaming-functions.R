@@ -80,9 +80,6 @@ setMethod(
   }
 )
 
-#' @name .generateStreamingOutput
-#' @title Implementation of output generation for \code{AnalysisPipeline} objects
-#' @keywords internal
 .generateStreamingOutput = function(object)
 {
   inputToExecute <- object@input

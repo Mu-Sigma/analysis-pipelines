@@ -21,6 +21,9 @@ In the documentation, objects of classes which are subclasses of this class are 
 \describe{
 \item{\code{pipeline}}{A tibble which holds functions to be called}
 
+\item{\code{pipelineExecutor}}{A list containing details of the execution, such as topological ordering of functions to be executed,
+dependency map of functions, as well as logger configuration}
+
 \item{\code{registry}}{A tibble which holds all the registered functions}
 
 \item{\code{output}}{A list which holds all the functions output}
@@ -28,15 +31,18 @@ In the documentation, objects of classes which are subclasses of this class are 
 
 \seealso{
 Other Package core functions: \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
   \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
-  \code{\link{getInput}}, \code{\link{getOutputById}},
-  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
   \code{\link{initializeBaseAnalysisPipeline}},
   \code{\link{loadPipeline}}, \code{\link{prepExecution}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }

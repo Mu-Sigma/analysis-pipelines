@@ -20,7 +20,6 @@ The sequence of operations stored in the \code{AnalysisPipeline} object are run,
 }
 \seealso{
 Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPipeline}},
-  \code{\link{checkSchemaMatch}},
   \code{\link{checkSchema}},
   \code{\link{initializeAnalysisPipeline}}
 }

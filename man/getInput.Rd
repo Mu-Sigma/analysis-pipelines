@@ -21,8 +21,10 @@ which extend this class
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
   \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
+  \code{\link{getLoggerDetails}},
   \code{\link{getOutputById}}, \code{\link{getPipeline}},
   \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
@@ -30,6 +32,7 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{loadPipeline}}, \code{\link{prepExecution}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
