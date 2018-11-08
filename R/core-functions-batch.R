@@ -65,9 +65,7 @@ setMethod(
   }
 )
 
-#' @name .checkSchemaMatch
-#' @title Function to check schema of input of an \code{AnalysisPipeline} object with a new dataset
-#' @keywords internal
+
 .checkSchemaMatch = function(object, newData){
   schemaCheck <- checkSchema(object@originalSchemaDf, newData)
   return(schemaCheck)
@@ -184,9 +182,6 @@ checkSchema <- function(dfOld, dfNew){
   return(schemaCheck)
 }
 
-#' @name .generateOutput
-#' @title Implementation of output generation for \code{AnalysisPipeline} objects
-#' @keywords internal
 .generateOutput = function(object)
 {
   inputToExecute <- object@input
@@ -217,39 +212,6 @@ checkSchema <- function(dfOld, dfNew){
   return(object)
 }
 
-#' @name .prepExecution
-#' @keywords internal
-.prepExecution <- function(object){
-
-  startPipelinePrep <- Sys.time()
-  futile.logger::flog.info(msg = "||  Pipeline Prep. STARTED  ||", name='logger.prep')
-
-
-  object@pipeline$dependencies <- rep(NA, nrow(object@pipeline))
-  object@pipeline %>>% setUpstreamDependencies -> object@pipeline #Parents
-
-  pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
-
-  pipelineRegistryJoin %>>% computeEdges -> edgeDf
-  pipelineRegistryJoin$id %>>% as.character %>>% getStartingPoints(edgeDf) -> startingPoints
-  nodes <- as.character(pipelineRegistryJoin$id)
-
-  topOrdering <- identifyTopologicalLevels(nodes, edgeDf)
-  object@pipelineExecutor$topologicalOrdering <- topOrdering
-  object@pipelineExecutor$dependencyLinks <- edgeDf
-
-  endPipelinePrep <- Sys.time()
-  prepTime <- endPipelinePrep - startPipelinePrep
-  futile.logger::flog.info(msg = "||  Pipeline Prep. COMPLETE. Time taken : %s seconds||", prepTime, name='logger.prep')
-
-  return(object)
-}
-
-setMethod(
-  f = "prepExecution",
-  signature = "BaseAnalysisPipeline",
-  definition = .prepExecution
-)
 
 .executeByBatch <- function(object){
 
@@ -457,152 +419,6 @@ setMethod(
   futile.logger::flog.info("||  Pipeline Execution COMPLETE. Time taken : %s seconds||", executionTime, name='logger.execution')
   return(object)
 }
-######################## Execution helper functions ############
-
-
-#' @name getUpstreamDependencies
-#' @keywords internal
-getUpstreamDependencies <- function(row){
-
-  ## dependencies from parameters
-  termRegexPattern <- "[f]|[:digit:]"
-  params <- row$parameters
-  dep <- lapply(params, function(p){
-    t <- NULL
-    tId <- NA
-    if(class(p) == "formula"){
-      t <- attr(terms(p), "term.labels")
-    }
-
-    isDependencyParam <- c()
-
-    if(!is.null(t)){
-      isDependencyParam <- grep(termRegexPattern, t)
-    }
-
-    if(length(isDependencyParam) > 0){
-      # Dependency param
-      tId <- as.numeric(gsub(pattern = "f", replacement = "", t))
-    }
-    return(tId)
-  })
-
-  ## Dependencies from outAsIn
-  if(row$outAsIn){
-    dep <- c(dep, as.character(as.numeric(row$id) - 1))
-  }
-
-
-  dep <- dep[which(!sapply(dep, is.na))]
-  dep <- paste(unique(dep), sep = ",")
-
-  return(dep)
-}
-
-
-#' @name setUpstreamDependencies
-#' @keywords internal
-setUpstreamDependencies <- function(pipeline){
-  pipeline %>>% apply(MARGIN = 1, FUN = getUpstreamDependencies) -> upstreamDependenciesList
-  # pipelineRegistryJoin %>>% dplyr::mutate(dependencies = dependenciesList) -> pipelineRegistryJoin
-  pipeline %>>% dplyr::mutate(dependencies = upstreamDependenciesList) -> pipeline
-  return(pipeline)
-}
-
-
-### Graph edges
-#' @name computeEdges
-#' @keywords internal
-computeEdges <- function(pipelineRegistryJoin){
-  edgesDf <- data.frame(from = c(),
-                        to = c())
-  pipelineRegistryJoin %>>% apply(MARGIN = 1, FUN = function(x, ...){
-    edges <- list()
-
-    if(length(x$dependencies) != 0){
-      id <- as.character(x$id)
-      parents <- unlist(strsplit(x$dependencies, ","))
-      edges <- lapply(parents, function(x, ...){
-        edge <- list(from = x, to = id)
-        return(edge)
-      }, id = id)
-
-      edges <- dplyr::bind_rows(edges)
-    }
-
-    return(edges)
-  }) %>>% dplyr::bind_rows(.) -> edgesDf
-
-  edgesDf %>>% dplyr::distinct(from, to, .keep_all = TRUE) -> edgesDf
-  return(edgesDf)
-}
-
-##Starting points
-#' @name getStartingPoints
-#' @keywords internal
-getStartingPoints <- function(nodes, edgeDf){
-  startingPoints <- setdiff(nodes, unique(edgeDf$to))
-  return(startingPoints)
-}
-
-### Topological levels
-
-#' @name identifyTopLevelRecursively
-#' @keywords internal
-identifyTopLevelRecursively <- function(input = list(topDf = dplyr::tibble(),
-                                                     nodes = c(),
-                                                     edgeDf = dplyr::tibble(),
-                                                     level = 1)){
-  topDf <- input$topDf
-  nodes <- input$nodes
-  edgeDf <- input$edgeDf
-  l <- input$level
-
-  if(nrow(edgeDf) == 0){
-    topDf %>>% dplyr::bind_rows(dplyr::bind_cols(id = nodes, level = rep(as.character(l), length(nodes)))) -> topDf
-    output <- list(topDf = topDf,
-                   nodes = nodes,
-                   edgeDf = edgeDf,
-                   level = l)
-    return(output)
-  }else{
-    startingPoints <- getStartingPoints(nodes, edgeDf)
-    topDf %>>% dplyr::bind_rows(dplyr::bind_cols(id = startingPoints, level = rep(as.character(l), length(startingPoints)))) -> topDf
-    edgeDf %>>% dplyr::filter(!(from %in% startingPoints)) -> edgeDf
-    nodes %>>% setdiff(startingPoints) -> nodes
-
-    output <- list(topDf = topDf,
-                   nodes = nodes,
-                   edgeDf = edgeDf,
-                   level = l + 1)
-    return(identifyTopLevelRecursively(output))
-  }
-}
-
-
-#' @name identifyTopologicalLevels
-#' @keywords internal
-identifyTopologicalLevels <- function(
-  nodes = c(),
-  edgeDf = dplyr::tibble(),
-  topDf = dplyr::tibble(id = character(),
-                        level = character()),
-  level = 1){
-  input <- list(topDf = topDf,
-                nodes = nodes,
-                edgeDf = edgeDf,
-                level = level)
-  topDf <- identifyTopLevelRecursively(input)$topDf
-  return(topDf)
-}
-
-
-
-
-
-
-
-
 
 #' @rdname generateOutput
 setMethod(
@@ -610,28 +426,6 @@ setMethod(
   signature = "AnalysisPipeline",
   definition = .generateOutput
 )
-
-
-# setMethod(
-#   f = "generateOutput",
-#   signature = "tbl",
-#   definition = function(object)
-#   {
-#     input <- input
-#     outList <- list()
-#     for(rowNo in 1:nrow(object)){
-#       if(object[['outAsIn']][rowNo] == T){
-#         input <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
-#       }
-#       outList[[rowNo]] <- do.call(object[['operation']][[rowNo]], append(list(input), object[['parameters']][[rowNo]]))
-#     }
-#     return(outList)
-#   }
-# )
-
-
-
-
 
 
 #' @name generateReport

@@ -2,21 +2,34 @@
 % Please edit documentation in R/core-functions.R
 \name{visualizePipeline}
 \alias{visualizePipeline}
-\title{Visualizes the pipeline as a graph, showing dependencies}
+\title{Visualizes the pipeline as a graph}
 \usage{
 visualizePipeline(object)
+}
+\arguments{
+\item{object}{The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
+}
+\value{
+A graph object which can be printed (or) plotted to visualize the pipeline
+}
+\details{
+Indicates dependencies amongst functions as well as functions for which output
+needs to be stored
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
   \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
-  \code{\link{getInput}}, \code{\link{getOutputById}},
-  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
   \code{\link{initializeBaseAnalysisPipeline}},
   \code{\link{loadPipeline}}, \code{\link{prepExecution}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
   \code{\link{updateObject}}
 }

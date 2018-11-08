@@ -15,6 +15,8 @@
 #' @details The details of the constructor for this class can be found at \link{initializeBaseAnalysisPipeline}
 #' @details In the documentation, objects of classes which are subclasses of this class are referred to as 'Pipeline' objects
 #' @slot pipeline A tibble which holds functions to be called
+#' @slot pipelineExecutor A list containing details of the execution, such as topological ordering of functions to be executed,
+#' dependency map of functions, as well as logger configuration
 #' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
 #' @family Package core functions
@@ -549,10 +551,214 @@ setMethod(
   definition = .getOutputById
 )
 
+
+######################## Execution helper functions ############
+
+#' @name getUpstreamDependencies
+#' @title Obtains upstream dependencies for \code{AnalysisPipeline} objects
+#' @keywords internal
+getUpstreamDependencies <- function(row){
+
+  ## dependencies from parameters
+  termRegexPattern <- "[f]|[:digit:]"
+  params <- row$parameters
+  dep <- lapply(params, function(p){
+    t <- NULL
+    tId <- NA
+    if(class(p) == "formula"){
+      t <- attr(terms(p), "term.labels")
+    }
+
+    isDependencyParam <- c()
+
+    if(!is.null(t)){
+      isDependencyParam <- grep(termRegexPattern, t)
+    }
+
+    if(length(isDependencyParam) > 0){
+      # Dependency param
+      tId <- as.numeric(gsub(pattern = "f", replacement = "", t))
+    }
+    return(tId)
+  })
+
+  ## Dependencies from outAsIn
+  if(row$outAsIn){
+    dep <- c(dep, as.character(as.numeric(row$id) - 1))
+  }
+
+
+  dep <- dep[which(!sapply(dep, is.na))]
+  dep <- paste(unique(dep), sep = ",")
+
+  return(dep)
+}
+
+
+#' @name setUpstreamDependencies
+#' @title Sets upstream dependencies for the entire pipeline
+#' @keywords internal
+setUpstreamDependencies <- function(pipeline){
+  pipeline %>>% apply(MARGIN = 1, FUN = getUpstreamDependencies) -> upstreamDependenciesList
+  if(length(upstreamDependenciesList) == 0){
+    upstreamDependenciesList <- lapply(pipeline$id, function(x){
+        x <- list(NA)
+        x <- x[which(!sapply(x, is.na))]
+        x <- paste(unique(x), sep = ",")
+      return(x)
+     })
+  }
+  pipeline %>>% dplyr::mutate(dependencies = upstreamDependenciesList) -> pipeline
+  return(pipeline)
+}
+
+
+### Graph edges
+#' @name computeEdges
+#' @title Computes edges (dependencies) in a pipeline given the joined tibble of the pipeline and registry
+#' @keywords internal
+computeEdges <- function(pipelineRegistryJoin){
+  edgesDf <- data.frame(from = c(),
+                        to = c())
+  pipelineRegistryJoin %>>% apply(MARGIN = 1, FUN = function(x, ...){
+    edges <- list()
+
+    if(length(x$dependencies) != 0){
+      id <- as.character(x$id)
+      parents <- unlist(strsplit(x$dependencies, ","))
+      edges <- lapply(parents, function(x, ...){
+        edge <- list(from = x, to = id)
+        return(edge)
+      }, id = id)
+
+      edges <- dplyr::bind_rows(edges)
+    }
+
+    return(edges)
+  }) %>>% dplyr::bind_rows(.) -> edgesDf
+
+  edgesDf %>>% dplyr::distinct(from, to, .keep_all = TRUE) -> edgesDf
+  return(edgesDf)
+}
+
+##Starting points
+#' @name getStartingPoints
+#' @title Obtains starting nodes in a graph given nodes and edges
+#' @keywords internal
+getStartingPoints <- function(nodes, edgeDf){
+  startingPoints <- setdiff(nodes, unique(edgeDf$to))
+  return(startingPoints)
+}
+
+### Topological levels
+
+#' @name identifyTopLevelRecursively
+#' @title Recursive function to identify the toplogical levels of the functions in a pipeline
+#' @keywords internal
+identifyTopLevelRecursively <- function(input = list(topDf = dplyr::tibble(),
+                                                     nodes = c(),
+                                                     edgeDf = dplyr::tibble(),
+                                                     level = 1)){
+  topDf <- input$topDf
+  nodes <- input$nodes
+  edgeDf <- input$edgeDf
+  l <- input$level
+
+  if(nrow(edgeDf) == 0){
+    topDf %>>% dplyr::bind_rows(dplyr::bind_cols(id = nodes, level = rep(as.character(l), length(nodes)))) -> topDf
+    output <- list(topDf = topDf,
+                   nodes = nodes,
+                   edgeDf = edgeDf,
+                   level = l)
+    return(output)
+  }else{
+    startingPoints <- getStartingPoints(nodes, edgeDf)
+    topDf %>>% dplyr::bind_rows(dplyr::bind_cols(id = startingPoints, level = rep(as.character(l), length(startingPoints)))) -> topDf
+    edgeDf %>>% dplyr::filter(!(from %in% startingPoints)) -> edgeDf
+    nodes %>>% setdiff(startingPoints) -> nodes
+
+    output <- list(topDf = topDf,
+                   nodes = nodes,
+                   edgeDf = edgeDf,
+                   level = l + 1)
+    return(identifyTopLevelRecursively(output))
+  }
+}
+
+
+#' @name identifyTopologicalLevels
+#' @title Identifies the topological levels of the functions in a pipeline
+#' @keywords internal
+identifyTopologicalLevels <- function(
+  nodes = c(),
+  edgeDf = dplyr::tibble(),
+  topDf = dplyr::tibble(id = character(),
+                        level = character()),
+  level = 1){
+  input <- list(topDf = topDf,
+                nodes = nodes,
+                edgeDf = edgeDf,
+                level = level)
+  topDf <- identifyTopLevelRecursively(input)$topDf
+  return(topDf)
+}
+
+
+#' @rdname prepExecution
+#' @name prepExecution
+#' @title Prepare the pipleline for execution
+#' @details The pipeline is prepared for execution by identifying the graph of the pipeline as well as its topological ordering,
+#' and dependency map in order to prepare for execution
+#' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
+#' @family Package core functions
+#' @export prepExecution
+
+setGeneric(
+  name = "prepExecution",
+  def = function(object)
+  {
+    standardGeneric("prepExecution")
+  }
+)
+
+.prepExecution <- function(object){
+
+  startPipelinePrep <- Sys.time()
+  futile.logger::flog.info(msg = "||  Pipeline Prep. STARTED  ||", name='logger.prep')
+
+
+  object@pipeline$dependencies <- rep(NA, nrow(object@pipeline))
+  object@pipeline %>>% setUpstreamDependencies -> object@pipeline #Parents
+
+  pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+
+  pipelineRegistryJoin %>>% computeEdges -> edgeDf
+  pipelineRegistryJoin$id %>>% as.character %>>% getStartingPoints(edgeDf) -> startingPoints
+  nodes <- as.character(pipelineRegistryJoin$id)
+
+  topOrdering <- identifyTopologicalLevels(nodes, edgeDf)
+  object@pipelineExecutor$topologicalOrdering <- topOrdering
+  object@pipelineExecutor$dependencyLinks <- edgeDf
+
+  endPipelinePrep <- Sys.time()
+  prepTime <- endPipelinePrep - startPipelinePrep
+  futile.logger::flog.info(msg = "||  Pipeline Prep. COMPLETE. Time taken : %s seconds||", prepTime, name='logger.prep')
+
+  return(object)
+}
+
+setMethod(
+  f = "prepExecution",
+  signature = "BaseAnalysisPipeline",
+  definition = .prepExecution
+)
+
 #' @name visualizePipeline
-#' @title Visualizes the pipeline as a graph, showing dependencies
-#' @details
-#' @param
+#' @title Visualizes the pipeline as a graph
+#' @details Indicates dependencies amongst functions as well as functions for which output
+#' needs to be stored
+#' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+#' @return A graph object which can be printed (or) plotted to visualize the pipeline
 #' @family Package core functions
 #' @export
 
@@ -609,21 +815,6 @@ setMethod(
 
 ########### Changing generics ############################################
 
-#' @rdname prepExecution
-#' @name prepExecution
-#' @title
-#' @details
-#' @family Package core functions
-#' @exportMethod prepExecution
-
-setGeneric(
-  name = "prepExecution",
-  def = function(object)
-  {
-    standardGeneric("prepExecution")
-  }
-)
-
 #' @rdname generateOutput
 #' @name generateOutput
 #' @title Generate a list of outputs from Pipeline objects
@@ -656,7 +847,7 @@ setGeneric(
 #'          the original schema that the pipeline was saved with. Provides a detailed comparison
 #' @return Returns a list with details on added columns, removed columns, comparison between column classes, and a logical
 #'         whether the schema has remained the same from the old dataframe to the new one
-#' @family Package core functions for batch/one-time analyses
+#' @family Package core functions
 #' @exportMethod checkSchemaMatch
 setGeneric(
   name = "checkSchemaMatch",
@@ -667,22 +858,69 @@ setGeneric(
 )
 
 ######### Logging functions ###################
+
+
+#' @rdname setLoggerDetails
 #' @name setLoggerDetails
-#'
-setLoggerDetails <- function(object, loggerDetails = list(target = 'console',
+#' @title Sets the logger configuration for the pipeline
+#' @details This function sets the logger configuration for the pipeline.
+#' @param object A Pipeline object
+#' @param loggerDetails A list of the following options, which can be set:
+#'                  - \code{target} - A string value. 'console' for appending to console, 'file' for appending to a file, or 'console&file' for both
+#'                  - \code{targetFile} - File name of the log file in case the target is 'file'
+#'                  - \code{targetLayout} - Specify the layout according to 'futile.logger' package convention
+#' @family Package core functions
+#' @export
+
+setGeneric(
+  name = "setLoggerDetails",
+  def = function(object, loggerDetails = list(target = 'console',
+                                                              targetFile = 'pipelineExecution.out',
+                                                              layout = 'layout.simple')){
+    standardGeneric("setLoggerDetails")
+  }
+)
+
+.setLoggerDetails <- function(object, loggerDetails = list(target = 'console',
                                                           targetFile = 'pipelineExecution.out',
                                                           layout = 'layout.simple')){
   object@pipelineExecutor$loggerDetails <- loggerDetails
   return(object)
 }
 
+setMethod(
+  f = "setLoggerDetails",
+  signature = "BaseAnalysisPipeline",
+  definition = .setLoggerDetails
+)
+
+#' @rdname getLoggerDetails
 #' @name getLoggerDetails
-#'
-getLoggerDetails <- function(object){
+#' @title Obtains the logger configuration for the pipeline
+#' @details This function obtains the logger configuration for the pipeline.
+#' @param object A Pipeline object
+#' @return Logger configuration as a list
+#' @family Package core functions
+#' @export
+setGeneric(
+  name = "getLoggerDetails",
+  def = function(object){
+    standardGeneric("getLoggerDetails")
+  }
+)
+
+.getLoggerDetails <- function(object){
   return(object@pipelineExecutor$loggerDetails )
 }
 
+setMethod(
+  f = "getLoggerDetails",
+  signature = "BaseAnalysisPipeline",
+  definition = .getLoggerDetails
+)
+
 #' @name initializeLoggers
+#' @title intializes the loggers with the required appenders and layout based on the provided configuration
 #' @keywords internal
 initializeLoggers <- function(object){
 

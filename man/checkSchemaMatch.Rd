@@ -24,7 +24,19 @@ Checks the schema of the new data frame that the pipeline is to be initialized w
          the original schema that the pipeline was saved with. Provides a detailed comparison
 }
 \seealso{
-Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPipeline}},
-  \code{\link{checkSchema}}, \code{\link{generateReport}},
-  \code{\link{initializeAnalysisPipeline}}
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
+  \code{\link{generateOutput}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{getRegistry}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}}, \code{\link{prepExecution}},
+  \code{\link{registerFunction}},
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
+  \code{\link{updateObject}},
+  \code{\link{visualizePipeline}}
 }

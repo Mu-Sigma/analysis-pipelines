@@ -21,7 +21,6 @@ Compares the schemas of two dataframes, providing information on added and remov
 }
 \seealso{
 Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPipeline}},
-  \code{\link{checkSchemaMatch}},
   \code{\link{generateReport}},
   \code{\link{initializeAnalysisPipeline}}
 }

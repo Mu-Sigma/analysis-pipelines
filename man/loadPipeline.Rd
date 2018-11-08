@@ -31,15 +31,18 @@ Another provided option, is to specify a filePath where the input dataset is pre
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
   \code{\link{generateOutput}},
   \code{\link{genericPipelineException}},
-  \code{\link{getInput}}, \code{\link{getOutputById}},
-  \code{\link{getPipeline}}, \code{\link{getRegistry}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
   \code{\link{initializeBaseAnalysisPipeline}},
   \code{\link{prepExecution}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }

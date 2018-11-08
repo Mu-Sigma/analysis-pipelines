@@ -24,6 +24,5 @@ Either one of \code{input} or \code{filePath} need to be provided i.e. either th
 }
 \seealso{
 Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPipeline}},
-  \code{\link{checkSchemaMatch}},
   \code{\link{checkSchema}}, \code{\link{generateReport}}
 }

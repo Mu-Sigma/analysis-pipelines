@@ -23,7 +23,7 @@ constructor - \link{initializeAnalysisPipeline}
 }}
 
 \seealso{
-Other Package core functions for batch/one-time analyses: \code{\link{checkSchemaMatch}},
-  \code{\link{checkSchema}}, \code{\link{generateReport}},
+Other Package core functions for batch/one-time analyses: \code{\link{checkSchema}},
+  \code{\link{generateReport}},
   \code{\link{initializeAnalysisPipeline}}
 }

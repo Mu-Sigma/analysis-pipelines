@@ -84,6 +84,7 @@ obj %>>% univarCatDistPlots(uniCol = "location_type", priColor = "xy", optionalP
          outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0, storeOutput = T) -> obj2
 obj2 %>>% getPipeline
+obj2 %>>% visualizePipeline
 ```
 
 <br>
@@ -115,7 +116,7 @@ A specific output can be viewed by providing the position of the function genera
 
 ```{r lazy eval 3, warning=F}
 # The index can range from 1 to length(obj@output)
-obj1Output %>>% getOuputByOrderId(1)
+obj1Output %>>% getOutputById(id = "1")
 ```
 
 <br>
@@ -181,13 +182,14 @@ obj2 <- obj2 %>>%
 
 # Printing the updated pipeline
 obj2 %>>% getPipeline
+obj2 %>>% visualizePipeline
 ```
 
 The newly added function will also lazy evaluate depending on the trigger.
 
 ```{r register function 3, warning=F}
 obj2Output <- obj2 %>>% generateOutput()
-obj2Output %>>% getOuputByOrderId(4)
+obj2Output %>>% getOutputById("1")
 ```
 
 <br>
