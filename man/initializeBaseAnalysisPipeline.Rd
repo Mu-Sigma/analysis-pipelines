@@ -9,6 +9,8 @@
 }
 \arguments{
 \item{.Object}{The \code{BaseAnalysisPipeline} object}
+
+\item{loggerDetails}{Provide logger details}
 }
 \value{
 an object of class "\code{BaseAnalysisPipeline}"
