@@ -200,8 +200,6 @@ checkSchema <- function(dfOld, dfNew){
 
     object %>>% initializeLoggers
 
-    print(futile.logger::flog.appender())
-
     inputToExecute <- object@input
 
     if(all(dim(inputToExecute) == c(0,0))){
@@ -330,15 +328,16 @@ checkSchema <- function(dfOld, dfNew){
         }
 
         if(prevEngine != currEngine){
+          prevFuncOutput <- paste0("f", as.numeric(y) - 1, ".out")
           if(prevEngine == 'spark'){
 
             if(currEngine == 'r'){
-              inputToExecute <- SparkR::as.data.frame(object@output[[rowNo-1]])
+              inputToExecute <- SparkR::as.data.frame(inputToExecute)
             }
 
           }else if(prevEngine == 'r'){
             if(currEngine == "spark"){
-              inputToExecute <- SparkR::as.DataFrame(object@output[[rowNo-1]])
+              inputToExecute <- SparkR::as.DataFrame(inputToExecute)
             }
 
           }

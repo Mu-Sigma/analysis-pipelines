@@ -1,8 +1,10 @@
 ---
-title: "Analysis pipelines for working with R data frames"
-author: "Sanjay, Neeratyoy Mallik, Naren Srinivasan"
+title: "Analysis pipelines - Core functionality and working with R data frames and functions"
+author: "Naren Srinivasan, Sanjay"
 date: "8/24/2018"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
   %\VignetteEngine{knitr::rmarkdown}
@@ -11,25 +13,8 @@ vignette: >
 
 <!-- ###TODO: Improve language and description -->
 
-# Objective
+# An overview of the package
 
-* Providing an overview of what the analysisPipelines package offers
-
-# Introduction
-
-Exploratory Data Analysis (EDA) offers the first interaction with data. It, therefore, plays an important role in revealing properties and features of the data. Features that can provide a direction for the rest of the analysis. Even though EDA is a crucial initial step, it often helps if it can be done rapidly. Since the subsequent steps in an analytical flow is what often creates the bottleneck in terms of turnaround time.<br>
-
-The EDA utility that this handbook describes, attempts at making the entire EDA phase of an analytical journey - 
-
-* <i>Modular</i> through the use of an API-like off-the-shelf functions to implement common EDA techniques
-* <i>Descriptive chaining</i> by adhering to the tidyverse paradigm of piping operations in a cascading manner
-* <i>Flexibility</i> to use any custom function defined by any user, that can work in the paradigm defined above
-* <i>Light on memory</i> through lazy evaluation of the functions that have been piped, i.e., the actual execution happens selectively
-* <i>Reproducible</i> and <i>scalable</i> since pipelines can be exported and reused with new data and/or standard R code
-
-The sections below will provide sample code and a walkthrough in using the utility. The sections should also highlight the features this utility has to offer.
-
-<br>
 
 # Loading the package
 
@@ -41,22 +26,16 @@ library(analysisPipelines)
 
 # Creating an analysisPipeline object
 
-The analysisPipelines package has been written as per R's S4 object system standard. 
-<br>
-To work with the package, one needs to call the constructor by specifying a file as an input.
+
 
 ```{r creating object, warning=F}
 obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
+obj %>>% setLoggerDetails(target = "file") -> obj
 class(obj)
 ```
 
 The object created is of type <i>"AnalysisPipeline"</i>. The object contains the following attributes:
 
-* input - stores the data frame read by the constructor
-* workingInput - Internal
-* pipeline - stores a tibble object which can store a sequence of function calls
-* registry - stores the list of function names that are available to the object
-* output - stores the output of each operation when a pipeline is evaluated 
 
 ```{r printing object contents, warning=F}
 obj %>>% getInput %>>% str
@@ -67,7 +46,6 @@ obj %>>% getRegistry
 
 # Chaining operations
 
-The pipe (%>>%) operator used here works in a similar manner to the tidyverse paradigm where operations can be chained, and data can flow in a cascaded manner. The package comes with some predefined functions, [currently mostly for generating exploratory analysis plots], which can be directly used in the chaining operation. Take a look at the registry of the object to see what functions are available. Every function, by default takes in the input data frame as the first input (need not be specified explicitly)
 
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
@@ -84,16 +62,12 @@ obj %>>% univarCatDistPlots(uniCol = "location_type", priColor = "xy", optionalP
          outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0, storeOutput = T) -> obj2
 obj2 %>>% getPipeline
-obj2 %>>% visualizePipeline
 ```
 
 <br>
 
 # Lazy evaluation
 
-The sequence of operations is stored as metadata. It is only processed when an evaluation is exclusively triggered through a call to <i>generateOutput()</i> (available in the utility), or when generating an HTML report based on the pipeline. <br>
-
-If noticed, the <i>output</i> attribute of the EDA object is empty so far.
 
 ```{r lazy eval 1}
 length(obj1@output)
@@ -121,7 +95,9 @@ obj1Output %>>% getOutputById("1")
 
 <br>
 
-# Registering a new function
+# User-defined functions
+
+## Registering your own function
 
 On invoking the constructor, i.e., creating an object of type AnalysisPipeline, the functions defined in the list are <i>registered</i> for the said object. The list of registered functions can be viewed as <i>obj@registry</i>. The package has the option to add any user-defined function to this list of functions,  <br>
 The only <b>constraint</b> for registering an user-defined function is that the first parameter in the argument list must be a data frame.
@@ -170,7 +146,7 @@ obj2 <- obj2 %>>% registerFunction('bivariatePlots', "Bivariate Plots", exceptio
 obj2 %>>% getRegistry
 ```
 
-### Using newly registered function with lazy eval of pipeline
+## Using the newly registered function with lazy eval of pipeline
 
 Now that a new user-defined function is also available along with the existing functions, all the features can be leveraged in unison.
 
@@ -182,7 +158,6 @@ obj2 <- obj2 %>>%
 
 # Printing the updated pipeline
 obj2 %>>% getPipeline
-obj2 %>>% visualizePipeline
 ```
 
 The newly added function will also lazy evaluate depending on the trigger.
@@ -196,11 +171,38 @@ obj2Output@pipeline
 
 <br>
 
-# Using the outputs of previous functions in the pipeline, as inputs to arbitrary parameters of subsequent functions
+# Complex pipelines
+
+## Using the outputs of previous functions in the pipeline, as inputs to arbitrary parameters of subsequent functions
+```{r}
+getColor <- function(data, color){
+  return(color)
+}
+
+getColumnName <-function(data, columnName){
+  return(columnName)
+}
 
 
+obj %>>% registerFunction("getColor") -> obj
 
-# Generate Report
+obj %>>% registerFunction("getColumnName") -> obj
+
+obj %>>% getRegistry
+
+obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy", storeOutput = T) %>>%
+      univarCatDistPlots(uniCol = "building_type", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
+      outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
+
+complexPipeline %>>% getPipeline
+complexPipeline %>>% visualizePipeline
+complexPipeline %>>% generateOutput -> op
+
+op %>>% getOutputById("4")
+```
+
+
+# Generating reports
 
 Object and lists stored in the memory are not consumable. Hence, the package allows for the option to knit a pipeline's outputs into a neat HTML file, which can serve as a report of the analysis performed.
 
@@ -225,7 +227,7 @@ objRep %>>% generateReport('~/Desktop')
 
 <br>
 
-# Save and Load Pipelines
+# Saving and loading pipelines
 
 The pipelines stored as an attribute in the object are effectively meta pipelines which document the steps in an EDA pipeline. These can be exported and re-read by certain functions available in this EDA utility. The pipelines are generic enough to work with the schema of the data that was used to invoke the constructor. Therefore, this pipeline can be used on any data of the same schema.
 
@@ -243,5 +245,9 @@ obj2 %>% getRegistry
 obj2 %>% getPipeline
 ```
 
-<br>
+# Logging & Execution times
+
+# Parallel execution of all-R pipelines
+
+
 

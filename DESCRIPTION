@@ -4,9 +4,10 @@ Title: Put analyis reports and pipelines into production
 Version: 0.1.0
 Authors@R: c(
       person("Naren","Srinivasan", email = "Naren.Srinivasan@mu-sigma.com", role = c("cre","aut")),
-      person("Neeratyoy","Mallik", email = "Neeratyoy.Mallik@mu-sigma.com", role = c("aut")),
-		  person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("aut")),
+      person("Neeratyoy","Mallik", email = "Neeratyoy.Mallik@mu-sigma.com", role = c("ctb")),
+		  person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("ctb")),
 		  person("Anoop S","",  email = "Anoop.S@mu-sigma.com", role = c("ctb")),
+		  person("Dheekshitha PS","",  email = "Dheekshitha.PS@mu-sigma.com", role = c("ctb")),
 		  person("Vedavyas C","",  email = "Vedavyas.C@mu-sigma.com", role = c("ctb"))
 		  )
 Maintainer: Naren Srinivasan <Naren.Srinivasan@mu-sigma.com>

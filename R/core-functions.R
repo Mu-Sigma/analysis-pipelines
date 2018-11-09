@@ -890,7 +890,9 @@ setGeneric(
                                                      pythonLogo))) -> node_df
     node_df$shape <- "image"
 
-    node_df %>>% dplyr::mutate(group = ifelse(storeOutput == T, "Stored output", "Auxiliary step")) %>>%
+    # node_df %>>% dplyr::mutate(group = ifelse(storeOutput == T, "Stored output", "Auxiliary step"))
+    node_df$group <- "function"
+    node_df %>>%
       dplyr::select(id, operation, group, shape, image) -> node_df
 
     colnames(node_df) <- c("id", "label", "group","shape", "image")
@@ -1050,11 +1052,14 @@ initializeLoggers <- function(object){
 
   appender.fn <- futile.logger::appender.console()
   # Define target
+  futile.logger::flog.threshold(futile.logger::INFO)
   fileName <- object@pipelineExecutor$loggerDetails$targetFile
   if(object@pipelineExecutor$loggerDetails$target == 'file'){
     appender.fn <- futile.logger::appender.file(fileName)
   }else if(object@pipelineExecutor$loggerDetails$target == 'console&file'){
     appender.fn <- futile.logger::appender.tee(fileName)
+  }else if(object@pipelineExecutor$loggerDetails$target == 'none'){
+    futile.logger::flog.threshold(futile.logger::FATAL)
   }
 
   #TODO: pass layout as parameter

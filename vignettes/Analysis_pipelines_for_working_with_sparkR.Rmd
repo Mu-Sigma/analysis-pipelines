@@ -2,11 +2,13 @@
 title: "Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses"
 author: "Naren S, Anoop S"
 date: "09/04/2018"
-# output: rmarkdown::html_vignette
-# vignette: >
-#   %\VignetteIndexEntry{Analysis pipelines for working with SparkR}
-#   %\VignetteEngine{knitr::rmarkdown}
-#   %\VignetteEncoding{UTF-8}
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 # Objective
 
@@ -49,16 +51,16 @@ sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = sparkPacka
 ### Read data from csv and initialize spark pipeline object
 Spark can connect to datasources like Hive, Kafka. Besides, it also also read parquet, json and csv files. In this example we will read a csv file.
 ```{r}
-inputDataset <- read.df(path="../inst/hotel_new.csv",source="csv",header = TRUE, inferSchema = "true")
-pipelineObj <- AnalysisPipeline(input = SparkR::as.data.frame(inputDataset))
+pipelineObj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
+# pipelineObj <- AnalysisPipeline(input = SparkR::as.data.frame(system.file("hotel_new.csv", package = "analysisPipelines")))
 ```
 
 ### User defined spark functions
 The example below shows a few functions to perform simple aggregations.
 
 ```{r}
-# Function to calculate avg occupany for the client as well as competitors - grouped by input parameter
-occupanyAnalysis <- function(inputDataset, groupByColumn) {
+# Function to calculate avg occupancy for the client as well as competitors - grouped by input parameter
+occupancyAnalysis <- function(inputDataset, groupByColumn) {
   occupancySummary <- summarize(groupBy(inputDataset,inputDataset[[groupByColumn]]),
                        avgOccupancy=mean(inputDataset$Occupancy),
                        avgCompetitorOccupancy=mean(inputDataset$Compet_Occupancy))
@@ -85,17 +87,18 @@ Each user defined function needs to be registered to the pipeline object. Post r
 
 ```{r}
 # Register user defined functions
-pipelineObj <- pipelineObj %>>% registerFunction("occupanyAnalysis", "Occupany analysis",outAsIn = F,
+pipelineObj <- pipelineObj %>>% registerFunction("occupancyAnalysis", "Occupany analysis",
                                                  engine = "spark")  %>>%
-  registerFunction("bookingChannelsAnalysis", "Booking channels analysis", outAsIn = F,
+  registerFunction("bookingChannelsAnalysis", "Booking channels analysis",
                                                  engine = "spark")
 # List al registered functions 
 pipelineObj %>>% getRegistry
 
 # Define pipeline from list of registered functions
-pipelineObj %>% occupanyAnalysis(groupByColumn = "location_type") %>% bookingChannelsAnalysis(groupByColumn = "location_type") -> pipelineObj
+pipelineObj %>% occupancyAnalysis(groupByColumn = "location_type") %>% bookingChannelsAnalysis(groupByColumn = "location_type") -> pipelineObj
 
 pipelineObj %>>% getPipeline
+pipelineObj %>>% visualizePipeline
 ```
 
 ### Running the pipeline and generating an output
@@ -108,17 +111,18 @@ In this example the Spark DataFrames are converted to R dataframes to help visua
 pipelineObj %>% generateOutput() -> pipelineObj
 
 # Show occupancy analysis result
-occpancyAnalysisResult <- pipelineObj %>>% getOuputByOrderId(1)
-occpancyAnalysisResultDf <- as.data.frame(occpancyAnalysisResult)
-occpancyAnalysisResultDf
+occupancyAnalysisResult <- pipelineObj %>>% getOutputById(1)
+occupancyAnalysisResultDf <- as.data.frame(occupancyAnalysisResult)
+occupancyAnalysisResultDf
 
-# ggplot(occpancyAnalysisResultDf) + geom_col(aes(location_type, avgOccupancy, color=location_type)) 
+# ggplot(occupancyAnalysisResultDf) + geom_col(aes(location_type, avgOccupancy, color=location_type)) 
 
 # Show booking channels analysis result
-bookingChannelsAnalysisResult <- pipelineObj %>>% getOuputByOrderId(2)
+bookingChannelsAnalysisResult <- pipelineObj %>>% getOutputById(2)
 bookingChannelsAnalysisResultDf <- as.data.frame(bookingChannelsAnalysisResult)
 bookingChannelsAnalysisResultDf
-# ggplot(bookingChannelsAnalysisResultDf) + geom_col(aes(location_type, avgCallCenterBookingPct, color=location_type)) + scale_y_continuous(labels = scales::percent)
+
+ggplot2::ggplot(bookingChannelsAnalysisResultDf) + geom_col(aes(location_type, avgCallCenterBookingPct, color=location_type)) + scale_y_continuous(labels = scales::percent)
 
 ```
 
