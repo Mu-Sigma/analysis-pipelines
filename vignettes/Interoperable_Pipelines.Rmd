@@ -43,7 +43,7 @@ sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
 
 sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
 
-inputDataset <- SparkR::read.df(path="../inst/hotel_new.csv",source="csv",header = TRUE, inferSchema = "true")
+inputDataset <- SparkR::read.df(path = system.file("hotel_new.csv", package = "analysisPipelines"),source="csv",header = TRUE, inferSchema = "true")
 ```
 
 
@@ -186,7 +186,7 @@ pipelineObj %>>% rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_
 vizWithoutFilterPipeline %>>% getPipeline
 vizWithoutFilterPipeline %>>% assessEngineSetUp
 vizWithoutFilterPipeline %>>% generateOutput -> opWithoutFilter
-opWithoutFilter %>>% getOuputByOrderId(1)
+opWithoutFilter %>>% getOutputById(1)
 ```
 
 We then perform filtering on one of the variables in Spark, before visualizing in R
@@ -195,9 +195,10 @@ We then perform filtering on one of the variables in Spark, before visualizing i
 pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
                      priColor = "blue", secColor = "green") -> singleFilterPipeline
-singleFilterPipeline %>>% assessEngineSetUp
+singleFilterPipeline %>>% visualizePipeline
+
 singleFilterPipeline %>>% generateOutput -> opWithFilter
-opWithFilter %>>% getOuputByOrderId(2)
+opWithFilter %>>% getOutputById(2)
 ```
 
 Finally, we show a case, where sequential filtering steps are performed in Spark, before visualizing in R
@@ -207,9 +208,8 @@ pipelineObj %>>% sparkFilterData("Class == 'good'") %>>%
   sparkFilterData("Occupancy > 0.7") %>>%
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
                      priColor = "blue", secColor = "green") -> twoFilterPipeline
-twoFilterPipeline %>>% assessEngineSetUp
 twoFilterPipeline %>>% generateOutput -> opWith2Filters
-opWith2Filters %>>% getOuputByOrderId(3)
+opWith2Filters %>>% getOutputById(3)
 ```
 
 
