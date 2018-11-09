@@ -44,31 +44,43 @@ setMethod(
   signature = "AnalysisPipeline",
   definition = function(.Object, ...,input = data.frame(), filePath = "")
   {
-    ##Check input class
+    tryCatch({
+      ##Check input class
 
-    .Object@input <- initDfBasedOnType(input, filePath)
-    .Object@originalSchemaDf <- .Object@input[0,]
+      .Object@input <- initDfBasedOnType(input, filePath)
+      .Object@originalSchemaDf <- .Object@input[0,]
 
 
-    ## Calling the parent constructor
-    .Object <- methods::callNextMethod(.Object, ...)
+      ## Calling the parent constructor
+      .Object <- methods::callNextMethod(.Object, ...)
 
-    for(rowNo in 1:nrow(batchPredefFunctions)){
-      .Object %>>% registerFunction(batchPredefFunctions[['functionName']][[rowNo]],
-                                    batchPredefFunctions[['heading']][[rowNo]],
-                                    batchPredefFunctions[['outAsIn']][[rowNo]],
-                                    batchPredefFunctions[['engine']][[rowNo]],
-                                    batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
-                                    userDefined = F) -> .Object
-    }
-  return(.Object)
+      for(rowNo in 1:nrow(batchPredefFunctions)){
+        .Object %>>% registerFunction(batchPredefFunctions[['functionName']][[rowNo]],
+                                      batchPredefFunctions[['heading']][[rowNo]],
+                                      batchPredefFunctions[['outAsIn']][[rowNo]],
+                                      batchPredefFunctions[['engine']][[rowNo]],
+                                      batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
+                                      userDefined = F) -> .Object
+      }
+      return(.Object)
+
+    },error = function(e){
+      futile.logger::flog.error(e, name = "logger.base")
+      stop()
+    })
+
   }
 )
 
 
 .checkSchemaMatch = function(object, newData){
-  schemaCheck <- checkSchema(object@originalSchemaDf, newData)
-  return(schemaCheck)
+  tryCatch({
+    schemaCheck <- checkSchema(object@originalSchemaDf, newData)
+    return(schemaCheck)
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+    stop()
+  })
 }
 
 #' @rdname checkSchemaMatch
@@ -184,240 +196,265 @@ checkSchema <- function(dfOld, dfNew){
 
 .generateOutput = function(object)
 {
-  inputToExecute <- object@input
+  tryCatch({
 
-  if(all(dim(inputToExecute) == c(0,0))){
-    m <- "This pipeline has not been initialized with a dataframe. Please use the setInput() function to do so."
-    futile.logger::flog.error(m, name = 'logger.pipeline')
-    stop(m)
-  }
+    object %>>% initializeLoggers
 
-  ## Check engine setup
-  object %>>% assessEngineSetUp ->  engineAssessment
-  engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
+    print(futile.logger::flog.appender())
 
-  if(!all(requiredEngines$isSetup)){
-    m <- paste0("All engines required for the pipelines have not been configured. ",
-                "Please use the analysisPipelines::assessEngine() function to check")
-    futile.logger::flog.error(m, name = 'logger.engine.assessment')
-    stop(m)
-  }
+    inputToExecute <- object@input
 
-  if(nrow(object@pipelineExecutor$topologicalOrdering) == 0){
-    object %>>% prepExecution -> object
-  }
+    if(all(dim(inputToExecute) == c(0,0))){
+      m <- "This pipeline has not been initialized with a dataframe. Please use the setInput() function to do so."
+      futile.logger::flog.error(m, name = 'logger.pipeline')
+      stop(m)
+    }
 
-  object %>>% .executeByBatch -> object
+    ## Check engine setup
+    object %>>% assessEngineSetUp ->  engineAssessment
+    engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
 
-  return(object)
+    if(!all(requiredEngines$isSetup)){
+      m <- paste0("All engines required for the pipelines have not been configured. ",
+                  "Please use the analysisPipelines::assessEngine() function to check")
+      futile.logger::flog.error(m, name = 'logger.engine.assessment')
+      stop(m)
+    }
+
+    if(nrow(object@pipelineExecutor$topologicalOrdering) == 0){
+      object %>>% prepExecution -> object
+    }
+
+    object %>>% .executeByBatch -> object
+
+    return(object)
+
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+    stop()
+  })
 }
 
 
 .executeByBatch <- function(object){
 
-  startPipelineExecution <- Sys.time()
-  futile.logger::flog.info("||  Pipeline Execution STARTED  ||" , name='logger.execution')
-
-  outputCache <- new.env()
-
-  topOrder <- object@pipelineExecutor$topologicalOrdering
-  dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName")) %>>%
-    dplyr::left_join(object@pipelineExecutor$topologicalOrdering, by = c("id" = "id")) -> pipelineRegistryOrderingJoin
-
-  # pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
-  batches <- unique(pipelineRegistryOrderingJoin$level)
-  numBatches <- max(as.numeric(batches))
-
-  #   no_cores <- parallel::detectCores() - 1
-  #   cl <- parallel::makeCluster(no_cores)
-  #   parallel::clusterExport(cl = cl, envir = .GlobalEnv, varlist = ls())
-  # .executeBatch <- function(y, functionsInBatch){
-  #
-  #   return(NULL)
-  # }
+  tryCatch({
 
 
+    startPipelineExecution <- Sys.time()
+    futile.logger::flog.info("||  Pipeline Execution STARTED  ||" , name='logger.execution')
 
-  # Iterate across batches
-  lapply(batches, function(x, object, pipelineRegistryOrderingJoin){
+    outputCache <- new.env()
 
-    startBatch <- Sys.time()
-    pipelineRegistryOrderingJoin %>>% dplyr::filter(level == x) -> functionsInBatch
-    futile.logger::flog.info("||  Executing Batch Number : %s/%s containing functions '%s' ||",
-              x, numBatches, paste(functionsInBatch$operation, collapse = ", "),
-              name='logger.batch')
+    topOrder <- object@pipelineExecutor$topologicalOrdering
+    dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName")) %>>%
+      dplyr::left_join(object@pipelineExecutor$topologicalOrdering, by = c("id" = "id")) -> pipelineRegistryOrderingJoin
 
-    # Garbage cleaning in the cache - Previous batch outputs
+    # pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+    batches <- unique(pipelineRegistryOrderingJoin$level)
+    numBatches <- max(as.numeric(batches))
 
-    prevBatch <- as.character(as.numeric(x) - 1)
-    pipelineRegistryOrderingJoin %>>% dplyr::filter(level == prevBatch) -> funcInPrevBatch
-
-    if(nrow(funcInPrevBatch)>0){
-      possiblePrevCacheOutputNames <- paste0("f", funcInPrevBatch$id, ".out")
-      previousCachedOutputNames <- intersect(possiblePrevCacheOutputNames, ls(outputCache))
-      pipelineRegistryOrderingJoin %>>% dplyr::filter(storeOutput == TRUE) -> requiredOutputs
-      requiredOutputs <-  paste0("f", requiredOutputs$id, ".out")
-
-      unrequiredCachedOutputNames <- setdiff(previousCachedOutputNames, requiredOutputs)
-
-      lapply(unrequiredCachedOutputNames, function(n){
-        rm(list = n, envir = outputCache)
-        return(NULL)
-      })
-      # object@pipelineExecutor$cache[unrequiredCachedOutputNames] <<- NULL
-
-      futile.logger::flog.info("||  Cleared intermediate outputs which are not required  ||", name = "logger.pipeline")
-
-    }
-
-    ## Function execution in a batch
-    lapply(functionsInBatch$id, function(y, object, functionsInBatch){
-      ## Check atleast one function to execute
-      ## Replace formula parameters with actual outputs
-      startFunc <- Sys.time()
-
-      functionsInBatch %>>% dplyr::filter(id == y) %>>% as.list -> funcDetails
-
-      futile.logger::flog.info("||  Function ID '%s' named '%s' STARTED on the '%s' engine ||",
-                funcDetails$id, funcDetails$operation, funcDetails$engine,
-                  name='logger.func')
-
-      # Set Input data
-      inputToExecute <- object@input
+    #   no_cores <- parallel::detectCores() - 1
+    #   cl <- parallel::makeCluster(no_cores)
+    #   parallel::clusterExport(cl = cl, envir = .GlobalEnv, varlist = ls())
+    # .executeBatch <- function(y, functionsInBatch){
+    #
+    #   return(NULL)
+    # }
 
 
-      if(funcDetails$outAsIn){
-        # inputToExecute <- object@pipelineExecutor$cache$workingInput
-        inputToExecute <- outputCache$workingInput
+
+    # Iterate across batches
+    lapply(batches, function(x, object, pipelineRegistryOrderingJoin, outputCache){
+
+      startBatch <- Sys.time()
+      pipelineRegistryOrderingJoin %>>% dplyr::filter(level == x) -> functionsInBatch
+      futile.logger::flog.info("||  Executing Batch Number : %s/%s containing functions '%s' ||",
+                               x, numBatches, paste(functionsInBatch$operation, collapse = ", "),
+                               name='logger.batch')
+
+      # Garbage cleaning in the cache - Previous batch outputs
+
+      prevBatch <- as.character(as.numeric(x) - 1)
+      pipelineRegistryOrderingJoin %>>% dplyr::filter(level == prevBatch) -> funcInPrevBatch
+
+      if(nrow(funcInPrevBatch)>0){
+        possiblePrevCacheOutputNames <- paste0("f", funcInPrevBatch$id, ".out")
+        previousCachedOutputNames <- intersect(possiblePrevCacheOutputNames, ls(outputCache))
+        pipelineRegistryOrderingJoin %>>% dplyr::filter(storeOutput == TRUE) -> requiredOutputs
+        requiredOutputs <-  paste0("f", requiredOutputs$id, ".out")
+
+        unrequiredCachedOutputNames <- setdiff(possiblePrevCacheOutputNames,
+                                               unique(c(previousCachedOutputNames, requiredOutputs)))
+
+        # futile.logger::flog.info("unrequired ops - %s",unrequiredCachedOutputNames, name = "logger.pipeline")
+
+        lapply(unrequiredCachedOutputNames, function(n){
+          rm(list = n, envir = outputCache)
+          return(NULL)
+        })
+        # object@pipelineExecutor$cache[unrequiredCachedOutputNames] <<- NULL
+
+        futile.logger::flog.info("||  Cleared intermediate outputs which are not required  ||", name = "logger.pipeline")
+
       }
 
-      #Check engine
-      ### Python to be added
+      ## Function execution in a batch
+      lapply(functionsInBatch$id, function(y, object, functionsInBatch, outputCache){
+        ## Check atleast one function to execute
+        ## Replace formula parameters with actual outputs
+        startFunc <- Sys.time()
 
-      prevEngine <- "r"
-      currEngine <- funcDetails$engine
-      if(class(inputToExecute) == "SparkDataFrame"){
-        prevEngine <- "spark"
-      }
+        functionsInBatch %>>% dplyr::filter(id == y) %>>% as.list -> funcDetails
 
-      if(prevEngine != currEngine){
-        if(prevEngine == 'spark'){
+        futile.logger::flog.info("||  Function ID '%s' named '%s' STARTED on the '%s' engine ||",
+                                 funcDetails$id, funcDetails$operation, funcDetails$engine,
+                                 name='logger.func')
 
-          if(currEngine == 'r'){
-            inputToExecute <- SparkR::as.data.frame(object@output[[rowNo-1]])
-          }
+        # Set Input data
+        inputToExecute <- object@input
 
-        }else if(prevEngine == 'r'){
-          if(currEngine == "spark"){
-            inputToExecute <- SparkR::as.DataFrame(object@output[[rowNo-1]])
-          }
 
+        if(funcDetails$outAsIn){
+          # inputToExecute <- object@pipelineExecutor$cache$workingInput
+          inputToExecute <- outputCache$workingInput
         }
-      }else{
-        if(currEngine == 'spark'){
-          inputToExecute <- SparkR::as.DataFrame(inputToExecute)
+
+        #Check engine
+        ### Python to be added
+
+        prevEngine <- "r"
+        currEngine <- funcDetails$engine
+        if(class(inputToExecute) == "SparkDataFrame"){
+          prevEngine <- "spark"
         }
-      }
 
-      # Set parameters
+        if(prevEngine != currEngine){
+          if(prevEngine == 'spark'){
 
-      params <- unlist(funcDetails$parameters, recursive = F)
-      dep <- unlist(funcDetails$dependencies, recursive = F)
-      depTerms <- paste0("f", dep)
+            if(currEngine == 'r'){
+              inputToExecute <- SparkR::as.data.frame(object@output[[rowNo-1]])
+            }
 
-      params <- lapply(params, function(p){
-        if(class(p) == "formula"){
-          formulaTerm <- attr(terms(p), "term.label")
-          if(length(formulaTerm) == 1 && formulaTerm %in% depTerms){
-            ## Formula of previous function in pipeline
-            actualParamObjectName <- paste0(formulaTerm, ".out")
-            p <-  unlist(object@pipelineExecutor$cache[[actualParamObjectName]], recursive = F)
+          }else if(prevEngine == 'r'){
+            if(currEngine == "spark"){
+              inputToExecute <- SparkR::as.DataFrame(object@output[[rowNo-1]])
+            }
+
+          }
+        }else{
+          if(currEngine == 'spark'){
+            inputToExecute <- SparkR::as.DataFrame(inputToExecute)
           }
         }
 
-        return(p)
-      })
+        # Set parameters
+
+        params <- unlist(funcDetails$parameters, recursive = F)
+        dep <- unlist(funcDetails$dependencies, recursive = F)
+        depTerms <- paste0("f", dep)
+
+        params <- lapply(params, function(p){
+          if(class(p) == "formula"){
+            formulaTerm <- attr(terms(p), "term.label")
+            if(length(formulaTerm) == 1 && formulaTerm %in% depTerms){
+
+              ## Formula of previous function in pipeline
+              actualParamObjectName <- paste0(formulaTerm, ".out")
+              p <-  get(actualParamObjectName, envir = outputCache)
+            }
+          }
+
+          return(p)
+        })
 
 
-      #Call
+        #Call
 
-      #Assign as named parameters
-      output <- tryCatch({do.call(what = funcDetails$operation,
-                                  args = append(list(inputToExecute),
-                                                params))},
-                         error = function(e){
-                           futile.logger::flog.error("||  ERROR Occurred in Function ID '%s' named '%s'. EXITING PIPELINE EXECUTION. Calling Exception Function - '%s'  ||",
-                                      funcDetails$id, funcDetails$operation, funcDetails$exceptionHandlingFunction,
-                                      name='logger.func')
-                           do.call(funcDetails$exceptionHandlingFunction,
-                                   list(error = e))
+        #Assign as named parameters
+        output <- tryCatch({do.call(what = funcDetails$operation,
+                                    args = append(list(inputToExecute),
+                                                  params))},
+                           error = function(e){
+                             futile.logger::flog.error("||  ERROR Occurred in Function ID '%s' named '%s'. EXITING PIPELINE EXECUTION. Calling Exception Function - '%s'  ||",
+                                                       funcDetails$id, funcDetails$operation, funcDetails$exceptionHandlingFunction,
+                                                       name='logger.func')
+                             do.call(funcDetails$exceptionHandlingFunction,
+                                     list(error = e))
 
-                         })
+                           })
 
-      ##outAsIn
-      if(funcDetails$outAsIn){
-        # object@pipelineExecutor$cache$workingInput <<- output
-        outputCache$workingInput <- output
-      }
-
-      opName <- paste0("f", funcDetails$id, ".out") #eg: f1.out
-      if(funcDetails$storeOutput){
-        assign(opName, value = list(output), envir = outputCache)
-        # object@pipelineExecutor$cache[[opName]] <<- list(output)
-      }else{
-        #Check if there are dependent children
-        fromList <- object@pipelineExecutor$dependencyLinks$from
-        if(funcDetails$id %in% fromList){
-          assign(opName, value = list(output), envir = outputCache)
-          # object@pipelineExecutor$cache[[opName]] <<- list(output)
+        ##outAsIn
+        if(funcDetails$outAsIn){
+          outputCache$workingInput <- output
         }
-      }
 
-      endFunc <- Sys.time()
-      funcExecTime <- endFunc - startFunc
+        opName <- paste0("f", funcDetails$id, ".out") #eg: f1.out
+        if(funcDetails$storeOutput){
+          assign(opName, value = output, envir = outputCache)
+        }else{
+          #Check if there are dependent children
+          fromList <- object@pipelineExecutor$dependencyLinks$from
+          if(funcDetails$id %in% fromList){
+            assign(opName, value = output, envir = outputCache)
+          }
+        }
 
-      futile.logger::flog.info("||  Function ID '%s' named '%s' COMPLETED. Time taken : %s seconds  ||", funcDetails$id, funcDetails$operation, funcExecTime,
-                name='logger.func')
+        endFunc <- Sys.time()
+        funcExecTime <- endFunc - startFunc
 
-    }, object, functionsInBatch)
+        futile.logger::flog.info("||  Function ID '%s' named '%s' COMPLETED. Time taken : %s seconds  ||", funcDetails$id, funcDetails$operation, funcExecTime,
+                                 name='logger.func')
 
-    # parallel::parLapply(X = functionsInBatch$id, cl = cl, function(y){s })
-    endBatch <- Sys.time()
-    batchExecTime <- endBatch - startBatch
+      }, object, functionsInBatch, outputCache)
 
-    futile.logger::flog.info("||  Batch Number %s/%s COMPLETE. Time taken : %s seconds  ||", x, numBatches, batchExecTime, name='logger.batch')
+      # parallel::parLapply(X = functionsInBatch$id, cl = cl, function(y){s })
+      endBatch <- Sys.time()
+      batchExecTime <- endBatch - startBatch
 
-  }, object, pipelineRegistryOrderingJoin)
+      futile.logger::flog.info("||  Batch Number %s/%s COMPLETE. Time taken : %s seconds  ||", x, numBatches, batchExecTime, name='logger.batch')
+
+    }, object, pipelineRegistryOrderingJoin, outputCache)
 
 
-  futile.logger::flog.info("||  Performing final garbage cleaning and collection of outputs  ||",
-            name='logger.pipeline')
+    futile.logger::flog.info("||  Performing final garbage cleaning and collection of outputs  ||",
+                             name='logger.pipeline')
 
-  #Final garbage cleaning
-  pipelineRegistryOrderingJoin %>>% dplyr::filter(storeOutput == TRUE) -> requiredOutputs
-  requiredOutputs <-  paste0("f", requiredOutputs$id, ".out")
+    #Final garbage cleaning
+    pipelineRegistryOrderingJoin %>>% dplyr::filter(storeOutput == TRUE) -> requiredOutputs
+    requiredOutputs <-  paste0("f", requiredOutputs$id, ".out")
 
-  unrequiredCachedOutputNames <- setdiff(ls(outputCache), requiredOutputs)
+    unrequiredCachedOutputNames <- setdiff(ls(outputCache), requiredOutputs)
 
-  lapply(unrequiredCachedOutputNames, function(n){
-    rm(list = n, envir = outputCache)
-    return(NULL)
+    lapply(unrequiredCachedOutputNames, function(n){
+      rm(list = n, envir = outputCache)
+      return(NULL)
+    })
+
+
+    object@output <- mget(ls(outputCache), envir = outputCache)
+    rm(list = ls(outputCache), envir = outputCache)
+
+    # stopCluster(cl)
+    # object@output <- object@pipelineExecutor$cache
+    #
+    # #Clear cache
+    # object@pipelineExecutor$cache <- NULL
+
+    endPipelineExecution <- Sys.time()
+    executionTime <- endPipelineExecution - startPipelineExecution
+
+    futile.logger::flog.info("||  Pipeline Execution COMPLETE. Time taken : %s seconds||", executionTime, name='logger.execution')
+    return(object)
+
+
+
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+    stop()
   })
 
 
-  object@output <- mget(ls(outputCache), envir = outputCache)
-  rm(list = ls(outputCache), envir = outputCache)
-  # stopCluster(cl)
-  # object@output <- object@pipelineExecutor$cache
-  #
-  # #Clear cache
-  # object@pipelineExecutor$cache <- NULL
-
-  endPipelineExecution <- Sys.time()
-  executionTime <- endPipelineExecution - startPipelineExecution
-
-  futile.logger::flog.info("||  Pipeline Execution COMPLETE. Time taken : %s seconds||", executionTime, name='logger.execution')
-  return(object)
 }
 
 #' @rdname generateOutput
@@ -450,31 +487,39 @@ setGeneric(
 setMethod(
   f = "generateReport",
   signature = c("AnalysisPipeline", "character"),
-  definition = function(object,path)
+  definition = function(object, path = ".")
   {
-    require(rmarkdown)
-    if(length(object@output) == 0){
-      object <- generateOutput(object)
-    }
-    object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
+    tryCatch({
+
+      object %>>% setLoggerDetails(target = "file") -> object
+
+      if(length(object@output) == 0){
+        object <- generateOutput(object)
+      }
+      # object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
 
 
-    rmarkdown::render(
-      system.file("report.Rmd", package = "analysisPipelines"),
-      params = list(
-        input = object@input,
-        pipeline = object@pipeline,
-        output = object@output
-      ),
-      html_document(
-        css = system.file("styles.css", package = "analysisPipelines"),
-        toc = T,
-        toc_float = T
-      ),
+      rmarkdown::render(
+        system.file("report.Rmd", package = "analysisPipelines"),
+        params = list(
+          # input = object@input,
+          # pipelineDetails = object@pipeline,
+          # output = object@output,
+          obj = object
+        ),
+        rmarkdown::html_document(
+          css = system.file("styles.css", package = "analysisPipelines"),
+          toc = T,
+          toc_float = T
+        ),
 
-      output_dir = path ,
-      output_file = paste('EDA_report_',Sys.time(),'.html', sep = '')
-    )
+        output_dir = path ,
+        output_file = paste('analysisPipelineReport_',Sys.time(),'.html', sep = '')
+      )
 
+    },error = function(e){
+      futile.logger::flog.error(e, name = "logger.base")
+      stop()
+    })
   }
 )

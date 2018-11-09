@@ -1,0 +1,2 @@
+ERROR [2018-11-09 15:58:26] Error in kable_styling(., full_width = F): could not find function "kable_styling"
+

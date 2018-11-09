@@ -80,7 +80,7 @@ obj1 %>>% getPipeline
 # Running univariate categorical distribution plot and then 
 # outlier detection on the constructed object
 
-obj %>>% univarCatDistPlots(uniCol = "location_type", priColor = "xy", optionalPlots = 0, storeOutput = T) %>>% 
+obj %>>% univarCatDistPlots(uniCol = "location_type", priColor = "xy", optionalPlots = 0) %>>% 
          outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0, storeOutput = T) -> obj2
 obj2 %>>% getPipeline
@@ -116,7 +116,7 @@ A specific output can be viewed by providing the position of the function genera
 
 ```{r lazy eval 3, warning=F}
 # The index can range from 1 to length(obj@output)
-obj1Output %>>% getOutputById(id = "1")
+obj1Output %>>% getOutputById("1")
 ```
 
 <br>
@@ -130,7 +130,7 @@ Let us demonstrate this with an example.
 
 ```{r current register, warning=FALSE}
 # Currently registered functions
-obj2 %>>% getRegistry
+obj2 %>>% getRegistry()
 ```
 
 Currently, the package does not have a function to plot bivariate distributions. Let us define a function which can do it for us.
@@ -189,7 +189,9 @@ The newly added function will also lazy evaluate depending on the trigger.
 
 ```{r register function 3, warning=F}
 obj2Output <- obj2 %>>% generateOutput()
-obj2Output %>>% getOutputById("1")
+obj2Output %>>% getOutputById("1") -> a
+a
+obj2Output@pipeline
 ```
 
 <br>
@@ -204,8 +206,9 @@ Object and lists stored in the memory are not consumable. Hence, the package all
 
 ```{r generate report and tabs, warning=F,  eval=F}
 # generateReport() needs a destination path as an argument
-# The function writes a HTML file with a name in the format 'EDA_report_[timestamp].html'
-obj2 %>>% generateReport('~/Desktop')
+# The function writes a HTML file
+
+obj2Output %>>% generateReport('~/Desktop')
 ```
 
 In the above case, since the object had the output evaluated and stored in the <i>output</i> attribute, the function call only knits the output into an HTML file. <br>

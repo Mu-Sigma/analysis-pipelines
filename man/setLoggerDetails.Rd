@@ -4,16 +4,17 @@
 \alias{setLoggerDetails}
 \title{Sets the logger configuration for the pipeline}
 \usage{
-setLoggerDetails(object, loggerDetails = list(target = "console", targetFile =
-  "pipelineExecution.out", layout = "layout.simple"))
+setLoggerDetails(object, target = "console",
+  targetFile = "pipelineExecution.out", layout = "layout.simple")
 }
 \arguments{
 \item{object}{A Pipeline object}
 
-\item{loggerDetails}{A list of the following options, which can be set:
-- \code{target} - A string value. 'console' for appending to console, 'file' for appending to a file, or 'console&file' for both
-- \code{targetFile} - File name of the log file in case the target is 'file'
-- \code{targetLayout} - Specify the layout according to 'futile.logger' package convention}
+\item{target}{A string value. 'console' for appending to console, 'file' for appending to a file, or 'console&file' for both}
+
+\item{targetFile}{File name of the log file in case the target is 'file'}
+
+\item{targetLayout}{Specify the layout according to 'futile.logger' package convention}
 }
 \details{
 This function sets the logger configuration for the pipeline.

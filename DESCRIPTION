@@ -13,7 +13,7 @@ Maintainer: Naren Srinivasan <Naren.Srinivasan@mu-sigma.com>
 Description: This package allows data scientists to compose and generate reports as a set of analytical operations. The sequence of generation can be stored as pipelines and reused, specifically for production systems where these tasks are run repetitively. Additionally, the package implements a form of lazy evaluation where the pipelines are run on datasets only when outputs/ reports need to be generated. The package also has functions implemented for working with Spark through SparkR for both traditional Spark jobs on Spark DataFrames, as well as Spark Structured Streaming.
 Depends: R (>= 3.4.0), tibble, magrittr, data.table, pipeR, devtools
 Imports: ggplot2, dplyr, futile.logger
-Suggests: plotly, knitr, rmarkdown, SparkR, parallel, visNetwork
+Suggests: plotly, knitr, rmarkdown, SparkR, parallel, visNetwork, rjson, DT
 Remotes: github::cran/SparkR
 Encoding: UTF-8
 License: Apache License 2.0
