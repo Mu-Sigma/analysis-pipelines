@@ -47,40 +47,45 @@ setMethod(
   signature = "BaseAnalysisPipeline",
   definition = function(.Object)
   {
-    .Object@pipeline <- tibble(
-      id = character(),
-      operation = character(),
-      heading = character(),
-      parameters = list(),
-      outAsIn = logical(),
-      storeOutput = F
-    )
+    tryCatch({
+      .Object@pipeline <- tibble(
+        id = character(),
+        operation = character(),
+        heading = character(),
+        parameters = list(),
+        outAsIn = logical(),
+        storeOutput = F
+      )
 
-    .Object@pipelineExecutor <- list(
-      topologicalOrdering = tibble(id = character(),
-                                   level = character()),
-      dependencyLinks = tibble(from = character(),
-                               to = character()),
-      loggerDetails <- list()
-    )
+      .Object@pipelineExecutor <- list(
+        topologicalOrdering = tibble(id = character(),
+                                     level = character()),
+        dependencyLinks = tibble(from = character(),
+                                 to = character()),
+        loggerDetails <- list()
+      )
 
-    .Object@registry <- tibble(
-      ##id required?
-      functionName = character(),
-      heading = character(),
-      # outAsIn = logical(),
-      engine = character(),
-      exceptionHandlingFunction = character(),
-      userDefined = logical(),
-      dataFunction = logical()
-    )
+      .Object@registry <- tibble(
+        functionName = character(),
+        heading = character(),
+        engine = character(),
+        exceptionHandlingFunction = character(),
+        userDefined = logical(),
+        dataFunction = logical()
+      )
 
-    .Object@output <- list()
+      .Object@output <- list()
 
-    .Object %>>% setLoggerDetails -> .Object
-    initializeLoggers(.Object)
+      .Object %>>% setLoggerDetails -> .Object
+      initializeLoggers(.Object)
 
-    return(.Object)
+      return(.Object)
+    }, error = function(e){
+      futile.logger::flog.error(e, name = "logger.base")
+    stop()
+    }, warning = function(w){
+      futile.logger::flog.warn(w, name = "logger.base")
+    })
   }
 )
 
@@ -122,81 +127,85 @@ setMethod(
                         engine = "r",
                         exceptionFunction = as.character(substitute(genericPipelineException)),
                         loadPipeline = F, userDefined = T
-                        # storeOutput = F,
-                        # session = session
                         )
   {
+    tryCatch({
+      #Define data frame class according to engine type
+      childClass <- class(object)
+      attr(childClass, "package") <- NULL
 
-    #Define data frame class according to engine type
-    childClass <- class(object)
-    attr(childClass, "package") <- NULL
+      dataFrameClass <- "data.frame"
+      if(engine == "spark"){
+        dataFrameClass <- "SparkDataFrame"
+      }
 
-    dataFrameClass <- "data.frame"
-    if(engine == "spark"){
-      dataFrameClass <- "SparkDataFrame"
-    }
+      parametersName <- names(as.list(args(eval(parse(text=functionName)))))
+      parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
+      if(parametersName != ""){
+        parametersName <- paste0(", ", parametersName)
+      }
+      methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
 
-    parametersName <- names(as.list(args(eval(parse(text=functionName)))))
-    parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
-    if(parametersName != ""){
-      parametersName <- paste0(", ", parametersName)
-    }
-    methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
+      originalArgs <- names(as.list(args(eval(parse(text=functionName)))))
+      firstArg <- originalArgs[1]
 
-    originalArgs <- names(as.list(args(eval(parse(text=functionName)))))
-    firstArg <- originalArgs[1]
+      methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object"), x = methodBody)
 
-    methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object"), x = methodBody)
-
-    methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
-    methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
-
-
-    ##Assigning the exception function to the global Environment
-    assign(exceptionFunction, get(x = exceptionFunction,
-                                                envir = environment()),
-           envir = globalenv())
-
-    #Register function
-    registerFunText <- # Generic
-                            paste0('setGeneric(name = "', functionName,'",',
-                                  'signature = "object",',
-                                 'def = function(object ', ', ... ', ', outAsIn = F, storeOutput = F)',
-                                 # 'def = function(object, ',firstArg, ', ...)',
-                                 'standardGeneric("', functionName,'"));',
-
-                        # Adding to pipeline when run on a Analysis Pipeline object
-                                 'setMethod(f = "', functionName,'",',
-                                            'signature = "', childClass, '",',
-                                            'definition = function(object',
-                                                                  parametersName, ',',
-                                                                  'outAsIn, storeOutput){',
-                                             'parametersList <- unlist(strsplit(x = "', sub(", ", "", parametersName), '", split = ","' ,'));',
-                                             'parametersPassed <- lapply(parametersList, function(x){eval(parse(text = x))});',
-                                             'return(updateObject(object,
-                                                                  operation = "', functionName, '",',
-                                                                  'heading = "', heading, '",',
-                                                                  'parameters = parametersPassed, outAsIn = outAsIn, storeOutput = storeOutput));});',
-
-                        #Executing the actual function when data is passed
-                                'setMethod(f = "',functionName,'",',
-                                 'signature = "', dataFrameClass, '",',
-                                 'definition = function(object ', parametersName,')',
-                                                    methodBody, ')'
-    )
-
-    eval(parse(text = registerFunText), envir=.GlobalEnv)
+      methodArg <- paste0(capture.output(args(eval(parse(text=functionName)))),collapse="")
+      methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
 
 
-    if(loadPipeline==F){
-      object@registry %>>% add_row(functionName = paste0(functionName),
-                                   heading = heading,
-                                   # outAsIn = outAsIn,
-                                   engine = engine,
-                                   exceptionHandlingFunction = exceptionFunction,
-                                   userDefined = userDefined) -> object@registry
-    }
-    return(object)
+      ##Assigning the exception function to the global Environment
+      assign(exceptionFunction, get(x = exceptionFunction,
+                                    envir = environment()),
+             envir = globalenv())
+
+      #Register function
+      registerFunText <- # Generic
+        paste0('setGeneric(name = "', functionName,'",',
+               'signature = "object",',
+               'def = function(object ', ', ... ', ', outAsIn = F, storeOutput = F)',
+               # 'def = function(object, ',firstArg, ', ...)',
+               'standardGeneric("', functionName,'"));',
+
+               # Adding to pipeline when run on a Analysis Pipeline object
+               'setMethod(f = "', functionName,'",',
+               'signature = "', childClass, '",',
+               'definition = function(object',
+               parametersName, ',',
+               'outAsIn, storeOutput){',
+               'parametersList <- unlist(strsplit(x = "', sub(", ", "", parametersName), '", split = ","' ,'));',
+               'parametersPassed <- lapply(parametersList, function(x){eval(parse(text = x))});',
+               'return(updateObject(object,
+               operation = "', functionName, '",',
+               'heading = "', heading, '",',
+               'parameters = parametersPassed, outAsIn = outAsIn, storeOutput = storeOutput));});',
+
+               #Executing the actual function when data is passed
+               'setMethod(f = "',functionName,'",',
+               'signature = "', dataFrameClass, '",',
+               'definition = function(object ', parametersName,')',
+               methodBody, ')'
+        )
+
+      eval(parse(text = registerFunText), envir=.GlobalEnv)
+
+
+      if(loadPipeline==F){
+        object@registry %>>% add_row(functionName = paste0(functionName),
+                                     heading = heading,
+                                     # outAsIn = outAsIn,
+                                     engine = engine,
+                                     exceptionHandlingFunction = exceptionFunction,
+                                     userDefined = userDefined) -> object@registry
+      }
+      return(object)
+    }, error = function(e){
+      futile.logger::flog.error(e, name = "logger.base")
+    stop()
+    }, warning = function(w){
+      futile.logger::flog.warn(w, name = "logger.base")
+    })
   }
 )
 
@@ -225,9 +234,16 @@ setGeneric(
 
 .setInput = function(object, input, filePath = "")
 {
-  input <- initDfBasedOnType(input, filePath)
-  object@input <- input
-  return(object)
+  tryCatch({
+    input <- initDfBasedOnType(input, filePath)
+    object@input <- input
+    return(object)
+  }, error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  }, warning = function(w){
+    futile.logger::flog.warn(w, name = "logger.base")
+  })
 }
 
 setMethod(
@@ -268,18 +284,25 @@ setGeneric(
 
 .updateObject = function(object, operation, heading = "", parameters, outAsIn = F,  storeOutput = F)
 {
-  if(nrow(object@pipeline) == 0){
-    id = 1
-  }else{
-    id = max(as.numeric(object@pipeline$id)) + 1
-  }
-  object@pipeline %>>% add_row(id = id,
-                             operation = operation,
-                             heading = heading,
-                             parameters = list(parameters),
-                             outAsIn = outAsIn,
-                             storeOutput = storeOutput) -> object@pipeline
-  return(object)
+  tryCatch({
+    if(nrow(object@pipeline) == 0){
+      id = 1
+    }else{
+      id = max(as.numeric(object@pipeline$id)) + 1
+    }
+    object@pipeline %>>% add_row(id = id,
+                                 operation = operation,
+                                 heading = heading,
+                                 parameters = list(parameters),
+                                 outAsIn = outAsIn,
+                                 storeOutput = storeOutput) -> object@pipeline
+    return(object)
+  }, error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  }, warning = function(w){
+    futile.logger::flog.warn(w, name = "logger.base")
+  })
 }
 
 setMethod(
@@ -311,65 +334,71 @@ setGeneric(
 
 .assessEngineSetUp = function(object)
 {
-  startEngineAssessment <- Sys.time()
-  futile.logger::flog.info("||  Engine Assessment for pipeline STARTED  ||" , name='logger.engine.assessment')
+  tryCatch({
+    startEngineAssessment <- Sys.time()
+    futile.logger::flog.info("||  Engine Assessment for pipeline STARTED  ||" , name='logger.engine.assessment')
 
-  engineAssessment <- tibble(engine = character(),
-                             requiredForPipeline = logical(),
-                             isSetup = logical(),
-                             comments = character())
-  if(nrow(object@pipeline) == 0){
-    m <- "No functions have been added to the pipeline"
-    futile.logger::flog.error(m)
-    stop(m)
-  }else{
-    pipelineRegistryJoin = dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
-    requiredEngines <- unique(pipelineRegistryJoin$engine)
-
-    # R
-    isRSetup <- T
-    rComments <- ""
-    engineAssessment %>>% dplyr::add_row(engine = "r",
-                                         requiredForPipeline = ifelse("r" %in% requiredEngines, T, F),
-                                         isSetup = isRSetup,
-                                         comments = rComments)           -> engineAssessment
-
-    #Spark Batch and Structured Streaming
-
-    isSparkSetup <- T
-    sparkComments <- ""
-    checkSession <- tryCatch(SparkR::sparkR.conf(), error = function(e) e)
-    if("SparkSession not initialized" %in% checkSession){
-      isSparkSetup <- F
-      sparkComments <- paste0("There does not seem to be a Spark Session initialized through SparkR ",
-                              "which is required to execute pipelines containing Spark functions. ",
-                              "Please initialize a SparkR session. The analysisPipelines::sparkRSessionCreateIfNotPresent() ",
-                              "helper function can be used.")
+    engineAssessment <- tibble(engine = character(),
+                               requiredForPipeline = logical(),
+                               isSetup = logical(),
+                               comments = character())
+    if(nrow(object@pipeline) == 0){
+      m <- "No functions have been added to the pipeline"
+      futile.logger::flog.error(m)
+      stop(m)
     }else{
-      sparkComments <- paste0("SESSION DETAILS : ", paste0(checkSession, collapse = " "))
+      pipelineRegistryJoin = dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+      requiredEngines <- unique(pipelineRegistryJoin$engine)
+
+      # R
+      isRSetup <- T
+      rComments <- ""
+      engineAssessment %>>% dplyr::add_row(engine = "r",
+                                           requiredForPipeline = ifelse("r" %in% requiredEngines, T, F),
+                                           isSetup = isRSetup,
+                                           comments = rComments)           -> engineAssessment
+
+      #Spark Batch and Structured Streaming
+
+      isSparkSetup <- T
+      sparkComments <- ""
+      checkSession <- tryCatch(SparkR::sparkR.conf(), error = function(e) e)
+      if("SparkSession not initialized" %in% checkSession){
+        isSparkSetup <- F
+        sparkComments <- paste0("There does not seem to be a Spark Session initialized through SparkR ",
+                                "which is required to execute pipelines containing Spark functions. ",
+                                "Please initialize a SparkR session. The analysisPipelines::sparkRSessionCreateIfNotPresent() ",
+                                "helper function can be used.")
+      }else{
+        sparkComments <- paste0("SESSION DETAILS : ", paste0(checkSession, collapse = " "))
+      }
+
+      engineAssessment %>>% dplyr::add_row(engine = "spark",
+                                           requiredForPipeline = ifelse("spark" %in% requiredEngines, T, F),
+                                           isSetup = isSparkSetup,
+                                           comments = sparkComments)           -> engineAssessment
+
+      engineAssessment %>>% dplyr::add_row(engine = "spark-structured-streaming",
+                                           requiredForPipeline = ifelse("spark-structured-streaming" %in% requiredEngines, T, F),
+                                           isSetup = isSparkSetup,
+                                           comments = sparkComments)           -> engineAssessment
+
+      #TO DO -  Python
+
     }
 
-    engineAssessment %>>% dplyr::add_row(engine = "spark",
-                                         requiredForPipeline = ifelse("spark" %in% requiredEngines, T, F),
-                                         isSetup = isSparkSetup,
-                                         comments = sparkComments)           -> engineAssessment
 
-    engineAssessment %>>% dplyr::add_row(engine = "spark-structured-streaming",
-                                         requiredForPipeline = ifelse("spark-structured-streaming" %in% requiredEngines, T, F),
-                                         isSetup = isSparkSetup,
-                                         comments = sparkComments)           -> engineAssessment
+    endEngineAssessment <- Sys.time()
+    engineAssessmentTime <- endEngineAssessment - startEngineAssessment
+    futile.logger::flog.info("||  Engine Assessment COMPLETE. Time taken : %s seconds||", engineAssessmentTime, name='logger.engine.assessment')
 
-    #TO DO -  Python
-
-  }
-
-
-  endEngineAssessment <- Sys.time()
-  engineAssessmentTime <- endEngineAssessment - startEngineAssessment
-  futile.logger::flog.info("||  Engine Assessment COMPLETE. Time taken : %s seconds||", engineAssessmentTime, name='logger.engine.assessment')
-
-  return(engineAssessment)
-
+    return(engineAssessment)
+  }, error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  }, warning = function(w){
+    futile.logger::flog.warn(w, name = "logger.base")
+  })
 }
 
 
@@ -401,10 +430,17 @@ setGeneric(
 )
 
 .savePipeline = function(object, path){
-  object@output <- list()
-  object@input <- data.frame()
-  listToBeSaved <- c("object", object@registry$functionName, object@registry$exceptionHandlingFunction)
-  save(list = listToBeSaved,file = path)
+  tryCatch({
+    object@output <- list()
+    object@input <- data.frame()
+    listToBeSaved <- c("object", object@registry$functionName, object@registry$exceptionHandlingFunction)
+    save(list = listToBeSaved,file = path)
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  }, warning = function(w){
+    futile.logger::flog.warn(w, name = "logger.base")
+  })
 }
 
 setMethod(
@@ -523,26 +559,38 @@ setMethod(
 
 setGeneric(
   name = "getOutputById",
-  def = function(object, id, includeCall = F)
+  def = function(object, reqId, includeCall = F)
   {
     standardGeneric("getOutputById")
   }
 )
 
-.getOutputById = function(object, id, includeCall = F){
-  op <- list(call = data.frame(),
-             output = list())
-  object@pipeline %>% dplyr::filter(id == id) -> call
-  unlist(object@output[[paste0("f", id, ".out")]], recursive = F) -> output
+.getOutputById = function(object, reqId, includeCall = F){
+  tryCatch({
+      op <- list(call = data.frame(),
+                 output = list())
+      reqId <- as.character(reqId)
+      object@pipeline %>>% dplyr::filter(id == reqId) -> call
+      if(call$storeOutput){
+        object@output[[paste0("f", reqId, ".out")]] -> output
+      }else{
+        includeCall <- T
+        output <- "The output of this function was not configured to be stored"
+      }
 
-  if(includeCall){
-    op <- list(call = call,
-               output = output)
-    return(op)
-  }else{
-    return(output)
-  }
 
+      if(includeCall){
+        op <- list(call = call,
+                   output = output)
+        return(op)
+      }else{
+        return(output)
+      }
+
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  })
 }
 
 setMethod(
@@ -558,40 +606,45 @@ setMethod(
 #' @title Obtains upstream dependencies for \code{AnalysisPipeline} objects
 #' @keywords internal
 getUpstreamDependencies <- function(row){
+  tryCatch({
+    ## dependencies from parameters
+    termRegexPattern <- "[f]|[:digit:]"
+    params <- row$parameters
+    dep <- lapply(params, function(p){
+      t <- NULL
+      tId <- NA
+      if(class(p) == "formula"){
+        t <- attr(terms(p), "term.labels")
+      }
 
-  ## dependencies from parameters
-  termRegexPattern <- "[f]|[:digit:]"
-  params <- row$parameters
-  dep <- lapply(params, function(p){
-    t <- NULL
-    tId <- NA
-    if(class(p) == "formula"){
-      t <- attr(terms(p), "term.labels")
+      isDependencyParam <- c()
+
+      if(!is.null(t)){
+        isDependencyParam <- grep(termRegexPattern, t)
+      }
+
+      if(length(isDependencyParam) > 0){
+        # Dependency param
+        tId <- as.numeric(gsub(pattern = "f", replacement = "", t))
+      }
+      return(tId)
+    })
+
+    ## Dependencies from outAsIn
+    if(row$outAsIn){
+      dep <- c(dep, as.character(as.numeric(row$id) - 1))
     }
 
-    isDependencyParam <- c()
 
-    if(!is.null(t)){
-      isDependencyParam <- grep(termRegexPattern, t)
-    }
+    dep <- dep[which(!sapply(dep, is.na))]
+    dep <- paste(unique(dep), sep = ",")
 
-    if(length(isDependencyParam) > 0){
-      # Dependency param
-      tId <- as.numeric(gsub(pattern = "f", replacement = "", t))
-    }
-    return(tId)
+    return(dep)
+
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
   })
-
-  ## Dependencies from outAsIn
-  if(row$outAsIn){
-    dep <- c(dep, as.character(as.numeric(row$id) - 1))
-  }
-
-
-  dep <- dep[which(!sapply(dep, is.na))]
-  dep <- paste(unique(dep), sep = ",")
-
-  return(dep)
 }
 
 
@@ -599,17 +652,23 @@ getUpstreamDependencies <- function(row){
 #' @title Sets upstream dependencies for the entire pipeline
 #' @keywords internal
 setUpstreamDependencies <- function(pipeline){
-  pipeline %>>% apply(MARGIN = 1, FUN = getUpstreamDependencies) -> upstreamDependenciesList
-  if(length(upstreamDependenciesList) == 0){
-    upstreamDependenciesList <- lapply(pipeline$id, function(x){
+  tryCatch({
+    pipeline %>>% apply(MARGIN = 1, FUN = getUpstreamDependencies) -> upstreamDependenciesList
+    if(length(upstreamDependenciesList) == 0){
+      upstreamDependenciesList <- lapply(pipeline$id, function(x){
         x <- list(NA)
         x <- x[which(!sapply(x, is.na))]
         x <- paste(unique(x), sep = ",")
-      return(x)
-     })
-  }
-  pipeline %>>% dplyr::mutate(dependencies = upstreamDependenciesList) -> pipeline
-  return(pipeline)
+        return(x)
+      })
+    }
+    pipeline %>>% dplyr::mutate(dependencies = upstreamDependenciesList) -> pipeline
+    return(pipeline)
+
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  })
 }
 
 
@@ -618,27 +677,37 @@ setUpstreamDependencies <- function(pipeline){
 #' @title Computes edges (dependencies) in a pipeline given the joined tibble of the pipeline and registry
 #' @keywords internal
 computeEdges <- function(pipelineRegistryJoin){
-  edgesDf <- data.frame(from = c(),
-                        to = c())
-  pipelineRegistryJoin %>>% apply(MARGIN = 1, FUN = function(x, ...){
-    edges <- list()
+  tryCatch({
+    edgesDf <- dplyr::tibble(from = character(),
+                             to = character())
+    pipelineRegistryJoin %>>% apply(MARGIN = 1, FUN = function(x, ...){
+      edges <- list()
 
-    if(length(x$dependencies) != 0){
-      id <- as.character(x$id)
-      parents <- unlist(strsplit(x$dependencies, ","))
-      edges <- lapply(parents, function(x, ...){
-        edge <- list(from = x, to = id)
-        return(edge)
-      }, id = id)
+      if(length(x$dependencies) != 0){
+        id <- as.character(x$id)
+        parents <- unlist(strsplit(x$dependencies, ","))
+        edges <- lapply(parents, function(x, ...){
+          edge <- list(from = x, to = id)
+          return(edge)
+        }, id = id)
 
-      edges <- dplyr::bind_rows(edges)
+        edges <- dplyr::bind_rows(edges)
+      }
+
+      return(edges)
+    }) %>>% dplyr::bind_rows(.) -> edgesDf
+
+    if(nrow(edgesDf) == 0 && ncol(edgesDf) == 0){
+      edgesDf <- tibble(from = character(),
+                        to = character())
+    }else{
+      edgesDf %>>% dplyr::distinct(from, to, .keep_all = TRUE) -> edgesDf
     }
-
-    return(edges)
-  }) %>>% dplyr::bind_rows(.) -> edgesDf
-
-  edgesDf %>>% dplyr::distinct(from, to, .keep_all = TRUE) -> edgesDf
-  return(edgesDf)
+    return(edgesDf)
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  })
 }
 
 ##Starting points
@@ -690,20 +759,26 @@ identifyTopLevelRecursively <- function(input = list(topDf = dplyr::tibble(),
 #' @title Identifies the topological levels of the functions in a pipeline
 #' @keywords internal
 identifyTopologicalLevels <- function(
-  nodes = c(),
-  edgeDf = dplyr::tibble(),
-  topDf = dplyr::tibble(id = character(),
-                        level = character()),
-  level = 1){
-  input <- list(topDf = topDf,
-                nodes = nodes,
-                edgeDf = edgeDf,
-                level = level)
-  topDf <- identifyTopLevelRecursively(input)$topDf
-  return(topDf)
+                                      nodes = c(),
+                                      edgeDf = dplyr::tibble(),
+                                      topDf = dplyr::tibble(id = character(),
+                                                            level = character()),
+                                      level = 1){
+
+  tryCatch({
+    input <- list(topDf = topDf,
+                  nodes = nodes,
+                  edgeDf = edgeDf,
+                  level = level)
+    topDf <- identifyTopLevelRecursively(input)$topDf
+    return(topDf)
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  })
 }
 
-
+####################### Execution prep #############################
 #' @rdname prepExecution
 #' @name prepExecution
 #' @title Prepare the pipleline for execution
@@ -722,29 +797,44 @@ setGeneric(
 )
 
 .prepExecution <- function(object){
+  tryCatch({
 
-  startPipelinePrep <- Sys.time()
-  futile.logger::flog.info(msg = "||  Pipeline Prep. STARTED  ||", name='logger.prep')
+    object %>>% initializeLoggers
+    startPipelinePrep <- Sys.time()
+    futile.logger::flog.info(msg = "||  Pipeline Prep. STARTED  ||", name='logger.prep')
 
 
-  object@pipeline$dependencies <- rep(NA, nrow(object@pipeline))
-  object@pipeline %>>% setUpstreamDependencies -> object@pipeline #Parents
+    object@pipeline$dependencies <- rep(NA, nrow(object@pipeline))
+    object@pipeline %>>% setUpstreamDependencies -> object@pipeline #Parents
 
-  pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+    pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
 
-  pipelineRegistryJoin %>>% computeEdges -> edgeDf
-  pipelineRegistryJoin$id %>>% as.character %>>% getStartingPoints(edgeDf) -> startingPoints
-  nodes <- as.character(pipelineRegistryJoin$id)
+    pipelineRegistryJoin %>>% computeEdges -> edgeDf
+    pipelineRegistryJoin$id %>>% as.character %>>% getStartingPoints(edgeDf) -> startingPoints
+    nodes <- as.character(pipelineRegistryJoin$id)
 
-  topOrdering <- identifyTopologicalLevels(nodes, edgeDf)
-  object@pipelineExecutor$topologicalOrdering <- topOrdering
-  object@pipelineExecutor$dependencyLinks <- edgeDf
+    topOrdering <- identifyTopologicalLevels(nodes, edgeDf)
+    object@pipelineExecutor$topologicalOrdering <- topOrdering
+    object@pipelineExecutor$dependencyLinks <- edgeDf
 
-  endPipelinePrep <- Sys.time()
-  prepTime <- endPipelinePrep - startPipelinePrep
-  futile.logger::flog.info(msg = "||  Pipeline Prep. COMPLETE. Time taken : %s seconds||", prepTime, name='logger.prep')
+    if(!pipelineRegistryJoin[nrow(pipelineRegistryJoin), "storeOutput"]){
+      object@pipeline[nrow(object@pipeline), "storeOutput"] <- TRUE
+      futile.logger::flog.info(msg = paste("||  The last function in the pipeline, '%s', has NOT been configured to store output.",
+                                           "Automatically reconfiguring to STORE output  ||"),
+                               pipelineRegistryJoin[nrow(pipelineRegistryJoin), "operation"],
+                               name='logger.prep')
+    }
 
-  return(object)
+    endPipelinePrep <- Sys.time()
+    prepTime <- endPipelinePrep - startPipelinePrep
+    futile.logger::flog.info(msg = "||  Pipeline Prep. COMPLETE. Time taken : %s seconds||", prepTime, name='logger.prep')
+
+    return(object)
+
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  })
 }
 
 setMethod(
@@ -771,40 +861,72 @@ setGeneric(
 )
 
 .visualizePipeline <- function(object){
+  tryCatch({
+    if(nrow(object@pipelineExecutor$dependencyLinks) == 0){
+      object %>>% prepExecution -> object
+    }
 
-  if(nrow(object@pipelineExecutor$dependencyLinks) == 0){
-    object %>>% prepExecution -> object
-  }
+    #Logos
+    rLogo <- paste('data:image/png;base64',
+                   RCurl::base64Encode(readBin(system.file("r-logo.png", package = "analysisPipelines"),
+                                         'raw',
+                                         file.info(system.file("r-logo.png", package = "analysisPipelines"))[1, 'size']),
+                                 'txt'), sep = ',')
+    pythonLogo <-  paste('data:image/png;base64',
+                         RCurl::base64Encode(readBin(system.file("python-logo.png", package = "analysisPipelines"),
+                                              'raw',
+                                              file.info(system.file("python-logo.png", package = "analysisPipelines"))[1, 'size']),
+                                      'txt'), sep = ',')
+    sparkLogo <-  paste('data:image/png;base64',
+                        RCurl::base64Encode(readBin(system.file("spark-logo.png", package = "analysisPipelines"),
+                                             'raw',
+                                             file.info(system.file("spark-logo.png", package = "analysisPipelines"))[1, 'size']),
+                                     'txt'), sep = ',')
 
-  node_df <- object@pipeline
-  node_df %>>% dplyr::mutate(group = ifelse(storeOutput == T, "Stored output", "Auxiliary step")) %>>%
-    dplyr::select(id, operation, group) -> node_df
-  colnames(node_df) <- c("id", "label", "group")
+    node_df <-dplyr::left_join(object@pipeline, object@registry,
+                                                       by = c("operation" = "functionName"))
+    node_df %>>% dplyr::mutate(image = ifelse(engine == "r", rLogo,
+                                              ifelse(engine == "spark", sparkLogo,
+                                                     pythonLogo))) -> node_df
+    node_df$shape <- "image"
 
-  edge_df <- object@pipelineExecutor$dependencyLinks
+    node_df %>>% dplyr::mutate(group = ifelse(storeOutput == T, "Stored output", "Auxiliary step")) %>>%
+      dplyr::select(id, operation, group, shape, image) -> node_df
+
+    colnames(node_df) <- c("id", "label", "group","shape", "image")
 
 
-  lnodes <- data.frame(label = c("Stored output", "Auxiliary step"),
-                       shape = c("dot"), color = c("#A1AEFF","#ff4d4d"),
-                       title = "Pipeline")
+    edge_df <- object@pipelineExecutor$dependencyLinks
 
 
-  vis <- visNetwork::visNetwork(node_df, edge_df) %>%
-    visNetwork::visGroups(groupname = "Stored output", color = "#A1AEFF", shadow=T) %>%
-    visNetwork::visGroups(groupname = "Auxiliary step", color = "#ff4d4d", shadow=T) %>%
-    visNetwork::visLegend(addNodes = lnodes, position = "right", ncol = 3,
-              zoom = F, useGroups = F)%>%
-    visNetwork::visNodes(font = list(size =18)) %>%
-    visNetwork::visEdges(arrows=list(to=list(enabled = T, scaleFactor = 0.25)),
-             widthConstraint = 1.2,
-             length = c(3)) %>%
-    visNetwork::visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
-    visNetwork::visLayout(randomSeed = 6, improvedLayout = T) %>%
-    # to stop auto update and making nodes sticky
-    visNetwork::visPhysics(enabled = F) %>%
-    visNetwork::visInteraction(navigationButtons = TRUE)
+    lnodes <- data.frame(label = c("Stored output", "Auxiliary step"),
+                         shape = c("dot"), color = c("#A1AEFF","#ff4d4d"),
+                         title = "Pipeline")
 
-  return(vis)
+
+    vis <- visNetwork::visNetwork(node_df, edge_df, width = "100%") %>%
+      # visNetwork::visGroups(groupname = "Stored output", color = "#A1AEFF", shadow=T) %>%
+      # visNetwork::visGroups(groupname = "Auxiliary step", color = "#ff4d4d", shadow=T) %>%
+      # visNetwork::visLegend(addNodes = lnodes, position = "right", ncol = 4,
+      #                       zoom = F, useGroups = F)%>%
+      visNetwork::visNodes(font = list(size =18)) %>%
+      visNetwork::visEdges(arrows=list(to=list(enabled = T, scaleFactor = 0.25)),
+                           widthConstraint = 1.2,
+                           length = c(3)) %>%
+      visNetwork::visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+      visNetwork::visLayout(randomSeed = 6, improvedLayout = T) %>%
+      # to stop auto update and making nodes sticky
+      visNetwork::visPhysics(enabled = F) %>%
+      visNetwork::visInteraction(navigationButtons = TRUE)
+
+    return(vis)
+
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  })
+
+
 }
 
 setMethod(
@@ -865,25 +987,27 @@ setGeneric(
 #' @title Sets the logger configuration for the pipeline
 #' @details This function sets the logger configuration for the pipeline.
 #' @param object A Pipeline object
-#' @param loggerDetails A list of the following options, which can be set:
-#'                  - \code{target} - A string value. 'console' for appending to console, 'file' for appending to a file, or 'console&file' for both
-#'                  - \code{targetFile} - File name of the log file in case the target is 'file'
-#'                  - \code{targetLayout} - Specify the layout according to 'futile.logger' package convention
+#' @param target A string value. 'console' for appending to console, 'file' for appending to a file, or 'console&file' for both
+#' @param targetFile File name of the log file in case the target is 'file'
+#' @param targetLayout Specify the layout according to 'futile.logger' package convention
 #' @family Package core functions
 #' @export
 
 setGeneric(
   name = "setLoggerDetails",
-  def = function(object, loggerDetails = list(target = 'console',
-                                                              targetFile = 'pipelineExecution.out',
-                                                              layout = 'layout.simple')){
+  def = function(object, target = 'console',
+                          targetFile = 'pipelineExecution.out',
+                          layout = 'layout.simple'){
     standardGeneric("setLoggerDetails")
   }
 )
 
-.setLoggerDetails <- function(object, loggerDetails = list(target = 'console',
-                                                          targetFile = 'pipelineExecution.out',
-                                                          layout = 'layout.simple')){
+.setLoggerDetails <- function(object,target = 'console',
+                                      targetFile = 'pipelineExecution.out',
+                                      layout = 'layout.simple'){
+  loggerDetails <- list( target = target,
+                         targetFile = targetFile,
+                         layout = layout)
   object@pipelineExecutor$loggerDetails <- loggerDetails
   return(object)
 }
@@ -924,8 +1048,6 @@ setMethod(
 #' @keywords internal
 initializeLoggers <- function(object){
 
-  #TODO: Externalize this
-  # loggerNames <- c('engine.assessment', 'prep', 'pipeline', 'batch', 'func')
   appender.fn <- futile.logger::appender.console()
   # Define target
   fileName <- object@pipelineExecutor$loggerDetails$targetFile
@@ -979,49 +1101,53 @@ genericPipelineException <- function(error){
 #' @export
 
 loadPipeline <- function(path, input = data.frame() , filePath = ""){
+  tryCatch({
+    load(path, envir = environment())
+    functionNames = setdiff(ls(envir = environment()), c("RDSPath", "object", "input", "filePath"))
 
-  load(path, envir = environment())
-  functionNames = setdiff(ls(envir = environment()), c("RDSPath", "object", "input", "filePath"))
+    lapply(functionNames, function(x){
+      assign(x, get(x, environment()), globalenv())
+    })
 
-  lapply(functionNames, function(x){
-    assign(x, get(x, environment()), globalenv())
+    input <- initDfBasedOnType(input, filePath)
+    schemaCheck <- object %>>% checkSchemaMatch(input)
+    if(!schemaCheck$isSchemaSame){
+      if(length(schemaCheck$removedColumns) > 0){
+        m <- paste0("Some columns which were present in the original schema ",
+                    "for the pipeline, ",
+                    "are not present in the new data frame. Some pipeline functions ",
+                    "may not execute as expected. Use the checkSchemaMatch function to obtain ",
+                    "a detailed comparison")
+        futile.logger::flog.warn(m, name = 'logger.pipeline')
+        warning(m)
+      }
+
+      if(length(schemaCheck$addedColumns) > 0){
+        m <- paste0("Some new columns have been added to the new data frame ",
+                    "as compared to the original schema for the pipeline. ",
+                    "Use the checkSchemaMatch function to obtain ",
+                    "a detailed comparison")
+        futile.logger::flog.warn(m, name = 'logger.pipeline')
+        warning(m)
+      }
+
+      if(length(schemaCheck$addedColumns) == 0 && length(schemaCheck$removedColumns) == 0){
+        m <- paste0("Colummn names are the same but types have changed",
+                    "Some pipeline functions may not execute as expected. ",
+                    "Use the checkSchemaMatch function to obtain ",
+                    "a detailed comparison")
+        futile.logger::flog.warn(m, name = 'logger.pipeline')
+        warning(m)
+      }
+
+    }
+
+    object@input <- input
+    return(object)
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
   })
-
-  input <- initDfBasedOnType(input, filePath)
-  schemaCheck <- object %>>% checkSchemaMatch(input)
-  if(!schemaCheck$isSchemaSame){
-    if(length(schemaCheck$removedColumns) > 0){
-      m <- paste0("Some columns which were present in the original schema ",
-                  "for the pipeline, ",
-                  "are not present in the new data frame. Some pipeline functions ",
-                  "may not execute as expected. Use the checkSchemaMatch function to obtain ",
-                  "a detailed comparison")
-      futile.logger::flog.warn(m, name = 'logger.pipeline')
-      warning(m)
-    }
-
-    if(length(schemaCheck$addedColumns) > 0){
-      m <- paste0("Some new columns have been added to the new data frame ",
-                  "as compared to the original schema for the pipeline. ",
-                  "Use the checkSchemaMatch function to obtain ",
-                  "a detailed comparison")
-      futile.logger::flog.warn(m, name = 'logger.pipeline')
-      warning(m)
-    }
-
-    if(length(schemaCheck$addedColumns) == 0 && length(schemaCheck$removedColumns) == 0){
-      m <- paste0("Colummn names are the same but types have changed",
-             "Some pipeline functions may not execute as expected. ",
-             "Use the checkSchemaMatch function to obtain ",
-             "a detailed comparison")
-      futile.logger::flog.warn(m, name = 'logger.pipeline')
-      warning(m)
-    }
-
-  }
-
-  object@input <- input
-  return(object)
 }
 
 
@@ -1038,25 +1164,31 @@ loadPipeline <- function(path, input = data.frame() , filePath = ""){
 
 initDfBasedOnType <- function(input, filePath){
 
-  if(filePath == ""){
-    if(!all(dim(input) == c(0,0))){
-      #Check for R, Spark, Python data frame
-      if(class(input) == "SparkDataFrame"){
-        input <- SparkR::as.data.frame(input)
-      }else if(class(input) == "data.frame" || class(input) == "tibble"){
-        #do nothing for R
-      }else{
-        m <- "The provided input is not of class - data.frame or SparkDataFrame"
-        futile.logger::flog.error(m, name = 'logger.pipeline')
-        stop(m)
+  tryCatch({
+    if(filePath == ""){
+      if(!all(dim(input) == c(0,0))){
+        #Check for R, Spark, Python data frame
+        if(class(input) == "SparkDataFrame"){
+          input <- SparkR::as.data.frame(input)
+        }else if(class(input) == "data.frame" || class(input) == "tibble"){
+          #do nothing for R
+        }else{
+          m <- "The provided input is not of class - data.frame or SparkDataFrame"
+          futile.logger::flog.error(m, name = 'logger.pipeline')
+          stop(m)
+        }
       }
     }
-  }
-  else{
-    input <- read.csv(filePath)
-  }
+    else{
+      input <- read.csv(filePath)
+    }
 
-  return(input)
+    return(input)
+
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+  stop()
+  })
 }
 
 
