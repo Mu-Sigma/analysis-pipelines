@@ -215,7 +215,6 @@ opWith2Filters %>>% generateReport(path = "~/Desktop")
 ```
 
 
-
 ## Saving and reloading the pipeline
 
 First, we save the pipeline

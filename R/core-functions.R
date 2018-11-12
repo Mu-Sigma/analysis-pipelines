@@ -905,9 +905,9 @@ setGeneric(
                                      'txt'), sep = ',')
 
     sparkSsLogo <-  paste('data:image/png;base64',
-                          RCurl::base64Encode(readBin(system.file("spark-structured-streaming-logo.jpg", package = "analysisPipelines"),
+                          RCurl::base64Encode(readBin(system.file("spark-structured-streaming-logo.png", package = "analysisPipelines"),
                                                       'raw',
-                                                      file.info(system.file("spark-structured-streaming-logo.jpg", package = "analysisPipelines"))[1, 'size']),
+                                                      file.info(system.file("spark-structured-streaming-logo.png", package = "analysisPipelines"))[1, 'size']),
                                               'txt'), sep = ',')
 
     dataLogo <- paste('data:image/png;base64',
