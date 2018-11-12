@@ -164,7 +164,7 @@ pipelineObj %>% castKafkaStreamAsString(outAsIn = T) %>% convertKafkaValueFromJs
 pipelineObj %>% globalUiMetrics -> pipelineObj
 
 pipelineObj %>>% getPipeline
-pipelineObj %>>% visualizePipeline -> a
+pipelineObj %>>% visualizePipeline
 ```
 
 ### Running the pipeline and generating an output
