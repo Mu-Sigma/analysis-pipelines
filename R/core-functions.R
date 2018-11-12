@@ -71,7 +71,8 @@ setMethod(
         engine = character(),
         exceptionHandlingFunction = character(),
         userDefined = logical(),
-        dataFunction = logical()
+        isDataFunction = logical(),
+        firstArgClass = character()
       )
 
       .Object@output <- list()
@@ -99,21 +100,21 @@ setMethod(
 #' @param object object that contains input, pipeline, registry and output
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
-#' @param outAsIn whether to use original input or output from previous function
 #' @param engine specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"
 #' @param loadPipeline logical parameter to see if function is being used in loadPipeline or not
-#' @param session to load shiny session in the function
 #' @return Updated \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
 #' @export
 
 setGeneric(
   name = "registerFunction",
-  def = function(object, functionName,  heading = "", outAsIn = F,
-                 engine = "r", #options are 'r', 'spark', 'python'
+  def = function(object, functionName,  heading = "",
+                 engine = "r", #options are 'r', 'spark', 'python', 'spark-structured-streaming'
                  exceptionFunction = substitute(genericPipelineException),
                  loadPipeline = F, userDefined = T,
-                 storeOutput = F, session = session)
+                 isDataFunction = T, firstArgClass = ""
+                 # storeOutput = F
+                 )
   {
     standardGeneric("registerFunction")
   }
@@ -123,10 +124,11 @@ setMethod(
   f = "registerFunction",
   signature = "BaseAnalysisPipeline",
   definition = function(object, functionName, heading = "",
-                        # outAsIn = F,
                         engine = "r",
                         exceptionFunction = as.character(substitute(genericPipelineException)),
-                        loadPipeline = F, userDefined = T
+                        loadPipeline = F, userDefined = T,
+                        isDataFunction = T, firstArgClass = ""
+                        # storeOutput = F
                         )
   {
     tryCatch({
@@ -135,19 +137,30 @@ setMethod(
       attr(childClass, "package") <- NULL
 
       dataFrameClass <- "data.frame"
-      if(engine == "spark"){
+      if(engine == "spark" || engine == 'spark-structured-streaming'){
         dataFrameClass <- "SparkDataFrame"
       }
+
+      parametersName <- ""
+
 
       parametersName <- names(as.list(args(eval(parse(text=functionName)))))
       parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
       if(parametersName != ""){
         parametersName <- paste0(", ", parametersName)
       }
+
+
       methodBody <- paste0(capture.output(body(eval(parse(text=functionName)))),collapse="\n")
 
       originalArgs <- names(as.list(args(eval(parse(text=functionName)))))
       firstArg <- originalArgs[1]
+
+      if(isDataFunction){
+        firstArgClass <- dataFrameClass
+      }else{
+        parametersName <- paste(", ", firstArg, parametersName)
+      }
 
       methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object"), x = methodBody)
 
@@ -181,9 +194,9 @@ setMethod(
                'heading = "', heading, '",',
                'parameters = parametersPassed, outAsIn = outAsIn, storeOutput = storeOutput));});',
 
-               #Executing the actual function when data is passed
+               #Executing the actual function when pipeline is executed
                'setMethod(f = "',functionName,'",',
-               'signature = "', dataFrameClass, '",',
+               'signature = "', firstArgClass, '",',
                'definition = function(object ', parametersName,')',
                methodBody, ')'
         )
@@ -194,17 +207,16 @@ setMethod(
       if(loadPipeline==F){
         object@registry %>>% add_row(functionName = paste0(functionName),
                                      heading = heading,
-                                     # outAsIn = outAsIn,
                                      engine = engine,
                                      exceptionHandlingFunction = exceptionFunction,
-                                     userDefined = userDefined) -> object@registry
+                                     userDefined = userDefined,
+                                     isDataFunction = isDataFunction,
+                                     firstArgClass = firstArgClass) -> object@registry
       }
       return(object)
     }, error = function(e){
       futile.logger::flog.error(e, name = "logger.base")
-    stop()
-    }, warning = function(w){
-      futile.logger::flog.warn(w, name = "logger.base")
+      stop()
     })
   }
 )
@@ -631,7 +643,7 @@ getUpstreamDependencies <- function(row){
     })
 
     ## Dependencies from outAsIn
-    if(row$outAsIn){
+    if(row$outAsIn && row$id != "1"){
       dep <- c(dep, as.character(as.numeric(row$id) - 1))
     }
 
@@ -710,13 +722,22 @@ computeEdges <- function(pipelineRegistryJoin){
   })
 }
 
-##Starting points
+## Starting points
 #' @name getStartingPoints
 #' @title Obtains starting nodes in a graph given nodes and edges
 #' @keywords internal
 getStartingPoints <- function(nodes, edgeDf){
   startingPoints <- setdiff(nodes, unique(edgeDf$to))
   return(startingPoints)
+}
+
+## End points
+#' @name getEndPoints
+#' @title Obtains end nodes in a graph given nodes and edges
+#' @keywords internal
+getEndPoints <- function(nodes, edgeDf){
+  endPoints <- setdiff(unique(edgeDf$to), unique(edgeDf$from))
+  return(endPoints)
 }
 
 ### Topological levels
@@ -817,13 +838,13 @@ setGeneric(
     object@pipelineExecutor$topologicalOrdering <- topOrdering
     object@pipelineExecutor$dependencyLinks <- edgeDf
 
-    if(!pipelineRegistryJoin[nrow(pipelineRegistryJoin), "storeOutput"]){
-      object@pipeline[nrow(object@pipeline), "storeOutput"] <- TRUE
-      futile.logger::flog.info(msg = paste("||  The last function in the pipeline, '%s', has NOT been configured to store output.",
-                                           "Automatically reconfiguring to STORE output  ||"),
-                               pipelineRegistryJoin[nrow(pipelineRegistryJoin), "operation"],
-                               name='logger.prep')
-    }
+    # if(!pipelineRegistryJoin[nrow(pipelineRegistryJoin), "storeOutput"]){
+    #   object@pipeline[nrow(object@pipeline), "storeOutput"] <- TRUE
+    #   futile.logger::flog.info(msg = paste("||  The last function in the pipeline, '%s', has NOT been configured to store output.",
+    #                                        "Automatically reconfiguring to STORE output  ||"),
+    #                            pipelineRegistryJoin[nrow(pipelineRegistryJoin), "operation"],
+    #                            name='logger.prep')
+    # }
 
     endPipelinePrep <- Sys.time()
     prepTime <- endPipelinePrep - startPipelinePrep
@@ -883,11 +904,49 @@ setGeneric(
                                              file.info(system.file("spark-logo.png", package = "analysisPipelines"))[1, 'size']),
                                      'txt'), sep = ',')
 
+    sparkSsLogo <-  paste('data:image/png;base64',
+                          RCurl::base64Encode(readBin(system.file("spark-structured-streaming-logo.jpg", package = "analysisPipelines"),
+                                                      'raw',
+                                                      file.info(system.file("spark-structured-streaming-logo.jpg", package = "analysisPipelines"))[1, 'size']),
+                                              'txt'), sep = ',')
+
+    dataLogo <- paste('data:image/png;base64',
+                      RCurl::base64Encode(readBin(system.file("data-icon.png", package = "analysisPipelines"),
+                                                  'raw',
+                                                  file.info(system.file("data-icon.png", package = "analysisPipelines"))[1, 'size']),
+                                          'txt'), sep = ',')
+    paramLogo <- paste('data:image/png;base64',
+                      RCurl::base64Encode(readBin(system.file("param-icon.png", package = "analysisPipelines"),
+                                                  'raw',
+                                                  file.info(system.file("param-icon.png", package = "analysisPipelines"))[1, 'size']),
+                                          'txt'), sep = ',')
+    outputLogo <- paste('data:image/png;base64',
+                      RCurl::base64Encode(readBin(system.file("output-icon.png", package = "analysisPipelines"),
+                                                  'raw',
+                                                  file.info(system.file("output-icon.png", package = "analysisPipelines"))[1, 'size']),
+                                          'txt'), sep = ',')
+
     node_df <-dplyr::left_join(object@pipeline, object@registry,
-                                                       by = c("operation" = "functionName"))
+                                                       by = c("operation" = "functionName")) %>>%
+               dplyr::left_join(object@pipelineExecutor$topologicalOrdering, by = c("id" = "id"))
+    edge_df <- object@pipelineExecutor$dependencyLinks
+
+
+    storedOutputs <- node_df %>>% dplyr::filter(storeOutput == T)
+    storedOutputs <- storedOutputs$id
+
+    spData <- node_df %>>% dplyr::filter(isDataFunction == T)
+    spData <- spData %>>% dplyr::filter(level == min(as.numeric(level)))
+    spDataIds <- spData$id
+
+    spParam <-node_df %>>% dplyr::filter(isDataFunction == F)
+    spParam <- spParam %>>% dplyr::filter(level == min(as.numeric(level)))
+    spParamIds <- spParam$id
+
     node_df %>>% dplyr::mutate(image = ifelse(engine == "r", rLogo,
                                               ifelse(engine == "spark", sparkLogo,
-                                                     pythonLogo))) -> node_df
+                                                     ifelse(engine == 'spark-structured-streaming', sparkSsLogo,
+                                                        pythonLogo)))) -> node_df
     node_df$shape <- "image"
 
     # node_df %>>% dplyr::mutate(group = ifelse(storeOutput == T, "Stored output", "Auxiliary step"))
@@ -897,9 +956,29 @@ setGeneric(
 
     colnames(node_df) <- c("id", "label", "group","shape", "image")
 
+    node_df %>>% dplyr::add_row(id = "d0", label = "Data", group = "data", shape = "image", image = dataLogo ) -> node_df
 
-    edge_df <- object@pipelineExecutor$dependencyLinks
+    for(o in storedOutputs){
+      node_df %>>% dplyr::add_row(id = paste0("o",o), label = paste("Output ID:", o ), group = "output", shape = "image",
+                                  image = outputLogo) -> node_df
+    }
 
+
+    #Starting points
+    for(s in spDataIds){
+      edge_df %>>% dplyr::add_row(from = "d0", to = s) -> edge_df
+    }
+
+    for(s in spParamIds){
+      pId <- paste0("p", s)
+      node_df %>>% dplyr::add_row(id = pId, label = "Non-data parameter", group = "parameter", shape = "image",
+                                  image = paramLogo ) -> node_df
+      edge_df %>>% dplyr::add_row(from = paste0("p", s), to = s) -> edge_df
+    }
+
+    for(e in storedOutputs){
+      edge_df %>>% dplyr::add_row(from = e , to = paste0("o",e)) -> edge_df
+    }
 
     lnodes <- data.frame(label = c("Stored output", "Auxiliary step"),
                          shape = c("dot"), color = c("#A1AEFF","#ff4d4d"),

@@ -75,7 +75,7 @@ sparkFilterData <- function(inputDataset, condition) {
 }
 
 pipelineObj %>>% registerFunction(functionName = "getSchema", engine = "spark") -> pipelineObj
-pipelineObj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark", outAsIn = T) -> pipelineObj
+pipelineObj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark") -> pipelineObj
 
 
 pipelineObj %>>% getRegistry
@@ -165,7 +165,7 @@ rBivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor 
   return(bivarPlot)
 }
 
-pipelineObj %>>% registerFunction(functionName = "rBivarPlots", engine = "r", outAsIn = T) -> pipelineObj
+pipelineObj %>>% registerFunction(functionName = "rBivarPlots", engine = "r", heading = "Bivariate analysis") -> pipelineObj
 
 pipelineObj %>>% getRegistry
 ```
@@ -182,7 +182,7 @@ We first visualize the data without filtering:
 ```{r}
 
 pipelineObj %>>% rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
-                     priColor = "blue", secColor = "green") -> vizWithoutFilterPipeline
+                     priColor = "blue", secColor = "green", storeOutput = T) -> vizWithoutFilterPipeline
 vizWithoutFilterPipeline %>>% getPipeline
 vizWithoutFilterPipeline %>>% assessEngineSetUp
 vizWithoutFilterPipeline %>>% generateOutput -> opWithoutFilter
@@ -194,7 +194,7 @@ We then perform filtering on one of the variables in Spark, before visualizing i
 ```{r}
 pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
-                     priColor = "blue", secColor = "green") -> singleFilterPipeline
+                     priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) -> singleFilterPipeline
 singleFilterPipeline %>>% visualizePipeline
 
 singleFilterPipeline %>>% generateOutput -> opWithFilter
@@ -205,11 +205,13 @@ Finally, we show a case, where sequential filtering steps are performed in Spark
 
 ```{r}
 pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
-  sparkFilterData("Occupancy > 0.7") %>>%
+  sparkFilterData("Occupancy > 0.7", outAsIn = T, storeOutput = T) %>>%
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
-                     priColor = "blue", secColor = "green") -> twoFilterPipeline
+                     priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) -> twoFilterPipeline
 twoFilterPipeline %>>% generateOutput -> opWith2Filters
 opWith2Filters %>>% getOutputById(3)
+opWith2Filters %>>% visualizePipeline
+opWith2Filters %>>% generateReport(path = "~/Desktop")
 ```
 
 

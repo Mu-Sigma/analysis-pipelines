@@ -4,9 +4,9 @@
 \alias{registerFunction}
 \title{Register a user-defined function to be used with a \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
 \usage{
-registerFunction(object, functionName, heading = "", outAsIn = F,
-  engine = "r", exceptionFunction = substitute(genericPipelineException),
-  loadPipeline = F, userDefined = T, storeOutput = F, session = session)
+registerFunction(object, functionName, heading = "", engine = "r",
+  exceptionFunction = substitute(genericPipelineException),
+  loadPipeline = F, userDefined = T)
 }
 \arguments{
 \item{object}{object that contains input, pipeline, registry and output}
@@ -15,13 +15,9 @@ registerFunction(object, functionName, heading = "", outAsIn = F,
 
 \item{heading}{heading of that section in report}
 
-\item{outAsIn}{whether to use original input or output from previous function}
-
 \item{engine}{specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"}
 
 \item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not}
-
-\item{session}{to load shiny session in the function}
 }
 \value{
 Updated \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object

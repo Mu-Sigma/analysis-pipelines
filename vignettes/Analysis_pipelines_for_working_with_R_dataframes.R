@@ -3,6 +3,7 @@ library(analysisPipelines)
 
 ## ----creating object, warning=F------------------------------------------
 obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
+obj %>>% setLoggerDetails(target = "file") -> obj
 class(obj)
 
 ## ----printing object contents, warning=F---------------------------------
@@ -23,7 +24,6 @@ obj %>>% univarCatDistPlots(uniCol = "location_type", priColor = "xy", optionalP
          outlierPlot(method = "iqr", columnName = "Occupancy", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0, storeOutput = T) -> obj2
 obj2 %>>% getPipeline
-obj2 %>>% visualizePipeline
 
 ## ----lazy eval 1---------------------------------------------------------
 length(obj1@output)
@@ -82,13 +82,38 @@ obj2 <- obj2 %>>%
 
 # Printing the updated pipeline
 obj2 %>>% getPipeline
-obj2 %>>% visualizePipeline
 
 ## ----register function 3, warning=F--------------------------------------
 obj2Output <- obj2 %>>% generateOutput()
 obj2Output %>>% getOutputById("1") -> a
 a
 obj2Output@pipeline
+
+## ------------------------------------------------------------------------
+getColor <- function(data, color){
+  return(color)
+}
+
+getColumnName <-function(data, columnName){
+  return(columnName)
+}
+
+
+obj %>>% registerFunction("getColor") -> obj
+
+obj %>>% registerFunction("getColumnName") -> obj
+
+obj %>>% getRegistry
+
+obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy", storeOutput = T) %>>%
+      univarCatDistPlots(uniCol = "building_type", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
+      outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
+
+complexPipeline %>>% getPipeline
+complexPipeline %>>% visualizePipeline
+complexPipeline %>>% generateOutput -> op
+
+op %>>% getOutputById("4")
 
 ## ----generate report and tabs, warning=F,  eval=F------------------------
 #  # generateReport() needs a destination path as an argument

@@ -148,22 +148,23 @@ consumerDataSchema <- structType(structField("bannerId", "string"),
                                  structField("segment", "string"))
 
 # Register user defined functions
-pipelineObj <- pipelineObj %>>% registerStreamingFunction("convertStructToDf", "", outAsIn = T)  %>>%
-  registerStreamingFunction("castDfColumns", "", outAsIn = T) %>>%
-  registerStreamingFunction("globalUiMetrics", "", outAsIn = T) %>>%
-  registerStreamingFunction("convertDfToKafkaKeyValuePairs", "", outAsIn = T)
+pipelineObj <- pipelineObj %>>% registerFunction("convertStructToDf", "", engine = "spark-structured-streaming") %>>%   registerFunction("castDfColumns", "", engine = "spark-structured-streaming") %>>%
+  registerFunction("globalUiMetrics", "",  engine = "spark-structured-streaming") %>>%
+  registerFunction("convertDfToKafkaKeyValuePairs", "",  engine = "spark-structured-streaming")
+
 
 pipelineObj %>>% getRegistry
 
 # Define pipeline 
 # Do data prep
 
-pipelineObj %>% castKafkaStreamAsString %>% convertKafkaValueFromJson(schema = consumerDataSchema) %>% convertStructToDf %>% castDfColumns -> pipelineObj
+pipelineObj %>% castKafkaStreamAsString(outAsIn = T) %>% convertKafkaValueFromJson(schema = consumerDataSchema, outAsIn = T) %>% convertStructToDf(outAsIn = T) %>% castDfColumns(outAsIn = T) -> pipelineObj
 
 # Perform analytical operations
 pipelineObj %>% globalUiMetrics -> pipelineObj
 
 pipelineObj %>>% getPipeline
+pipelineObj %>>% visualizePipeline -> a
 ```
 
 ### Running the pipeline and generating an output
@@ -179,6 +180,6 @@ In this example the spark dataframes are converted to R dataframes to help visua
 pipelineObj %>% generateOutput() -> pipelineObj
 
 ## Write to output stream
-streamObj <- pipelineObj %>>% getOuputByOrderId(5)
+streamObj <- pipelineObj %>>% getOuputById(5)
 write.stream(streamObj, 'console',outputMode = "complete")
 ```
