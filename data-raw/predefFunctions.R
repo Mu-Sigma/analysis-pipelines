@@ -14,24 +14,24 @@
 ##################################################################################################
 batchPredefFunctions <- data.frame(functionName = c("univarCatDistPlots"),
                                 heading = c("Univariate Distribution Categorical"),
-                                outAsIn = c(FALSE),
+                                # outAsIn = c(FALSE),
                                 engine = c("r"),
                                 exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
                                 stringsAsFactors = F)
 
 batchPredefFunctions %>>% dplyr::add_row(functionName = "outlierPlot",
                                    heading = "Univariate Outlier",
-                                   outAsIn = FALSE,
+                                   # outAsIn = FALSE,
                                    engine = "r",
                                    exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))           -> batchPredefFunctions
 batchPredefFunctions %>>% dplyr::add_row(functionName = "multiVarOutlierPlot",
                                    heading = "Multivariate Outlier",
-                                   outAsIn = FALSE,
+                                   # outAsIn = FALSE,
                                    engine = "r",
                                    exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))           -> batchPredefFunctions
 batchPredefFunctions %>>% dplyr::add_row(functionName = "ignoreCols",
                                    heading = "",
-                                   outAsIn = TRUE,
+                                   # outAsIn = TRUE,
                                    engine = "r",
                                    exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))            -> batchPredefFunctions
 
@@ -48,16 +48,16 @@ batchPredefFunctions %>>% dplyr::add_row(functionName = "ignoreCols",
 streamingPredefFunctions <- data.frame(functionName = c("castKafkaStreamAsString"),
                                         heading = c(""),
                                         engine = c("spark-structured-streaming"),
-                                        outAsIn = c(TRUE), stringsAsFactors = F)
+                                       exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
+                                        # outAsIn = c(TRUE),
+                                       stringsAsFactors = F)
 
 streamingPredefFunctions %>>% dplyr::add_row(functionName = "convertKafkaValueFromJson",
                                        heading = "",
                                        engine = c("spark-structured-streaming"),
-                                       outAsIn = TRUE)           -> streamingPredefFunctions
-
-# sparkPredefFunctions %>>% dplyr::add_row(functionName = "printStream",
-#                                        heading = "",
-#                                        outAsIn = TRUE)           -> sparkPredefFunctions
+                                       exceptionHandlingFunction = c(as.character(substitute(genericPipelineException)))
+                                       # outAsIn = TRUE
+                                       )           -> streamingPredefFunctions
 
 
 devtools::use_data(batchPredefFunctions, streamingPredefFunctions, internal = TRUE, overwrite = T)

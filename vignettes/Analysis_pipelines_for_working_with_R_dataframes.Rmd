@@ -175,18 +175,18 @@ obj2Output@pipeline
 
 ## Using the outputs of previous functions in the pipeline, as inputs to arbitrary parameters of subsequent functions
 ```{r}
-getColor <- function(data, color){
+getColor <- function(color){
   return(color)
 }
 
-getColumnName <-function(data, columnName){
+getColumnName <-function(columnName){
   return(columnName)
 }
 
 
-obj %>>% registerFunction("getColor") -> obj
+obj %>>% registerFunction("getColor", isDataFunction = F, firstArgClass = "character") -> obj
 
-obj %>>% registerFunction("getColumnName") -> obj
+obj %>>% registerFunction("getColumnName", isDataFunction = F, firstArgClass = "character") -> obj
 
 obj %>>% getRegistry
 

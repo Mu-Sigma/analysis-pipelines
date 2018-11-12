@@ -55,12 +55,12 @@ setMethod(
       .Object <- methods::callNextMethod(.Object, ...)
 
       for(rowNo in 1:nrow(batchPredefFunctions)){
-        .Object %>>% registerFunction(batchPredefFunctions[['functionName']][[rowNo]],
-                                      batchPredefFunctions[['heading']][[rowNo]],
-                                      batchPredefFunctions[['outAsIn']][[rowNo]],
-                                      batchPredefFunctions[['engine']][[rowNo]],
-                                      batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
-                                      userDefined = F) -> .Object
+        .Object %>>% registerFunction(functionName = batchPredefFunctions[['functionName']][[rowNo]],
+                                      heading =  batchPredefFunctions[['heading']][[rowNo]],
+                                      # batchPredefFunctions[['outAsIn']][[rowNo]],
+                                      engine = batchPredefFunctions[['engine']][[rowNo]],
+                                      exceptionFunction = batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
+                                      userDefined = F, loadPipeline = F ) -> .Object
       }
       return(.Object)
 
@@ -248,7 +248,38 @@ checkSchema <- function(dfOld, dfNew){
     dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName")) %>>%
       dplyr::left_join(object@pipelineExecutor$topologicalOrdering, by = c("id" = "id")) -> pipelineRegistryOrderingJoin
 
-    # pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+    # Set Input data and set type to engine with max. number of operations
+
+    pipelineRegistryOrderingJoin %>>% dplyr::group_by(engine) %>>% dplyr::summarise(numOp = dplyr::n()) -> engineCount
+
+    engineCount %>>% dplyr::filter(numOp == max(numOp)) -> maxEngine
+
+
+    maxEngineName <- "r"
+    if(nrow(maxEngine) == 1){
+      maxEngineName <- maxEngine$engine
+    }
+
+    inputToExecute <- object@input
+
+    if(maxEngineName == "spark"){
+
+      startTypeConv <- Sys.time()
+
+      inputToExecute <- SparkR::as.DataFrame(object@input)
+
+      endTypeConv <- Sys.time()
+      typeConvTime <- endTypeConv - startTypeConv
+      futile.logger::flog.info(paste("||  Initial Type conversion from R dataframe to SparkDataFrame,",
+                                "as maximum number of operations are on the Spark engine.",
+                                "Time taked : %s seconds  ||"),
+                                 typeConvTime,
+                                 name='logger.func')
+
+    }else if(maxEngineName == "pythong"){
+      # TODO: convert to Python data frame
+    }
+
     batches <- unique(pipelineRegistryOrderingJoin$level)
     numBatches <- max(as.numeric(batches))
 
@@ -285,20 +316,19 @@ checkSchema <- function(dfOld, dfNew){
         unrequiredCachedOutputNames <- setdiff(possiblePrevCacheOutputNames,
                                                unique(c(previousCachedOutputNames, requiredOutputs)))
 
-        # futile.logger::flog.info("unrequired ops - %s",unrequiredCachedOutputNames, name = "logger.pipeline")
-
         lapply(unrequiredCachedOutputNames, function(n){
           rm(list = n, envir = outputCache)
           return(NULL)
         })
-        # object@pipelineExecutor$cache[unrequiredCachedOutputNames] <<- NULL
 
         futile.logger::flog.info("||  Cleared intermediate outputs which are not required  ||", name = "logger.pipeline")
 
       }
 
+
       ## Function execution in a batch
       lapply(functionsInBatch$id, function(y, object, functionsInBatch, outputCache){
+
         ## Check atleast one function to execute
         ## Replace formula parameters with actual outputs
         startFunc <- Sys.time()
@@ -309,41 +339,60 @@ checkSchema <- function(dfOld, dfNew){
                                  funcDetails$id, funcDetails$operation, funcDetails$engine,
                                  name='logger.func')
 
-        # Set Input data
-        inputToExecute <- object@input
 
 
-        if(funcDetails$outAsIn){
-          # inputToExecute <- object@pipelineExecutor$cache$workingInput
-          inputToExecute <- outputCache$workingInput
+
+        if(funcDetails$outAsIn && funcDetails$id  != "1"){
+          dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
+            actualDataObjectName <- paste0(dataOpFn, ".out")
+            inputToExecute <-  get(actualDataObjectName, envir = outputCache)
+
         }
 
         #Check engine
-        ### Python to be added
+        ###TODO: Python to be added
 
-        prevEngine <- "r"
         currEngine <- funcDetails$engine
-        if(class(inputToExecute) == "SparkDataFrame"){
-          prevEngine <- "spark"
-        }
+
+        prevEngine <- ifelse(class(inputToExecute) == "SparkDataFrame", 'spark',
+                              ifelse(class(inputToExecute) == "data.frame" || class(inputToExecute) == "tibble",
+                                            'r', 'python'))
+        #Check engine
+        ###TODO: Python to be added
 
         if(prevEngine != currEngine){
-          prevFuncOutput <- paste0("f", as.numeric(y) - 1, ".out")
           if(prevEngine == 'spark'){
 
             if(currEngine == 'r'){
+              startTypeConv <- Sys.time()
+
               inputToExecute <- SparkR::as.data.frame(inputToExecute)
+
+              endTypeConv <- Sys.time()
+              typeConvTime <- endTypeConv - startTypeConv
+              futile.logger::flog.info("||  Type conversion from Spark DataFrame to R dataframe took %s seconds  ||",
+                                     typeConvTime,
+                                      name='logger.func')
+            }else if(currEngine == 'python'){
+              #TODO: python
             }
 
           }else if(prevEngine == 'r'){
             if(currEngine == "spark"){
-              inputToExecute <- SparkR::as.DataFrame(inputToExecute)
-            }
+              startTypeConv <- Sys.time()
 
-          }
-        }else{
-          if(currEngine == 'spark'){
-            inputToExecute <- SparkR::as.DataFrame(inputToExecute)
+              inputToExecute <- SparkR::as.DataFrame(inputToExecute)
+
+              endTypeConv <- Sys.time()
+              typeConvTime <- endTypeConv - startTypeConv
+              futile.logger::flog.info("||  Type conversion from R dataframe to Spark DataFrame took %s seconds  ||",
+                                       typeConvTime,
+                                       name='logger.func')
+            }else if(prevEngine == 'python'){
+              # TODO: python
+            }
+          }else if(prevEngine == 'python'){
+              #TODO: python
           }
         }
 
@@ -353,7 +402,7 @@ checkSchema <- function(dfOld, dfNew){
         dep <- unlist(funcDetails$dependencies, recursive = F)
         depTerms <- paste0("f", dep)
 
-        params <- lapply(params, function(p){
+        params <- lapply(params, function(p, depTerms, outputCache){
           if(class(p) == "formula"){
             formulaTerm <- attr(terms(p), "term.label")
             if(length(formulaTerm) == 1 && formulaTerm %in% depTerms){
@@ -365,7 +414,7 @@ checkSchema <- function(dfOld, dfNew){
           }
 
           return(p)
-        })
+        }, depTerms, outputCache)
 
 
         #Call
@@ -384,9 +433,9 @@ checkSchema <- function(dfOld, dfNew){
                            })
 
         ##outAsIn
-        if(funcDetails$outAsIn){
-          outputCache$workingInput <- output
-        }
+        # if(funcDetails$outAsIn){
+        #   outputCache$workingInput <- output
+        # }
 
         opName <- paste0("f", funcDetails$id, ".out") #eg: f1.out
         if(funcDetails$storeOutput){
@@ -497,6 +546,13 @@ setMethod(
       }
       # object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
 
+      opEngineDetails <- object@pipeline %>>% dplyr::filter(storeOutput == T)
+      if(!all(unique(opEngineDetails$engine) == 'r')){
+        futile.logger::flog.warn(paste("||  Pipeline contains engines other than R.",
+                              "Will attempt coercing of outputs for rendinring through 'rmarkdown'.",
+                              "This may throw errors  ||"), name='logger.execution')
+
+      }
 
       rmarkdown::render(
         system.file("report.Rmd", package = "analysisPipelines"),
