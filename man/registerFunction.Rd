@@ -6,7 +6,8 @@
 \usage{
 registerFunction(object, functionName, heading = "", engine = "r",
   exceptionFunction = substitute(genericPipelineException),
-  loadPipeline = F, userDefined = T)
+  loadPipeline = F, userDefined = T, isDataFunction = T,
+  firstArgClass = "")
 }
 \arguments{
 \item{object}{object that contains input, pipeline, registry and output}
@@ -23,8 +24,9 @@ registerFunction(object, functionName, heading = "", engine = "r",
 Updated \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 }
 \details{
-The specified operation along with the heading and parameters is updated in the pipeline slot
-      of the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations to be performed is stored
+The specified operation along with the heading and engine details is stored in the registry, after which it can be added to a pipeline.
+
+If the function already exists in the registry, the newly provided definition and details overwrite the existing registration
 
 This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
 which extend this class

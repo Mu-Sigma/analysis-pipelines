@@ -1,36 +1,33 @@
 ---
-title: "Interoperable analysis pipelines across R and Spark"
+title: "Interoperable analysis pipelines"
 author: "Naren Srinivasan"
-date: "9/10/2018"
-output: html_document
+date: "11/13/2018"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    fig_width: 8
+vignette: >
+  %\VignetteIndexEntry{Interoperable analysis pipelines}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
- <!-- output: rmarkdown::html_vignette -->
-<!-- vignette: > -->
-<!--   %\VignetteIndexEntry{Analysis pipelines for working with R data frames} -->
-<!--   %\VignetteEngine{knitr::rmarkdown} -->
-<!--   %\VignetteEncoding{UTF-8} -->
-
 
 # Objective
 
-This vignette explains how pipelines containing functions operating on different engines such as R, Spark and Python can be configured and executed through the **analysisPipelines** package. Currently, the package supports interoperable pipelines containing R and Spark batch functions.
+This vignette explains how **interoperable pipelines** containing functions operating on different engines such as R, Spark and Python can be configured and executed through the **analysisPipelines** package. Currently, the package supports interoperable pipelines containing R and Spark batch functions.
 
-# Introduction
+If the package is new to you, it is recommended that you go through the *Analysis pipelines - Core functionality and working with R data frames and functions* vignette first.
 
-As the data science community matures, there are multiple tools suited for different purposes. R is typically used for data transformations, statistical models, and visualizations, while Python provides more robust functions for machine learning. In addition to this, Spark provides an environment to process high volume data - both as one-time/ batch or as streams.
-
-Recently in the data science community, interfaces for using these various tools have been published. In terms of R packages, the *reticulate* package provides an interface to Python, and the *SparkR* and *sparklyr* packages provide an interface to Spark. 
-
-The **analysisPipelines** package uses these interfaces to enable **Interoperable Pipelines** i.e. the ability define an execute a reusable data science pipeline which can contain functions to be executed in an R environment, in a Python environment or in a Spark environment. These pipelines can saved and loaded, to enable batch operation as datasets get updated with new data.
-
-
-```{r sourcing}
+```{r echo = FALSE}
 library(analysisPipelines)
+knitr::opts_chunk$set(
+    eval = FALSE
+  )
 ```
 
 # An example of an interoperable pipeline
 
-In this vignette we demonstrate an interoperable pipeline built using the **analysisPipelines** package, which contains a couple of filtering/ aggregation functions performed in Spark, which is then subsequently visualized through R functions using *ggplot2*
+In this vignette we demonstrate an interoperable pipeline built using the **analysisPipelines** package, which contains a couple of filtering/ aggregation functions performed in *Spark*, which is then subsequently visualized through *R* functions using *ggplot2*
 
 ## Initializing a Spark connection from R and loading the data
 
@@ -49,12 +46,11 @@ inputDataset <- SparkR::read.df(path = system.file("hotel_new.csv", package = "a
 
 ## Creating an analysisPipeline object
 
-We then initialize an AnalysisPipeline, with the input dataset
+We then initialize an *AnalysisPipeline*, with the input dataset
 
 ```{r}
 pipelineObj <- AnalysisPipeline(input = inputDataset)
 ```
-
 
 
 ## Registering functions to work in the Spark environment
@@ -81,7 +77,7 @@ pipelineObj %>>% registerFunction(functionName = "sparkFilterData", engine = "sp
 pipelineObj %>>% getRegistry
 ```
 
-# Registering R functions
+## Registering R functions
 
 Similar to the Spark functions, we register some user-defined functions in R. In this case to plot a bivariate plot using *ggplot2*.
 
@@ -211,11 +207,11 @@ pipelineObj %>>% sparkFilterData("Class == 'good'") %>>%
 twoFilterPipeline %>>% generateOutput -> opWith2Filters
 opWith2Filters %>>% getOutputById(3)
 opWith2Filters %>>% visualizePipeline
-opWith2Filters %>>% generateReport(path = "~/Desktop")
+# opWith2Filters %>>% generateReport(path = "~/Desktop")
 ```
 
 
-## Saving and reloading the pipeline
+# Saving and reloading the pipeline
 
 First, we save the pipeline
 
@@ -249,11 +245,11 @@ Then, we load the pipeline and execute on the new data which is the just the fir
 
 pipelineObjLoaded <- loadPipeline(path = "~/Downloads/twoFilterPipeline.Rda")
 pipelineObjLoaded %>>% checkSchemaMatch(newData = SparkR::as.data.frame(inputDataset)[1:100,]) -> schemaCheck
-schemaCheck
-
 pipelineObjLoaded %>>% setInput(input = inputDataset) -> pipelineObjLoaded
-                                  
-
-pipelineObjLoaded %>>% generateOutput()
+pipelineObjLoaded %>>% generateOutput -> op
+op %>>% getOutputById("3")
 ```
 
+# Supplementary Note
+
+The *analysisPipelines* package internally uses the *SparkR* package to interface with *Spark*. *SparkR* masks many typical data manipulation and processing functions from *base* as well as packages like *dplyr*. Therefore, ensure you use function scoping when calling a function.
