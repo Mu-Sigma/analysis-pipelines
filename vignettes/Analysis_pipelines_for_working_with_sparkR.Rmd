@@ -1,31 +1,29 @@
 ---
 title: "Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses"
 author: "Naren S, Anoop S"
-date: "09/04/2018"
+date: "11/13/2018"
 output: 
   rmarkdown::html_vignette:
     toc: true
+    fig_width: 8
 vignette: >
-  %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
+  %\VignetteIndexEntry{Analysis pipelines for working with Spark DataFrames for batch analyses}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-# Objective
+# Introduction
 
-The vignette aims to show examples of using SparkR as an interface to run one-time/batch spark jobs through R - using the analysisPipelines package. The major use cases can be categorized as:<br>
+*Apache Spark* can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. The vignette describes defining and executing *Spark*-only pipelines using the *analysisPipelines* package.
 
-* Implement a pipeline using SparkR, to work on Spark DataFrames for one-time/batchtch Spark jobs
+# Initialize libraries
 
-## Pipelines for batch spark jobs using SparkR
-
-Spark clusters can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. This example illustrates usage of pipeline functions to run one-time/batch Spark jobs using the analysisPipelines package
-
-### Initialize libraries
-
-* Initialize the analysisPipelines and SparkR libraries
+* Load the *analysisPipelines* and *SparkR* libraries
 * Ensure you have a local installation of spark and SparkR package is installed
 * Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
 ```{r, include=FALSE}
+knitr::opts_chunk$set(
+    eval = FALSE
+  )
 library(ggplot2)
 library(analysisPipelines)
 library(SparkR)
@@ -39,7 +37,8 @@ if(Sys.getenv("SPARK_HOME") == "") {
 }
 ```
 
-### Connect to spark cluster
+# Connect to Spark cluster
+
 * Define the spark master URL
 * Specify dependency packages if any during spark connection. Example: `sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")`
 * Connect to the cluster using the package's `sparkRSessionCreateIfNotPresent` function
@@ -48,40 +47,40 @@ if(Sys.getenv("SPARK_HOME") == "") {
 sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = sparkPackages)
 ```
 
-### Read data from csv and initialize spark pipeline object
+# Read data from csv and initialize pipeline object
 Spark can connect to datasources like Hive, Kafka. Besides, it also also read parquet, json and csv files. In this example we will read a csv file.
 ```{r}
 pipelineObj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
 # pipelineObj <- AnalysisPipeline(input = SparkR::as.data.frame(system.file("hotel_new.csv", package = "analysisPipelines")))
 ```
 
-### User defined spark functions
+# User defined spark functions
 The example below shows a few functions to perform simple aggregations.
 
 ```{r}
 # Function to calculate avg occupancy for the client as well as competitors - grouped by input parameter
 occupancyAnalysis <- function(inputDataset, groupByColumn) {
-  occupancySummary <- summarize(groupBy(inputDataset,inputDataset[[groupByColumn]]),
-                       avgOccupancy=mean(inputDataset$Occupancy),
-                       avgCompetitorOccupancy=mean(inputDataset$Compet_Occupancy))
+  occupancySummary <- SparkR::summarize( SparkR::groupBy(inputDataset,inputDataset[[groupByColumn]]),
+                       avgOccupancy =  SparkR::mean(inputDataset$Occupancy),
+                       avgCompetitorOccupancy=  SparkR::mean(inputDataset$Compet_Occupancy))
  return(occupancySummary)
 }
 
 # Function to calculate avg booking contribution for differen channels - grouped by input parameter
 bookingChannelsAnalysis <- function(inputDataset, groupByColumn) {
-  bookingChannelsAnalysisSummary <- summarize(groupBy(inputDataset,inputDataset[[groupByColumn]]),
-                       avgCallCenterBookingPct=avg(inputDataset$call_center_booking_pct),
-                       avgAgencyBookingPct=avg(inputDataset$travel_agency_booking_pct),
-                       avgThirdPartyBookingPct=avg(inputDataset$third_party_web_bookings_pct),
-                       avgHotelToHotelBookingPct=avg(inputDataset$hotel_to_hotel_bookings_pct),
-                       avgDirectBookingPct=avg(inputDataset$direct_call_booking_pct),
-                       avgWebBookingPct=avg(inputDataset$direct_web_booking_pct))
+  bookingChannelsAnalysisSummary <-  SparkR::summarize( SparkR::groupBy(inputDataset,inputDataset[[groupByColumn]]),
+                       avgCallCenterBookingPct =  SparkR::avg(inputDataset$call_center_booking_pct),
+                       avgAgencyBookingPct = SparkR::avg(inputDataset$travel_agency_booking_pct),
+                       avgThirdPartyBookingPct =  SparkR::avg(inputDataset$third_party_web_bookings_pct),
+                       avgHotelToHotelBookingPct = SparkR::avg(inputDataset$hotel_to_hotel_bookings_pct),
+                       avgDirectBookingPct = SparkR::avg(inputDataset$direct_call_booking_pct),
+                       avgWebBookingPct = SparkR::avg(inputDataset$direct_web_booking_pct))
  return(bookingChannelsAnalysisSummary)
 }
 
 ```
 
-### Registering user defined functions to the pipeline object
+# Registering user defined functions to the pipeline object
 
 Each user defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline is a set of multiple functions called in a particular sequence.
 
@@ -95,34 +94,39 @@ pipelineObj <- pipelineObj %>>% registerFunction("occupancyAnalysis", "Occupany 
 pipelineObj %>>% getRegistry
 
 # Define pipeline from list of registered functions
-pipelineObj %>% occupancyAnalysis(groupByColumn = "location_type") %>% bookingChannelsAnalysis(groupByColumn = "location_type") -> pipelineObj
+pipelineObj %>% occupancyAnalysis(groupByColumn = "location_type", storeOutput = T) %>% 
+                bookingChannelsAnalysis(groupByColumn = "location_type", storeOutput = T) -> pipelineObj
 
 pipelineObj %>>% getPipeline
 pipelineObj %>>% visualizePipeline
 ```
 
-### Running the pipeline and generating an output
+# Running the pipeline and generating an output
 
-The pipeline is run by calling the `generateOutput()` function. A particular output in the sequence on evaluations can be accessed by calling the `getOutputByOrderId` function
+The pipeline is run by calling the `generateOutput()` function. A particular output in the sequence on evaluations can be accessed by calling the `getOutputById` function
 
-In this example the Spark DataFrames are converted to R dataframes to help visualize the result.
 
 ```{r fig.width=6, fig.height=3}
-pipelineObj %>% generateOutput() -> pipelineObj
+pipelineObj %>% generateOutput -> pipelineObj
 
 # Show occupancy analysis result
 occupancyAnalysisResult <- pipelineObj %>>% getOutputById(1)
 occupancyAnalysisResultDf <- as.data.frame(occupancyAnalysisResult)
-occupancyAnalysisResultDf
+DT::datatable(head(occupancyAnalysisResultDf),options = list(scrollX = T, scrollY = T))
 
-# ggplot(occupancyAnalysisResultDf) + geom_col(aes(location_type, avgOccupancy, color=location_type)) 
+
+# ggplot2::ggplot(occupancyAnalysisResultDf) + ggplot2::geom_col(ggplot2::aes(location_type, avgOccupancy, color=location_type)) 
 
 # Show booking channels analysis result
 bookingChannelsAnalysisResult <- pipelineObj %>>% getOutputById(2)
 bookingChannelsAnalysisResultDf <- as.data.frame(bookingChannelsAnalysisResult)
-bookingChannelsAnalysisResultDf
+DT::datatable(head(bookingChannelsAnalysisResultDf),options = list(scrollX = T, scrollY = T))
 
-ggplot2::ggplot(bookingChannelsAnalysisResultDf) + geom_col(aes(location_type, avgCallCenterBookingPct, color=location_type)) + scale_y_continuous(labels = scales::percent)
+
+# ggplot2::ggplot(bookingChannelsAnalysisResultDf) + ggplot2::geom_col(ggplot2::aes(location_type, avgCallCenterBookingPct, color=location_type)) + ggplot2::scale_y_continuous(labels = scales::percent)
 
 ```
 
+# Supplementary Note
+
+The *analysisPipelines* package internally uses the *SparkR* package to interface with *Spark*. *SparkR* masks many typical data manipulation and processing functions from *base* as well as packages like *dplyr*. Therefore, ensure you use function scoping when calling a function.

@@ -92,9 +92,8 @@ setMethod(
 
 #' @name registerFunction
 #' @title Register a user-defined function to be used with a \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
-#' @details
-#'       The specified operation along with the heading and parameters is updated in the pipeline slot
-#'       of the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations to be performed is stored
+#' @details The specified operation along with the heading and engine details is stored in the registry, after which it can be added to a pipeline.
+#' @details If the function already exists in the registry, the newly provided definition and details overwrite the existing registration
 #' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
 #' which extend this class
 #' @param object object that contains input, pipeline, registry and output
@@ -128,10 +127,11 @@ setMethod(
                         exceptionFunction = as.character(substitute(genericPipelineException)),
                         loadPipeline = F, userDefined = T,
                         isDataFunction = T, firstArgClass = ""
-                        # storeOutput = F
                         )
   {
     tryCatch({
+
+
       #Define data frame class according to engine type
       childClass <- class(object)
       attr(childClass, "package") <- NULL
@@ -140,6 +140,30 @@ setMethod(
       if(engine == "spark" || engine == 'spark-structured-streaming'){
         dataFrameClass <- "SparkDataFrame"
       }
+
+
+      ## Checking if already registered
+      existingM <- c()
+      tryCatch({
+          existingM <- methods::findMethod(functionName, signature = childClass, where = .GlobalEnv)
+
+          if(length(existingM) > 0){
+
+            futile.logger::flog.error("||  A function of name '%s' has already been registered  ||",
+                                      functionName, name = "logger.base")
+            futile.logger::flog.error(paste("||  Please re-assign the function definition and then call 'registerFunction' again."),
+                                      name = "logger.base")
+            stop()
+          }
+      }, warning = function(w){
+        tryCatch({
+          func <- methods::getFunction(name = functionName, where = .GlobalEnv)
+        }, error = function(e){
+          futile.logger::flog.error(paste("||  The provided function name does not exist in the Global environment"),
+                                    name = "logger.base")
+        })
+      })
+
 
       parametersName <- ""
 
@@ -205,7 +229,11 @@ setMethod(
 
 
       if(loadPipeline==F){
-        object@registry %>>% add_row(functionName = paste0(functionName),
+        fn <- paste0(functionName)
+        if(nrow(object@registry %>>% dplyr::filter(functionName == fn)) > 0){
+          object@registry %>>% dplyr::filter(functionName != fn) -> object@registry
+        }
+        object@registry %>>% add_row(functionName = fn,
                                      heading = heading,
                                      engine = engine,
                                      exceptionHandlingFunction = exceptionFunction,

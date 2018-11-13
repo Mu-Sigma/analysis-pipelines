@@ -276,7 +276,7 @@ checkSchema <- function(dfOld, dfNew){
                                  typeConvTime,
                                  name='logger.func')
 
-    }else if(maxEngineName == "pythong"){
+    }else if(maxEngineName == "python"){
       # TODO: convert to Python data frame
     }
 
@@ -340,61 +340,62 @@ checkSchema <- function(dfOld, dfNew){
                                  name='logger.func')
 
 
-
-
-        if(funcDetails$outAsIn && funcDetails$id  != "1"){
-          dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
+        if(funcDetails$isDataFunction){
+          if(funcDetails$outAsIn && funcDetails$id  != "1"){
+            dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
             actualDataObjectName <- paste0(dataOpFn, ".out")
             inputToExecute <-  get(actualDataObjectName, envir = outputCache)
 
-        }
+          }
 
-        #Check engine
-        ###TODO: Python to be added
+          #Check engine
+          ###TODO: Python to be added
 
-        currEngine <- funcDetails$engine
+          currEngine <- funcDetails$engine
 
-        prevEngine <- ifelse(class(inputToExecute) == "SparkDataFrame", 'spark',
-                              ifelse(class(inputToExecute) == "data.frame" || class(inputToExecute) == "tibble",
-                                            'r', 'python'))
-        #Check engine
-        ###TODO: Python to be added
+          prevEngine <- ifelse(class(inputToExecute) == "SparkDataFrame", 'spark',
+                               ifelse(class(inputToExecute) == "data.frame" || class(inputToExecute) == "tibble",
+                                      'r', 'python'))
+          #Check engine
+          ###TODO: Python to be added
 
-        if(prevEngine != currEngine){
-          if(prevEngine == 'spark'){
+          if(prevEngine != currEngine){
+            if(prevEngine == 'spark'){
 
-            if(currEngine == 'r'){
-              startTypeConv <- Sys.time()
+              if(currEngine == 'r'){
+                startTypeConv <- Sys.time()
 
-              inputToExecute <- SparkR::as.data.frame(inputToExecute)
+                inputToExecute <- SparkR::as.data.frame(inputToExecute)
 
-              endTypeConv <- Sys.time()
-              typeConvTime <- endTypeConv - startTypeConv
-              futile.logger::flog.info("||  Type conversion from Spark DataFrame to R dataframe took %s seconds  ||",
-                                     typeConvTime,
-                                      name='logger.func')
-            }else if(currEngine == 'python'){
-              #TODO: python
-            }
+                endTypeConv <- Sys.time()
+                typeConvTime <- endTypeConv - startTypeConv
+                futile.logger::flog.info("||  Type conversion from Spark DataFrame to R dataframe took %s seconds  ||",
+                                         typeConvTime,
+                                         name='logger.func')
+              }else if(currEngine == 'python'){
+                #TODO: python
+              }
 
-          }else if(prevEngine == 'r'){
-            if(currEngine == "spark"){
-              startTypeConv <- Sys.time()
+            }else if(prevEngine == 'r'){
+              if(currEngine == "spark"){
+                startTypeConv <- Sys.time()
 
-              inputToExecute <- SparkR::as.DataFrame(inputToExecute)
+                inputToExecute <- SparkR::as.DataFrame(inputToExecute)
 
-              endTypeConv <- Sys.time()
-              typeConvTime <- endTypeConv - startTypeConv
-              futile.logger::flog.info("||  Type conversion from R dataframe to Spark DataFrame took %s seconds  ||",
-                                       typeConvTime,
-                                       name='logger.func')
+                endTypeConv <- Sys.time()
+                typeConvTime <- endTypeConv - startTypeConv
+                futile.logger::flog.info("||  Type conversion from R dataframe to Spark DataFrame took %s seconds  ||",
+                                         typeConvTime,
+                                         name='logger.func')
+              }else if(prevEngine == 'python'){
+                # TODO: python
+              }
             }else if(prevEngine == 'python'){
-              # TODO: python
-            }
-          }else if(prevEngine == 'python'){
               #TODO: python
+            }
           }
         }
+
 
         # Set parameters
 
@@ -420,9 +421,12 @@ checkSchema <- function(dfOld, dfNew){
         #Call
 
         #Assign as named parameters
+        args <- params
+        if(funcDetails$isDataFunction){
+          args <- append(list(inputToExecute), params)
+        }
         output <- tryCatch({do.call(what = funcDetails$operation,
-                                    args = append(list(inputToExecute),
-                                                  params))},
+                                    args = args)},
                            error = function(e){
                              futile.logger::flog.error("||  ERROR Occurred in Function ID '%s' named '%s'. EXITING PIPELINE EXECUTION. Calling Exception Function - '%s'  ||",
                                                        funcDetails$id, funcDetails$operation, funcDetails$exceptionHandlingFunction,

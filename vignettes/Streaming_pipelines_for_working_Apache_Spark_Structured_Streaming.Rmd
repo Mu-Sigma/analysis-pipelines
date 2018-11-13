@@ -5,19 +5,22 @@ date: "9/11/2018"
 output: html_document
 ---
 
-# Objective
+# Introduction
 
 The vignette aims to show examples of using SparkR as an interface to run streaming spark jobs through R - using the analysisPipelines package. The major use cases can be categorized as:<br>
 
 * Implement a pipeline using SparkR dataframes for streaming use cases
 
-### Initialize libraries
+# Initialize libraries
 
 * Initialize the analysisPipelines and SparkR libraries
 * Ensure you have a local installation of spark and SparkR package is installed
 * Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
 
 ```{r, include=FALSE}
+knitr::opts_chunk$set(
+    eval = FALSE
+  )
 library(analysisPipelines)
 library(SparkR)
 
