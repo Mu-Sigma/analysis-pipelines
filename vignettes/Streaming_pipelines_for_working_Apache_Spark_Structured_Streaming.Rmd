@@ -2,20 +2,27 @@
 title: "Streaming Analysis Pipelines for working with Apache Spark Structured Streaming"
 author: "Naren Srinivasan, Anoop S"
 date: "9/11/2018"
-output: html_document
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    fig_width: 8
+vignette: >
+  %\VignetteIndexEntry{Streaming Analysis Pipelines for working with Apache Spark Structured Streaming}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 # Introduction
 
-The vignette aims to show examples of using SparkR as an interface to run streaming spark jobs through R - using the analysisPipelines package. The major use cases can be categorized as:<br>
+The vignette aims to show examples of using SparkR as an interface to run streaming Spark jobs through R - using the analysisPipelines package. The major use cases can be categorized as:<br>
 
 * Implement a pipeline using SparkR dataframes for streaming use cases
 
 # Initialize libraries
 
 * Initialize the analysisPipelines and SparkR libraries
-* Ensure you have a local installation of spark and SparkR package is installed
-* Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
+* Ensure you have a local installation of Spark and SparkR package is installed
+* Check is SPARK_HOME environment variable is set to Spark installation folder. Else, define it using `sys.setenv()` function.
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
@@ -33,21 +40,21 @@ if(Sys.getenv("SPARK_HOME") == "") {
 }
 ```
 
-### Connect to spark cluster
-* Define the spark master URL
-* Specify dependency packages if any during spark connection. Example: `sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")`
+# Connect to Spark cluster
+* Define the Spark master URL
+* Specify dependency packages if any during Spark connection. Example: `sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")`
 * Connect to the cluster using the package's `sparkRSessionCreateIfNotPresent` function
 
-```{r}
+```{r, results='hide'}
 sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = sparkPackages)
 ```
 
 
-## Streaming Pipelines for structured streaming using SparkR
+# Streaming Analysis Pipelines using Apache Spark Structured Streaming
 
 This example illustrates usage of pipelines for a streaming application. In this use case streaming data is read from Kafka, aggregations are performed and the output is written to the console.
 
-### Read stream from Kafka
+## Read stream from Kafka
 
 Read streaming data from Kafka.
 
@@ -58,9 +65,9 @@ streamObj <- read.stream(source = "kafka", kafka.bootstrap.servers = kafkaBootst
 printSchema(streamObj)
 ```
 
-### User defined spark functions
+## User-defined Spark functions
 
-Users can define their own functions and use it as a part of the pipeline. These functions range from data prep, agrregations, casting data to suitable write stream format, etc.
+Users can define their own functions and use it as a part of the pipeline. These functions range from data prep, aggregations, casting data to suitable write stream format, etc.
 
 ```{r}
 
@@ -120,11 +127,11 @@ globalUiMetrics <- function (streamObj) {
 
 ```
 
-### Define pipeline object, register user defined functions to the pipeline object
+## Define pipeline object, register user-defined functions to the pipeline object
 
-In order to use pipelines, a pipeline object needs to be defined. Notice the spark pipelines are defined using the `readInputSpark` function.
+In order to use pipelines, a pipeline object needs to be defined. Notice the Spark pipelines are defined using the `readInputSpark` function.
 
-Each user defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline can be a pipeline of multiple functions called in a particular sequence.
+Each user-defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline can be a pipeline of multiple functions called in a particular sequence.
 
 ```{r}
 # Define pipeline object
@@ -150,31 +157,26 @@ consumerDataSchema <- structType(structField("bannerId", "string"),
                                  structField("maritalStatus", "string"),
                                  structField("segment", "string"))
 
-# Register user defined functions
-pipelineObj <- pipelineObj %>>% registerFunction("convertStructToDf", "", engine = "spark-structured-streaming") %>>%   registerFunction("castDfColumns", "", engine = "spark-structured-streaming") %>>%
-  registerFunction("globalUiMetrics", "",  engine = "spark-structured-streaming") %>>%
-  registerFunction("convertDfToKafkaKeyValuePairs", "",  engine = "spark-structured-streaming")
+# Register user-defined functions
+registerFunction("convertStructToDf", "", functionType = "streaming", engine = "spark-structured-streaming") 
+registerFunction("castDfColumns", "", functionType = "streaming", engine = "spark-structured-streaming") 
+registerFunction("convertDfToKafkaKeyValuePairs", "", functionType = "streaming", engine = "spark-structured-streaming")
 
-
-pipelineObj %>>% getRegistry
+getRegistry()
 
 # Define pipeline 
 # Do data prep
-
-pipelineObj %>% castKafkaStreamAsString(outAsIn = T) %>% convertKafkaValueFromJson(schema = consumerDataSchema, outAsIn = T) %>% convertStructToDf(outAsIn = T) %>% castDfColumns(outAsIn = T) -> pipelineObj
-
-# Perform analytical operations
-pipelineObj %>% globalUiMetrics -> pipelineObj
+pipelineObj %>% castKafkaStreamAsString() %>% convertKafkaValueFromJson(schema = consumerDataSchema, outAsIn = T) %>% convertStructToDf(outAsIn = T) %>% castDfColumns(outAsIn = T, storeOutput = T) -> pipelineObj
 
 pipelineObj %>>% getPipeline
 pipelineObj %>>% visualizePipeline
 ```
 
-### Running the pipeline and generating an output
+## Running the pipeline and generating an output
 
-The pipeline is run by calling the `generateOutput()` function. The `output` attribute of the pipeline object contains the resultant spark dataframe(s).
+The pipeline is run by calling the `generateOutput()` function. The `output` attribute of the pipeline object contains the resultant Spark dataframe(s).
 
-In this example the spark dataframes are converted to R dataframes to help visualizing the result.
+In this example the Spark dataframes are converted to R dataframes to help visualizing the result.
 
 
 ```{r}
@@ -183,6 +185,10 @@ In this example the spark dataframes are converted to R dataframes to help visua
 pipelineObj %>% generateOutput() -> pipelineObj
 
 ## Write to output stream
-streamObj <- pipelineObj %>>% getOuputById(5)
-write.stream(streamObj, 'console',outputMode = "complete")
+streamObj <- pipelineObj %>>% getOutputById("4")
+streamObj
 ```
+
+# Supplementary note
+
+Currently, streaming pipelines have the limitation that they are able to execute only linear flows, as this constrained by *Apache Spark Structured Streaming.* Non-linear flows can be defined but might throw execution errors in runtime.

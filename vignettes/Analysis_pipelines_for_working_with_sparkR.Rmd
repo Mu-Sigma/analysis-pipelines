@@ -13,7 +13,7 @@ vignette: >
 ---
 # Introduction
 
-*Apache Spark* can be leveraged to process large volumes of distributed data that are typically impossible to process on standlone R servers. The vignette describes defining and executing *Spark*-only pipelines using the *analysisPipelines* package.
+*Apache Spark* can be leveraged to process large volumes of distributed data that are typically impossible to process on standalone R servers. The vignette describes defining and executing *Spark*-only pipelines using the *analysisPipelines* package.
 
 # Initialize libraries
 
@@ -28,6 +28,7 @@ library(ggplot2)
 library(analysisPipelines)
 library(SparkR)
 
+## Define these variables as per the configuration of your machine
 sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
 sparkMaster <- "local[1]"
 sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
@@ -54,7 +55,7 @@ pipelineObj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package 
 # pipelineObj <- AnalysisPipeline(input = SparkR::as.data.frame(system.file("hotel_new.csv", package = "analysisPipelines")))
 ```
 
-# User defined spark functions
+# User-defined spark functions
 The example below shows a few functions to perform simple aggregations.
 
 ```{r}
@@ -80,18 +81,19 @@ bookingChannelsAnalysis <- function(inputDataset, groupByColumn) {
 
 ```
 
-# Registering user defined functions to the pipeline object
+# Registering user-defined functions to the pipeline object
 
-Each user defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline is a set of multiple functions called in a particular sequence.
+Each user-defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline is a set of multiple functions called in a particular sequence.
 
 ```{r}
-# Register user defined functions
-pipelineObj <- pipelineObj %>>% registerFunction("occupancyAnalysis", "Occupany analysis",
-                                                 engine = "spark")  %>>%
-  registerFunction("bookingChannelsAnalysis", "Booking channels analysis",
+# Register user-defined functions
+registerFunction("occupancyAnalysis", "Occupany analysis",
                                                  engine = "spark")
-# List al registered functions 
-pipelineObj %>>% getRegistry
+
+registerFunction("bookingChannelsAnalysis", "Booking channels analysis",
+                                                 engine = "spark")
+# List all registered functions 
+getRegistry()
 
 # Define pipeline from list of registered functions
 pipelineObj %>% occupancyAnalysis(groupByColumn = "location_type", storeOutput = T) %>% 
