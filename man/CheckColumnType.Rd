@@ -12,6 +12,9 @@ CheckColumnType(dataVector)
 \value{
 column Type
 }
+\description{
+Check for type of column
+}
 \details{
 Checking for type of columns in the datavector
 }
@@ -23,3 +26,4 @@ Other Package EDA Utilites functions: \code{\link{bivarPlots}},
   \code{\link{outlierPlot}},
   \code{\link{univarCatDistPlots}}
 }
+\concept{Package EDA Utilites functions}

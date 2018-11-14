@@ -9,6 +9,9 @@ prepExecution(object)
 \value{
 Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 }
+\description{
+Prepare the pipleline for execution
+}
 \details{
 The pipeline is prepared for execution by identifying the graph of the pipeline as well as its topological ordering,
 and dependency map in order to prepare for execution
@@ -32,3 +35,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
+\concept{Package core functions}

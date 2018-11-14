@@ -1,6 +1,6 @@
 ##################################################################################################
 # Title: Reusable pipelines for streaming analyses
-# Version: 18.09.01
+# Author: Naren Srinivasan
 # Created on: July 12, 2018
 # Description: An R package version - Currently supports Apache Spark Structured Streaming
 ##################################################################################################
