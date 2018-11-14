@@ -29,3 +29,4 @@ Collate:
     'core-streaming-functions.R'
     'r-batch-eda-utilities.R'
     'spark-structured-streaming-utilities.R'
+    'zzz.R'

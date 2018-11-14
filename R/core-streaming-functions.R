@@ -55,16 +55,6 @@ setMethod(
 
     ## Calling the parent constructor
     .Object <- methods::callNextMethod(.Object)
-
-    for(rowNo in 1:nrow(streamingPredefFunctions)){
-
-      .Object %>>% registerFunction(   functionName = streamingPredefFunctions[['functionName']][[rowNo]],
-                                       heading =  streamingPredefFunctions[['heading']][[rowNo]],
-                                       # streamingPredefFunctions[['outAsIn']][[rowNo]],
-                                       engine = streamingPredefFunctions[['engine']][[rowNo]],
-                                       exceptionFunction = streamingPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
-                                       userDefined = F, loadPipeline = F) -> .Object
-    }
     return(.Object)
   }
 )
@@ -76,13 +66,13 @@ setMethod(
 
     futile.logger::flog.info("||  Pipeline Execution STARTED  ||" , name='logger.execution')
 
-    outputCache <- new.env()
+    outputCache <- .getCache()
 
     topOrder <- object@pipelineExecutor$topologicalOrdering
-    dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName")) %>>%
+    dplyr::left_join(object@pipeline, getRegistry(), by = c("operation" = "functionName")) %>>%
       dplyr::left_join(object@pipelineExecutor$topologicalOrdering, by = c("id" = "id")) -> pipelineRegistryOrderingJoin
 
-    # pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+    # pipelineRegistryJoin <- dplyr::left_join(object@pipeline, getRegistry(), by = c("operation" = "functionName"))
     batches <- unique(pipelineRegistryOrderingJoin$level)
     numBatches <- max(as.numeric(batches))
 
@@ -110,10 +100,9 @@ setMethod(
 
 
         if(funcDetails$outAsIn && funcDetails$id  != "1"){
-          actualDataObjecttName <- paste0(formulaTerm, ".out")
-          inputToExecute <-  get(actualDataObjecttName, envir = outputCache)
-          # inputToExecute <- object@pipelineExecutor$cache$workingInput
-          # inputToExecute <- outputCache$workingInput
+          dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
+          actualDataObjectName <- paste0(dataOpFn, ".out")
+          inputToExecute <-  get(actualDataObjectName, envir = outputCache)
         }
 
         # Set parameters
@@ -178,11 +167,10 @@ setMethod(
 
       }, object, functionsInBatch, outputCache)
 
-      endBatch <- Sys.time()
-      batchExecTime <- endBatch - startBatch
-
-
     }, object, pipelineRegistryOrderingJoin, outputCache)
+
+    object@output <- mget(ls(outputCache), envir = outputCache)
+    rm(list = ls(outputCache), envir = outputCache)
 
     return(object)
   },error = function(e){
@@ -248,7 +236,7 @@ setMethod(
 #     stop(paste0("All engines required for the pipelines have not been configured. ",
 #                 "Please use the analysisPipelines::assessEngine() function to check"))
 #   }
-#   pipelineRegistryJoin <- dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName"))
+#   pipelineRegistryJoin <- dplyr::left_join(object@pipeline, getRegistry(), by = c("operation" = "functionName"))
 #
 #   if(nrow(pipelineRegistryJoin) > 0){
 #     for(rowNo in 1:nrow(pipelineRegistryJoin)){

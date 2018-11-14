@@ -54,14 +54,14 @@ setMethod(
       ## Calling the parent constructor
       .Object <- methods::callNextMethod(.Object, ...)
 
-      for(rowNo in 1:nrow(batchPredefFunctions)){
-        .Object %>>% registerFunction(functionName = batchPredefFunctions[['functionName']][[rowNo]],
-                                      heading =  batchPredefFunctions[['heading']][[rowNo]],
-                                      # batchPredefFunctions[['outAsIn']][[rowNo]],
-                                      engine = batchPredefFunctions[['engine']][[rowNo]],
-                                      exceptionFunction = batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
-                                      userDefined = F, loadPipeline = F ) -> .Object
-      }
+      # for(rowNo in 1:nrow(batchPredefFunctions)){
+      #   .Object %>>% registerFunction(functionName = batchPredefFunctions[['functionName']][[rowNo]],
+      #                                 heading =  batchPredefFunctions[['heading']][[rowNo]],
+      #                                 # batchPredefFunctions[['outAsIn']][[rowNo]],
+      #                                 engine = batchPredefFunctions[['engine']][[rowNo]],
+      #                                 exceptionFunction = batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
+      #                                 userDefined = F, loadPipeline = F ) -> .Object
+      # }
       return(.Object)
 
     },error = function(e){
@@ -242,10 +242,10 @@ checkSchema <- function(dfOld, dfNew){
     startPipelineExecution <- Sys.time()
     futile.logger::flog.info("||  Pipeline Execution STARTED  ||" , name='logger.execution')
 
-    outputCache <- new.env()
+    outputCache <- .getCache()
 
     topOrder <- object@pipelineExecutor$topologicalOrdering
-    dplyr::left_join(object@pipeline, object@registry, by = c("operation" = "functionName")) %>>%
+    dplyr::left_join(object@pipeline, getRegistry(), by = c("operation" = "functionName")) %>>%
       dplyr::left_join(object@pipelineExecutor$topologicalOrdering, by = c("id" = "id")) -> pipelineRegistryOrderingJoin
 
     # Set Input data and set type to engine with max. number of operations

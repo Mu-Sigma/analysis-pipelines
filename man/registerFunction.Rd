@@ -4,32 +4,33 @@
 \alias{registerFunction}
 \title{Register a user-defined function to be used with a \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
 \usage{
-registerFunction(object, functionName, heading = "", engine = "r",
-  exceptionFunction = substitute(genericPipelineException),
-  loadPipeline = F, userDefined = T, isDataFunction = T,
-  firstArgClass = "")
+registerFunction(functionName, heading = "", functionType = "batch",
+  engine = "r",
+  exceptionFunction = as.character(substitute(genericPipelineException)),
+  isDataFunction = T, firstArgClass = "", loadPipeline = F,
+  userDefined = T)
 }
 \arguments{
-\item{object}{object that contains input, pipeline, registry and output}
-
 \item{functionName}{name of function to be registered}
 
-\item{heading}{heading of that section in report}
+\item{heading}{heading of that section in report
+#' @param functionType type of function - 'batch' for \code{AnalysisPipeline} objects, 'streaming' for \code{StreamingAnalysisPipeline} objects}
 
 \item{engine}{specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"}
 
-\item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not}
-}
-\value{
-Updated \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+\item{isDataFunction}{logical parameter which defines whether the function to be registered operates on data i.e. the first parameter is a dataframe}
+
+\item{firstArgClass}{character string with the class of the first argument to the function, if it is a non-data function}
+
+\item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not. This is for internal working}
+
+\item{userDefined}{logical parameter defining whether the function is user defined. By default, set to true}
 }
 \details{
 The specified operation along with the heading and engine details is stored in the registry, after which it can be added to a pipeline.
 
-If the function already exists in the registry, the newly provided definition and details overwrite the existing registration
-
-This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
-which extend this class
+If the function already exists in the registry, registration will be skipped. In order to change the definition, the function needs
+to be reassigned in the Global Environment and then the \code{registerFunction} called again.
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
@@ -42,9 +43,10 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
   \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{loadPipeline}}, \code{\link{prepExecution}},
-  \code{\link{savePipeline}}, \code{\link{setInput}},
-  \code{\link{setLoggerDetails}},
+  \code{\link{loadPipeline}},
+  \code{\link{loadPredefinedFunctionRegistry}},
+  \code{\link{prepExecution}}, \code{\link{savePipeline}},
+  \code{\link{setInput}}, \code{\link{setLoggerDetails}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }

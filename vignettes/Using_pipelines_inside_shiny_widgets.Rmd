@@ -1,0 +1,50 @@
+---
+title: "Using pipelines inside Shiny widgets or apps"
+author: "Naren Srinivasan"
+date: "11/14/2018"
+runtime: shiny-prerendered
+output: 
+   rmarkdown::html_vignette:
+     fig_width: 8
+vignette: >
+  %\VignetteIndexEntry{Using pipelines inside Shiny widgets or apps}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, echo=FALSE, message=FALSE}
+library(analysisPipelines)
+```
+
+Pipelines can be used as part of Shiny widgets or apps. In the following example, we define a simple pipeline which generates a chart, and use that to power a shiny widget.
+
+In this example, we emulate streaming dataset using the `shiny::reactivePoll` function and randomly sampling from an existing sample dataset in the package.
+
+---
+
+```{r data, echo=T, results='hide'}
+  dataset <- read.csv(system.file("hotel_new.csv", package = "analysisPipelines"))
+  dataset %>>% dplyr::select_if(is.factor) -> dataset 
+  
+  
+  shinyPipeline <- AnalysisPipeline()
+  shinyPipeline %>>% setLoggerDetails(target = "none")
+  shinyPipeline %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0, storeOutput = T) ->   shinyPipeline
+```
+---
+
+We then use the pipeline within the `shiny::renderPlot` function, and set the sampled data to execute the pipeline, and generate the chart. Since the data keeps changing due to our reactive poll, the expression within the `shiny::renderPlot` function keeps getting called in the reactive context.
+
+---
+```{r shiny, message=FALSE, warning=FALSE, eval = TRUE}
+  sampled_data <- shiny::reactivePoll(intervalMillis = 2000,
+                                        session = NULL,
+                                        checkFunc = function() return(base::sample(1:100, 1)),
+                                        valueFunc = function() return(dataset[sample(1:nrow(dataset), 100),]))
+  shiny::renderPlot(height = 400, {
+      sampled_data <- sampled_data()
+      shinyPipeline %>>% setInput(input = sampled_data) -> shinyPipeline
+      shinyPipeline %>>% generateOutput %>>% getOutputById("1")
+    })
+```
+---

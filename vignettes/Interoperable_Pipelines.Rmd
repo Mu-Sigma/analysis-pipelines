@@ -70,11 +70,11 @@ sparkFilterData <- function(inputDataset, condition) {
  return(filteredData)
 }
 
-pipelineObj %>>% registerFunction(functionName = "getSchema", engine = "spark") -> pipelineObj
-pipelineObj %>>% registerFunction(functionName = "sparkFilterData", engine = "spark") -> pipelineObj
+registerFunction(functionName = "getSchema", engine = "spark") 
+registerFunction(functionName = "sparkFilterData", engine = "spark") 
 
 
-pipelineObj %>>% getRegistry
+getRegistry()
 ```
 
 ## Registering R functions
@@ -161,9 +161,9 @@ rBivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor 
   return(bivarPlot)
 }
 
-pipelineObj %>>% registerFunction(functionName = "rBivarPlots", engine = "r", heading = "Bivariate analysis") -> pipelineObj
+registerFunction(functionName = "rBivarPlots", engine = "r", heading = "Bivariate analysis")
 
-pipelineObj %>>% getRegistry
+getRegistry()
 ```
 
 

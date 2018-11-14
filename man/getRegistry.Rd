@@ -4,10 +4,7 @@
 \alias{getRegistry}
 \title{Obtains the function registry}
 \usage{
-getRegistry(object)
-}
-\arguments{
-\item{object}{The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}  object}
+getRegistry()
 }
 \value{
 Tibble describing the registry
@@ -29,7 +26,9 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{getOutputById}}, \code{\link{getPipeline}},
   \code{\link{initDfBasedOnType}},
   \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{loadPipeline}}, \code{\link{prepExecution}},
+  \code{\link{loadPipeline}},
+  \code{\link{loadPredefinedFunctionRegistry}},
+  \code{\link{prepExecution}},
   \code{\link{registerFunction}},
   \code{\link{savePipeline}}, \code{\link{setInput}},
   \code{\link{setLoggerDetails}},

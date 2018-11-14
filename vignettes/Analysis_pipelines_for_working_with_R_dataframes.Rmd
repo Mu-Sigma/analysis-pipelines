@@ -47,7 +47,9 @@ The *analysisPipelines* package uses S4 classes and methods to implement all the
 
 ## Pipelining semantics
 
+The package stays true to the *tidyverse* pipelining style which also fits nicely into the idea of creating pipelines. The core mechanism in the package is too instantiate a pipeline with data and then pipeline required functions to the object itself.
 
+The package allows both the use of *magrittr* pipe **(%>%)** or the *pipeR* pipe **(%>>%)**.
 
 ## Supported engines
 
@@ -55,19 +57,19 @@ As of this version, the package supports functions executed on *R*, or *Spark* t
 
 ## Available vignettes
 
-This package contains 4 vignettes:
+This package contains 5 vignettes:
 
 * This is the main vignette describing the package's core functionality, and explaining this through **batch** pipelines in just **R**
 * **Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses** - This vignette describes creating **batch** pipelines to execute in solely in a *Spark* environment 
 * **Interoperable analysis pipelines** - This vignette describes creating and executing **batch** pipelines which are composed of functions executing across *supported engines*
 * **Streaming Analysis Pipelines for working with Apache Spark Structured Streaming** - This vignette describes setting up streaming pipelines on *Apache Spark Structured Streaming*
-
+* **Using pipelines inside Shiny widgets or apps** - A brief vignette which illustrates an example of using a pipeline inside a shiny widget with reactive elements and changing data
 
 # Usage
 
 ## Loading the package
 
-```{r sourcing}
+```{r sourcing, message=F, results='hide'}
 library(analysisPipelines)
 ```
 
@@ -86,10 +88,10 @@ The *AnalysisPipeline* object has a set of getters, for retrieving various slots
 
 ```{r printing object contents, warning=F}
 obj %>>% getInput %>>% str
-obj %>>% getRegistry
+getRegistry()
 ```
 
-The *getRegistry* method retrieves the set of functions and their metadata available for pipelining. Any *AnalysisPipeline* object comes with a set of pre-registered functions which can be used **out-of-the-box**. Of course, the user can register her own functions, to be used in the pipeline. We will look at this later on in the vignette.
+The *getRegistry* function retrieves the set of functions and their metadata available for pipelining. Any *AnalysisPipeline* object comes with a set of pre-registered functions which can be used **out-of-the-box**. Of course, the user can register her own functions, to be used in the pipeline. We will look at this later on in the vignette.
 
 There are two types of functions which can be pipelined:
 
@@ -109,7 +111,7 @@ We can access the details of the pipeline as a tibble through the `getPipeline` 
 
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
-?analysisPipelines::univarCatDistPlots
+# ?analysisPipelines::univarCatDistPlots
 obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0, storeOutput = T)
 obj1 %>>% getPipeline
 ```
@@ -164,14 +166,14 @@ obj1Output %>>% getOutputById("1")
 
 ## Registering your own function
 
-You can register your own *data* or *non-data* functions by calling the `registerFunction` method. This adds the user-defined function to the object's registry. 
+You can register your own *data* or *non-data* functions by calling `registerFunction.` This adds the user-defined function to the registry. The registry is maintained by the package and once registered, functions can be used across pipeline objects. The registry can be view by calling the `getRegistry` function.
 
 ```{r current register, warning=FALSE}
 # Currently registered functions
-obj2 %>>% getRegistry()
+getRegistry()
 ```
 
-In order to register a function, first the function must be defined in the Global environment, before calling the `registerFunction` method.
+In order to register a function, first the function must be defined in the Global environment, before calling `registerFunction`.
 
 ```{r bivariate definition}
 bivariatePlots <- function(dataset, select_var_name_1, select_var_name_2, 
@@ -191,10 +193,9 @@ bivariatePlots <- function(dataset, select_var_name_1, select_var_name_2,
                    axis.title=ggplot2::element_text(size=10))
   return(bivarPlot)
 }
-obj2 %>>% registerFunction("bivariatePlots", heading = "Bivariate Analysis") -> obj2
-```
 
-This user-defined function can now be registered as part of an *AnalysisPipeline* object. After registration, the registry in the object will be updated with the user-defined function. 
+registerFunction(functionName = "bivariatePlots", heading = "Bivariate Analysis")
+```
 
 ## Adding the newly registered function to a pipeline
 
@@ -224,8 +225,6 @@ In addition to the simple pipelines described above, more complex pipelines can 
 
 The package defines certain *formula* semantics to accomplish this. We take the example of two simple user-defined functions, both which simply return the color of the graph, as well as the column on which the graph should be plotted, in order to illustrate how this works.
 
-
-
 ```{r}
 getColor <- function(color){
   return(color)
@@ -235,12 +234,10 @@ getColumnName <-function(columnName){
   return(columnName)
 }
 
-obj %>>% registerFunction("getColor", isDataFunction = F, firstArgClass = "character") -> obj
-# obj %>>% registerFunction("getColor", heading = "Get Color", isDataFunction = F, firstArgClass = "numeric") -> obj
+registerFunction(functionName = "getColor", isDataFunction = F, firstArgClass = "character")
+registerFunction(functionName = "getColumnName", isDataFunction = F, firstArgClass = "character")
 
-obj %>>% registerFunction("getColumnName", isDataFunction = F, firstArgClass = "character") -> obj
-
-obj %>>% getRegistry
+getRegistry()
 ```
 
 
@@ -281,10 +278,9 @@ objRep %>>% generateReport(path = '~/Desktop')
 
 # Saving and loading pipelines
 
-Pipelines can also be saved and loaded for re-use and execution on new data. The pipeline can be saved by calling the `savePipeline` function.
+Pipelines can also be saved and loaded for re-use and execution on new data. The pipeline can be saved by calling the `savePipeline` function. On save, both the pipeline and the existing state of the registry is saved (including both predefined as well as user-defined functions).
 
-```{r save pipelines, message=FALSE, warning=FALSE, eval=TRUE}
-# Saves the pipeline and registry of the EDA object
+```{r save pipelines, message=FALSE, warning=FALSE, eval=FALSE}
 obj2 %>>% savePipeline(path = 'pipeline.RDS')
 ```
 
@@ -294,10 +290,11 @@ This pipeline can be loaded and while loading *instantiated* with a new dataset 
 * perform certain data manipulations on new data
 * re-run the analysis on a different subset
 
-```{r load pipelines, message=FALSE, warning=FALSE, eval=T}
+```{r load pipelines, message=FALSE, warning=FALSE, eval=FALSE}
+library(analysisPipelines)
 obj2 <- loadPipeline('pipeline.RDS',filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 
-obj2 %>% getRegistry
+getRegistry()
 obj2 %>% getPipeline
 ```
 
@@ -346,9 +343,9 @@ sampleException <- function(error){
   stop("There was an error with the provided input")
 }
 
-sampleExceptionObj <- obj2 %>>% registerFunction('sampleFunction', "Sample", exceptionFunction = "sampleException")
+registerFunction(functionName = 'sampleFunction', "Sample", exceptionFunction = "sampleException")
 
-sampleExceptionObj %>>% getRegistry
+getRegistry()
 ```
 
 
