@@ -4,24 +4,34 @@
 \alias{getRegistry}
 \title{Obtains the function registry}
 \usage{
-getRegistry(object)
-}
-\arguments{
-\item{object}{The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object}
+getRegistry()
 }
 \value{
 Tibble describing the registry
 }
 \details{
-Obtains the function registry from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble,
+Obtains the function registry from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble,
      including both predefined and user defined functions
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
-  \code{\link{getPipeline}}, \code{\link{initialize}},
-  \code{\link{loadPipeline}}, \code{\link{readInput}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{generateOutput}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}},
+  \code{\link{loadPredefinedFunctionRegistry}},
+  \code{\link{prepExecution}},
   \code{\link{registerFunction}},
-  \code{\link{savePipeline}}, \code{\link{updateObject}}
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
+  \code{\link{updateObject}},
+  \code{\link{visualizePipeline}}
 }

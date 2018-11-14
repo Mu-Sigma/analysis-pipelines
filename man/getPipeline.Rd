@@ -7,20 +7,33 @@
 getPipeline(object)
 }
 \arguments{
-\item{object}{The \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object}
+\item{object}{The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
 }
 \value{
 Tibble describing the pipeline
 }
 \details{
-Obtains the pipeline from the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object as a tibble
+Obtains the pipeline from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
-  \code{\link{getRegistry}}, \code{\link{initialize}},
-  \code{\link{loadPipeline}}, \code{\link{readInput}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{generateOutput}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getRegistry}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}},
+  \code{\link{loadPredefinedFunctionRegistry}},
+  \code{\link{prepExecution}},
   \code{\link{registerFunction}},
-  \code{\link{savePipeline}}, \code{\link{updateObject}}
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
+  \code{\link{updateObject}},
+  \code{\link{visualizePipeline}}
 }

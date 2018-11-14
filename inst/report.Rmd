@@ -1,89 +1,91 @@
 ---
-title: "Analysis results"
-subtitle: v`r if (!require(rjson)) {install.packages('rjson', dependencies = T, repos = "http://cloud.r-project.org/");};date=(`r format(Sys.Date(), "%B %d, %Y")`)
+title: "Analysis Pipeline Results"
 
-output: 
-  html_document
-   
+subtitle: '`r format(Sys.Date(), "%B %d, %Y")`'
+
+output: html_document
+  
 params:
-  input: !r data.frame()
-  recipe: !r tibble(
-      operation = character(),
-      functionName = character(),
-      parameters = list()
-    )
-  output: !r list()
-
+  obj: r! analysisPipelines::AnalysisPipeline() 
 ---
 
-## Quick Peek
-```{r quick peek,echo=FALSE,warning=FALSE,results='asis'}
-library(analysisRecipes)
-input <<- params$input
-recipe <- params$recipe
-output <- params$output
+## Pipeline Visualization
 
-DT::datatable(head(input),options = list(scrollX=T))
+```{r echo=FALSE, warning=FALSE, comment=FALSE, message=FALSE, results='asis', fig.width = 12, out.width = '100%'}
+obj <- params$obj
+input <- obj@input
+pipelineDetails <-obj@pipeline
+output <- obj@output
+
+
+analysisPipelines::visualizePipeline(obj)
 ```
 
 
-     
-
+## Quick Peek
+```{r quick peek,echo=FALSE,warning=FALSE,results='asis', fig.width = 12, out.width = '100%'}
+DT::datatable(head(input),options = list(scrollX = T, scrollY = T))
+```
 
 
 ```{r, echo =FALSE,warnings=FALSE,results='asis'}
 
-rowNo <- 1
+# rowNo <- 1
 outputDiagram <- ""
 
+storedOps <- pipelineDetails %>>% dplyr::filter(storeOutput == T)
 
-
-while(1) {
-
-    if(recipe[['operation']][[rowNo]] != recipe[['operation']][[rowNo+1]]){
-        knit_expanded <- paste0(
-            "\n```{r chunk",rowNo,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
+for(i in storedOps$id){
+          opTable <- storedOps %>>% dplyr::filter(id == i)
+          obj%>>% getOutputById(i) -> op
+          knit_expanded <- paste0(
+            "\n```{r chunk",i,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
             \n\n
-            cat('## ",recipe[['heading']][[rowNo]]," \n')
+            cat('## ",opTable$heading," \n')
             \n\n
-            output[[",rowNo,"]]
+            op
             \n```
             \n\n"
         )
         outputDiagram <- paste0(outputDiagram, knit_expanded)
-        rowNo <- rowNo + 1
-
-    }
-    else
-    {
-      outputDiagram <- paste0(outputDiagram, "\n`r {\"## ",recipe[['heading']][rowNo]," {.tabset}\"}`\n\n")
-      tabNo=1
-      while (1){
-        knit_expanded <- paste0(
-            "\n```{r chunk",rowNo,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
-            \n\n
-            cat('### ",tabNo," \n')
-            \n\n
-            output[[",rowNo,"]]
-            \n```
-            \n\n"
-        )
-        outputDiagram <- paste0(outputDiagram, knit_expanded)
-        rowNo <- rowNo + 1
-        tabNo <- tabNo + 1
-        if(recipe[['operation']][rowNo] != recipe[['operation']][rowNo-1])
-          break
-      }
-    }
-  
-    if(rowNo > length(output))
-      break    
-
 }
+
+# while(1) {
+# 
+#     if(pipelineDetails[['operation']][[rowNo]] != pipelineDetails[['operation']][[rowNo+1]]){
+# 
+#         rowNo <- rowNo + 1
+# 
+#     }
+    # else
+    # # {
+    #   outputDiagram <- paste0(outputDiagram, "\n`r {\"## ",pipelineDetails[['heading']][rowNo]," {.tabset}\"}`\n\n")
+    #   tabNo=1
+    #   while (1){
+    #     knit_expanded <- paste0(
+    #         "\n```{r chunk",rowNo,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
+    #         \n\n
+    #         cat('### ",tabNo," \n')
+    #         \n\n
+    #         output[[",rowNo,"]]
+    #         \n```
+    #         \n\n"
+    #     )
+    #     outputDiagram <- paste0(outputDiagram, knit_expanded)
+    #     rowNo <- rowNo + 1
+    #     tabNo <- tabNo + 1
+    #     if(pipelineDetails[['operation']][rowNo] != pipelineDetails[['operation']][rowNo-1])
+    #       break
+    #   }
+    # }
+    # 
+    # if(rowNo > length(output))
+    #   break    
+
+# }
 
 
 ```
-
 
 
 `r paste(knitr::knit(text = outputDiagram), collapse = '\n')`

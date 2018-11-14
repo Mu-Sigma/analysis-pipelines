@@ -1,146 +1,186 @@
 ---
-title: "Analysis pipelines for working with R data frames"
-author: "Sanjay, Neeratyoy Mallik, Naren Srinivasan"
-date: "8/24/2018"
-output: rmarkdown::html_vignette
+title: "Analysis pipelines - Core functionality and working with R data frames and functions"
+author: "Naren Srinivasan, Sanjay"
+date: "11/13/2018"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    fig_width: 8
 vignette: >
   %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-<!-- ###TODO: Improve language and description -->
+# An overview of the package
 
-# Objective
+In a typical data science workflow there are multiple steps involved from data aggregation, cleaning, exploratory analysis, modeling and so on. As the data science community matures, we are seeing that there are a variety of languages which provide better capabilities for specific steps in the data science workflow. *R* is typically used for data transformations, statistical models, and visualizations, while *Python* provides more robust functions for machine learning. In addition to this, *Spark* provides an environment to process high volume data - both as one-time/ batch or as streams.
 
-* Providing an overview of what the analysisPipelines package offers
+The job of today's data scientist is changing from one where they are married to a specific tool or language, to one where they are using all these tools for their specialized purposes. The key problem then becomes one of translation between these tools for seamless analysis.
 
-# Introduction
+Recently in the data science community, interfaces for using these various tools have been published. In terms of R packages, the *reticulate* package provides an interface to Python, and the *SparkR* and *sparklyr* packages provide an interface to Spark. 
 
-Exploratory Data Analysis (EDA) offers the first interaction with data. It, therefore, plays an important role in revealing properties and features of the data. Features that can provide a direction for the rest of the analysis. Even though EDA is a crucial initial step, it often helps if it can be done rapidly. Since the subsequent steps in an analytical flow is what often creates the bottleneck in terms of turnaround time.<br>
+The *analysisPipelines* package uses these interfaces to enable *Interoperable Pipelines* i.e. the ability define an execute a reusable data science pipeline which can contain functions to be executed in an R environment, in a Python environment or in a Spark environment. These pipelines can saved and loaded, to enable batch operation as datasets get updated with new data.
 
-The EDA utility that this handbook describes, attempts at making the entire EDA phase of an analytical journey - 
+Additionally, in the work of a data scientist, there is a need to perform the same task repeatedly, as well as put certain analysis flows (or) pipelines into production to work on new data periodically, or work on streaming data.
 
-* <i>Modular</i> through the use of an API-like off-the-shelf functions to implement common EDA techniques
-* <i>Descriptive chaining</i> by adhering to the tidyverse paradigm of piping operations in a cascading manner
-* <i>Flexibility</i> to use any custom function defined by any user, that can work in the paradigm defined above
-* <i>Light on memory</i> through lazy evaluation of the functions that have been piped, i.e., the actual execution happens selectively
-* <i>Reproducible</i> and <i>scalable</i> since pipelines can be exported and reused with new data and/or standard R code
+The goal of the *analysisPipelines* package is to enable data scientists to compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. It also aims to enable data scientists to use tools of their choice through an *R* interface, and compose **interoperable** pipelines between *R, Spark, and Python.*
 
-The sections below will provide sample code and a walkthrough in using the utility. The sections should also highlight the features this utility has to offer.
+Essentially, it allows data scientists to:
 
-<br>
+* Compose **reusable, interoperable** pipelines in a flexible manner
+* Leverage available utility functions for performing different analytical operations
+* Put these pipelines into production in order to execute repeatedly
+* Generated analysis reports by executing these pipelines
 
-# Loading the package
+## Types of pipelines
 
-```{r sourcing}
+This package supports for both **batch/ repeated** pipelines, as well as *streaming pipelines.*
+
+For *batch* pipelines, the vision is to enable interoperable pipelines which execute efficiently with functions in *R*, *Spark* and *Python*
+
+For *streaming* pipelines, the package allows for streaming analyses through *Spark Structured Streaming.*
+
+## Classes and implementation
+
+The *analysisPipelines* package uses S4 classes and methods to implement all the core functionality. The fundamental class exposed in this package is the *BaseAnalysisPipeline* class on which most of the core functions are implemented. The user, however, interacts with the *AnalysisPipeline* and *StreamingAnalysisPipeline* classes for batch and streaming analysis respectively. In this vignette, we work with the *AnalysisPipeline* class, with functions solely in R.
+
+## Pipelining semantics
+
+The package stays true to the *tidyverse* pipelining style which also fits nicely into the idea of creating pipelines. The core mechanism in the package is too instantiate a pipeline with data and then pipeline required functions to the object itself.
+
+The package allows both the use of *magrittr* pipe **(%>%)** or the *pipeR* pipe **(%>>%)**.
+
+## Supported engines
+
+As of this version, the package supports functions executed on *R*, or *Spark* through the SparkR interface for batch pipelines. It also supports *Spark Structured Streaming* pipelines for streaming analyses. In subsequent releases, *Python* will also be supported
+
+## Available vignettes
+
+This package contains 5 vignettes:
+
+* This is the main vignette describing the package's core functionality, and explaining this through **batch** pipelines in just **R**
+* **Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses** - This vignette describes creating **batch** pipelines to execute in solely in a *Spark* environment 
+* **Interoperable analysis pipelines** - This vignette describes creating and executing **batch** pipelines which are composed of functions executing across *supported engines*
+* **Streaming Analysis Pipelines for working with Apache Spark Structured Streaming** - This vignette describes setting up streaming pipelines on *Apache Spark Structured Streaming*
+* **Using pipelines inside Shiny widgets or apps** - A brief vignette which illustrates an example of using a pipeline inside a shiny widget with reactive elements and changing data
+
+# Usage
+
+## Loading the package
+
+```{r sourcing, message=F, results='hide'}
 library(analysisPipelines)
 ```
 
-<br>
+## Creating an analysisPipeline object
 
-# Creating an analysisPipeline object
-
-The analysisPipelines package has been written as per R's S4 object system standard. 
-<br>
-To work with the package, one needs to call the constructor by specifying a file as an input.
+An object of class *AnalysisPipeline* can be created like so:
 
 ```{r creating object, warning=F}
-obj <- readInput(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
+obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 class(obj)
 ```
 
-The object created is of type <i>"AnalysisPipeline"</i>. The object contains the following attributes:
+While initializing the object, an input dataframe can be provided on which the pipeline should work, either by providing the filePath to a *.csv* file through the *filePath* argument, or by providing R dataframe available in the session, through the *input* argument
 
-* input - stores the data frame read by the constructor
-* workingInput - Internal
-* pipeline - stores a tibble object which can store a sequence of function calls
-* registry - stores the list of function names that are available to the object
-* output - stores the output of each operation when a pipeline is evaluated 
+The *AnalysisPipeline* object has a set of getters, for retrieving various slots containing data and metadata required for pipeline execution. The most basic of them is the *getInput* method which retrieves the input dataframe with which the object has been initialized. If not initialized with a dataframe, the *setInput* method can be used to do so.
 
 ```{r printing object contents, warning=F}
 obj %>>% getInput %>>% str
-obj %>>% getRegistry
+getRegistry()
 ```
 
-<br>
+The *getRegistry* function retrieves the set of functions and their metadata available for pipelining. Any *AnalysisPipeline* object comes with a set of pre-registered functions which can be used **out-of-the-box**. Of course, the user can register her own functions, to be used in the pipeline. We will look at this later on in the vignette.
 
-# Chaining operations
+There are two types of functions which can be pipelined:
 
-The pipe (%>>%) operator used here works in a similar manner to the tidyverse paradigm where operations can be chained, and data can flow in a cascaded manner. The package comes with some predefined functions, [currently mostly for generating exploratory analysis plots], which can be directly used in the chaining operation. Take a look at the registry of the object to see what functions are available. Every function, by default takes in the input data frame as the first input (need not be specified explicitly)
+* **Data functions** - These functions necessarily take their **first** argument as a dataframe. These are functions focused on performing operations on data
+* **Non-data functions** - These are auxiliary helper functions which are required in a pipeline, which do not operate on data.
+
+Both pre-registered and user-defined functions work with the *AnalysisPipeline* object in the same way i.e. regardless of who writes the function, they follow the same semantics.
+
+## Creating a simple pipeline
+
+We'll now take a look at creating a simple pipeline, with some of the pre-registered functions available in the registry. We pipeline the *univarCatDistPlots* function (available as a pre-registered utility function,which generates a chart showing distribution of a categorical variable in a dataset), by simply using the *pipe* or *double pipe* operator, and providing the required additional parameters apart from the *data* on which it needs to operate, as we have already initialized the *AnalysisPipeline* object with the data.
+
+Note that unless assigned to the same or another object, the pipeline does not get stored.
+
+We can access the details of the pipeline as a tibble through the `getPipeline` method.
+
 
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
-
-obj <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0)
-obj %>>% getPipeline
+# ?analysisPipelines::univarCatDistPlots
+obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0, storeOutput = T)
+obj1 %>>% getPipeline
 ```
+
+
+We now construct a pipeline with a couple of functions, one to generate a categorical distribution plot, and another one for outliers.
 
 ```{r pipe demo 2, warning=F}
 # Running univariate categorical distribution plot and then 
 # outlier detection on the constructed object
 
-obj <- obj %>>% 
-  univarCatDistPlots(uniCol = "location_type", priColor = "blue", optionalPlots = 0) %>>% 
-  outlierPlot(method = "iqr", columnName = "Occupancy", 
-              cutoffValue = 0.01, priColor = "blue", optionalPlots = 0)
-obj %>>% getPipeline
+obj %>>% univarCatDistPlots(uniCol = "location_type", priColor = "green", optionalPlots = 0) %>>% 
+         outlierPlot(method = "iqr", columnName = "Occupancy", 
+              cutoffValue = 0.01, priColor = "blue", optionalPlots = 0, storeOutput = T) -> obj2
+obj2 %>>% getPipeline
 ```
 
-<br>
+Apart from the parameters required for the function, a couple of additional parameters can be passed to registered functions when adding them to the pipeline:
 
-# Lazy evaluation
+* **outAsIn** - This parameter defines if the original dataframe with which the object was initialized should be taken as input to this function (for data functions), or the output of the previous function in the pipeline should be used. By default, this is FALSE
+* **storeOutput** - Whether the output of this step in the pipeline should be stored. By default, this is FALSE.
 
-The sequence of operations is stored as metadata. It is only processed when an evaluation is exclusively triggered through a call to <i>generateOutput()</i> (available in the utility), or when generating an HTML report based on the pipeline. <br>
+## Lazy evaluation
 
-If noticed, the <i>output</i> attribute of the EDA object is empty so far.
+It is important to note that the functions in the pipeline are not actually **called** when the pipeline is defined. This can be seen by looking at the *output* slot of the pipeline we defined above.
 
 ```{r lazy eval 1}
-length(obj@output)
+length(obj1@output)
 ```
 
-However, a specific function call can generate the output of the pipeline stored in the object. Which is then stored in the <i>output</i> attribute of the object.
+The pipeline can be executed by explicitly calling the `generateOutput` method and assigning it to a variable.
 
 ```{r lazy eval 2, warning=F}
-obj1 <- obj %>>% generateOutput()
-length(obj1@output)
+obj1Output <- obj1 %>>% generateOutput
+length(obj1Output@output)
 ```
 
 Observe that the length of the output list of the first object (the chunk above) remains 0 since the generated output was assigned to a new object.
 
 ```{r lazy eval 2.5, warning=F}
-length(obj@output)
+length(obj1@output)
 ```
 
-A specific output can be viewed by providing the position of the function generating the output in the sequence of operations in the pipeline. This can be obtained from the "order" column in the "pipeline" table corresponding to the function whose output is desired
+A specific output can be viewed by providing the ID of the function in the pipeline to the `getOutputById` method. The ID can be obtained from the *id* column in the *pipeline* tibble. corresponding to the function whose output is desired.
 
 ```{r lazy eval 3, warning=F}
 # The index can range from 1 to length(obj@output)
-obj1 %>>% getOuputByOrderId(3)
+obj1Output %>>% getOutputById("1")
 ```
 
-<br>
+# User-defined functions
 
-# Registering a new function
+## Registering your own function
 
-On invoking the constructor, i.e., creating an object of type AnalysisPipeline, the functions defined in the list are <i>registered</i> for the said object. The list of registered functions can be viewed as <i>obj@registry</i>. The package has the option to add any user-defined function to this list of functions,  <br>
-The only <b>constraint</b> for registering an user-defined function is that the first parameter in the argument list must be a data frame.
-<br>
-Let us demonstrate this with an example.
+You can register your own *data* or *non-data* functions by calling `registerFunction.` This adds the user-defined function to the registry. The registry is maintained by the package and once registered, functions can be used across pipeline objects. The registry can be view by calling the `getRegistry` function.
 
 ```{r current register, warning=FALSE}
 # Currently registered functions
-obj %>>% getRegistry
+getRegistry()
 ```
 
-Currently, the package does not have a function to plot bivariate distributions. Let us define a function which can do it for us.
+In order to register a function, first the function must be defined in the Global environment, before calling `registerFunction`.
 
 ```{r bivariate definition}
-bivariatePlots <- function(object, select_var_name_1, select_var_name_2, 
+bivariatePlots <- function(dataset, select_var_name_1, select_var_name_2, 
                        priColor = "blue", secColor='black') {
-  x=object[, select_var_name_1]
-  y=object[, select_var_name_2]
-  bivarPlot <- ggplot2::ggplot(object, ggplot2::aes(x,y)) +
+  x=dataset[, select_var_name_1]
+  y=dataset[, select_var_name_2]
+  bivarPlot <- ggplot2::ggplot(dataset, ggplot2::aes(x,y)) +
     ggplot2::geom_point(color=priColor,alpha=0.7) +
     ggplot2::geom_smooth(method = lm,color=secColor) +
     ggplot2::xlab(select_var_name_1) +
@@ -153,83 +193,162 @@ bivariatePlots <- function(object, select_var_name_1, select_var_name_2,
                    axis.title=ggplot2::element_text(size=10))
   return(bivarPlot)
 }
+
+registerFunction(functionName = "bivariatePlots", heading = "Bivariate Analysis")
 ```
 
-This user-defined function can now be registered as part of the AnalysisPipeline object created. Following which, the updated registry will show that the object has at its disposal an additional function which was not defined in the utility.
+## Adding the newly registered function to a pipeline
 
-```{r register function, warning=F}
-# The first parameter provides the function name
-# The second parameter allows for a header that will feature in the report
-obj <- obj %>>% registerFunction('bivariatePlots', "Bivariate Plots")
-
-# Printing the updated registry
-obj %>>% getRegistry
-```
-
-### Using newly registered function with lazy eval of pipeline
-
-Now that a new user-defined function is also available along with the existing functions, all the features can be leveraged in unison.
+Now the newly registered user-defined function can be used as part of the pipeline, exactly as described before. For example, we add it to a pipeline which already contains some functions. The function then gets added to the end of the pipeline
 
 ```{r register function 2, warning=F}
 # Chaining the user-defined function to the object's pipeline where it was registered
-obj <- obj %>>% 
+obj2 <- obj2 %>>% 
   bivariatePlots(select_var_name_1 = 'Occupancy', select_var_name_2 = 'max_rooms_capacity', 
                  priColor = "blue", secColor = "black")
 
 # Printing the updated pipeline
-obj %>>% getPipeline
+obj2 %>>% getPipeline
 ```
 
 The newly added function will also lazy evaluate depending on the trigger.
 
 ```{r register function 3, warning=F}
-obj2 <- obj %>>% generateOutput()
-obj2 %>>% getOuputByOrderId(4)
+obj2Output <- obj2 %>>% generateOutput()
+obj2Output %>>% getOutputById("1")
+obj2Output %>>% getPipeline()
 ```
 
-<br>
+# Complex pipelines and formula semantics
 
-# Generate Report
+In addition to the simple pipelines described above, more complex pipelines can also be defined. There are cases when the outputs of previous functions in the pipeline, as inputs to arbitrary parameters of subsequent functions. This is *apart* from the **data** which is passed through in a more *native* manner through the *outAsIn* argument to subsequent functions in the pipeline.
 
-Object and lists stored in the memory are not consumable. Hence, the package allows for the option to knit a pipeline's outputs into a neat HTML file, which can serve as a report of the analysis performed.
+The package defines certain *formula* semantics to accomplish this. We take the example of two simple user-defined functions, both which simply return the color of the graph, as well as the column on which the graph should be plotted, in order to illustrate how this works.
+
+```{r}
+getColor <- function(color){
+  return(color)
+}
+
+getColumnName <-function(columnName){
+  return(columnName)
+}
+
+registerFunction(functionName = "getColor", isDataFunction = F, firstArgClass = "character")
+registerFunction(functionName = "getColumnName", isDataFunction = F, firstArgClass = "character")
+
+getRegistry()
+```
+
+
+In the following pipeline, we pass the colour and column name we want to the *non-data* functions we defined, and use the output of those in subsequent functions. This can be done simply by specifying a **formula** of the form 'f*id*' against the argument to which we want to pass the output. The ID represents the ID of the function in the pipeline. For example, to pass the output of function with ID '1' as an argument to a parameter of a subsequent function, the formula '~f1' is passed to that corresponding argument.
+
+```{r}
+obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy") %>>%
+      univarCatDistPlots(uniCol = "building_type", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
+      outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
+
+complexPipeline %>>% getPipeline
+complexPipeline %>>% generateOutput -> op
+op %>>% getOutputById("4")
+```
+
+# Visualizing pipelines
+
+These pipelines can be visualized by calling the `visualizePipeline` method. This generates the whole pipeline as a network, showing the engines on which each function is run, and which outputs are stored.
+
+```{r out.width=10}
+complexPipeline %>>% visualizePipeline
+```
+
+# Generating reports
+
+The generated output can easily be rendered into a beautiful, formatted report by calling the `generateReport` method. The report is a *html* file which contains the stored outputs, as well as a peek into the data and the pipeline that was executed.
 
 ```{r generate report and tabs, warning=F,  eval=F}
-# generateReport() needs a destination path as an argument
-# The function writes a HTML file with a name in the format 'EDA_report_[timestamp].html'
-obj2 %>>% generateReport('~/Desktop')
+obj2Output %>>% generateReport(path = '~/Desktop')
 ```
-
-In the above case, since the object had the output evaluated and stored in the <i>output</i> attribute, the function call only knits the output into an HTML file. <br>
-In the example below, the object has an empty output attribute. The function call, in this case, evaluates the outputs and then knits them into an HTML file.
 
 ```{r generate report and tabs 2, message=FALSE, warning=FALSE, eval=FALSE}
-obj <- obj %>>% bivariatePlots('Occupancy', 'PercentTransientNights', 
+objRep <- obj %>>% bivariatePlots('Occupancy', 'PercentTransientNights', 
                            priColor = "blue", secColor = "black")
 
-obj %>>% generateReport('~/Desktop')
+objRep %>>% generateReport(path = '~/Desktop')
 ```
 
-<b>NOTE</b>: A sample of the above report can be found in the <i>support/</i> folder of the utility.
+# Saving and loading pipelines
 
-<br>
+Pipelines can also be saved and loaded for re-use and execution on new data. The pipeline can be saved by calling the `savePipeline` function. On save, both the pipeline and the existing state of the registry is saved (including both predefined as well as user-defined functions).
 
-# Save and Load Pipelines
-
-The pipelines stored as an attribute in the object are effectively meta pipelines which document the steps in an EDA pipeline. These can be exported and re-read by certain functions available in this EDA utility. The pipelines are generic enough to work with the schema of the data that was used to invoke the constructor. Therefore, this pipeline can be used on any data of the same schema.
-
-```{r save pipelines, message=FALSE, warning=FALSE, eval=TRUE}
-# Saves the pipeline and registry of the EDA object
-savePipeline(obj, 'pipeline.RDS')
+```{r save pipelines, message=FALSE, warning=FALSE, eval=FALSE}
+obj2 %>>% savePipeline(path = 'pipeline.RDS')
 ```
 
-This pipeline can be loaded and re-used with any other data set.
+This pipeline can be loaded and while loading *instantiated* with a new dataset of the *same* schema as that which was used in the original pipeline (in order to prevent errors). This can be used for a variety of purposes such as:
 
-```{r load pipelines, message=FALSE, warning=FALSE, eval=T}
+* predict on new data
+* perform certain data manipulations on new data
+* re-run the analysis on a different subset
+
+```{r load pipelines, message=FALSE, warning=FALSE, eval=FALSE}
+library(analysisPipelines)
 obj2 <- loadPipeline('pipeline.RDS',filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
 
-obj2 %>% getRegistry
+getRegistry()
 obj2 %>% getPipeline
 ```
 
-<br>
+# Details of execution
+
+This section provides an overview of how pipelines are executed, along with additional features such as **logging** and **exception handling.**
+
+## Execution mechanism
+
+The 'analysisPipelines' package internally converts the pipeline defined by the user into a **directed graph** which captures dependencies of each function in the pipeline on data, other arguments as well as outputs as other functions. 
+
+### Topological sort and ordering
+
+When it is required to generate the output, the pipeline is first *prepped* by performing a **topological sort** of the directed graph, and identifying *sets (or)  batches* of independent functions and a sequence of *batches* for execution. A later release of the package will allow for parallel execution of these independent functions
+
+### Memory management & garbage cleaning
+
+Memory is managed efficiently, by only storing outputs which the user has explicitly specified, or temporarily storing intermediate outputs required for subsequent functions **only until** they are required for processing. Garbage cleaning is performed after the execution of each *batch* in order to manage memory effectively.
+
+### Type conversions
+
+In the case of *Interoperable pipelines* executing across multiple engines such as *R, Spark and Python*, type conversions between data types in the different engines is **minimized** by identifying the optimal number of type conversions, before execution starts
+
+## Logging & Execution times
+
+The package provides logging capabilities for execution of pipelines, as you might have noted when the output was generated in sections above. By default, logs are written to the *console*, but alternatively the user can specify an output file to which the logs need to be written through the `setLoggerDetails` function.
+
+```{r}
+obj2 %>>% setLoggerDetails(target = "file") -> obj2
+```
+
+Logs capture errors, as well as provide information on the steps being performed, execution times and so on.
+
+## Custom exception-handling
+
+By default, when a function is registered, a generic exception handling function which captures the R error message, in case of error is registered against each function in the registry. The user can define a custom exception handling function, by defining it and providing it during the time of registration. The function should take 1 argument, which is the error object.
+
+
+```{r register function, warning=F}
+
+sampleFunction <- function(text){
+  return(text)
+}
+
+sampleException <- function(error){
+  stop("There was an error with the provided input")
+}
+
+registerFunction(functionName = 'sampleFunction', "Sample", exceptionFunction = "sampleException")
+
+getRegistry()
+```
+
+
+
+
 
