@@ -12,6 +12,9 @@ getLoggerDetails(object)
 \value{
 Logger configuration as a list
 }
+\description{
+Obtains the logger configuration for the pipeline
+}
 \details{
 This function obtains the logger configuration for the pipeline.
 }
@@ -34,3 +37,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
+\concept{Package core functions}

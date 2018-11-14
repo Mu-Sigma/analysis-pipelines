@@ -23,6 +23,9 @@ updateObject(object, operation, heading = "", parameters, outAsIn = F,
 \value{
 Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 }
+\description{
+Update the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by adding an operation to the pipeline
+}
 \details{
 The specified operation along with the heading and parameters is updated in the pipeline slot
       of the  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations
@@ -50,3 +53,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{setLoggerDetails}},
   \code{\link{visualizePipeline}}
 }
+\concept{Package core functions}

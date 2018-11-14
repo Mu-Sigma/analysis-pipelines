@@ -1,6 +1,6 @@
 ##################################################################################################
 # Title: Reusable pipelines for generating analyses outputs and reports
-# Version: 18.09.01
+# Author: Naren Srinivasan
 # Created on: July 12, 2018
 # Description: An R package version which works both on R data frames, and a Spark environment i.e.
 #              Spark DataFrames including Structured Streaming
@@ -84,7 +84,7 @@ setMethod(
       #   engine = character(),
       #   exceptionHandlingFunction = character(),
       #   userDefined = logical(),
-      #   isDataFunction = logical(),
+      #   isDataFunction = #logical(),
       #   firstArgClass = character()
       # )
 
@@ -110,7 +110,7 @@ setMethod(
 #' to be reassigned in the Global Environment and then the \code{registerFunction} called again.
 #' @param functionName name of function to be registered
 #' @param heading heading of that section in report
-#' #' @param functionType type of function - 'batch' for \code{AnalysisPipeline} objects, 'streaming' for \code{StreamingAnalysisPipeline} objects
+#' @param functionType type of function - 'batch' for \code{AnalysisPipeline} objects, 'streaming' for \code{StreamingAnalysisPipeline} objects
 #' @param engine specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"
 #' @param isDataFunction logical parameter which defines whether the function to be registered operates on data i.e. the first parameter is a dataframe
 #' @param firstArgClass character string with the class of the first argument to the function, if it is a non-data function
@@ -586,10 +586,7 @@ setMethod(
 #' @name getRegistry
 #' @title Obtains the function registry
 #' @details
-#'      Obtains the function registry from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble,
-#'      including both predefined and user defined functions
-#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
-#' which extend this class
+#'      Obtains the function registry as a tibble, including both predefined and user defined functions
 #' @return Tibble describing the registry
 #' @family Package core functions
 #' @export
