@@ -1,6 +1,6 @@
 ######################################################################################################
 # Title: Functions for various EDA operations on data frames
-# Version: 18.08.01
+# Author: Naren Srinivasan, Sanjay
 # Created on: June 14, 2018
 # Description: Consolidated file for all functions
 #                to be used for EDA out of the box

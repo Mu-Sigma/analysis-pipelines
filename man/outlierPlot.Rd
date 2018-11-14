@@ -22,6 +22,9 @@ outlierPlot(data, method, columnName, cutoffValue, priColor, optionalPlots)
 \value{
 Outliers plot object
 }
+\description{
+Outlier detection plot
+}
 \details{
 Outlier are to be identified on the selected column from the dataframe
 }
@@ -33,3 +36,4 @@ Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{multiVarOutlierPlot}},
   \code{\link{univarCatDistPlots}}
 }
+\concept{Package EDA Utilites functions}
