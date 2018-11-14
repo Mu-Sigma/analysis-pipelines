@@ -22,6 +22,9 @@ Updated Pipeline object with the outputs at each step stored in the \code{output
 
 Specific outputs can be obtained by using the \link{getOuputByOrderId} function
 }
+\description{
+Generate a list of outputs from Pipeline objects
+}
 \details{
 \code{generateOutput} is a generic function that is implemented for various types of pipeline objects
 such as \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline}
@@ -48,3 +51,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
+\concept{Package core functions}

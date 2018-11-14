@@ -6,4 +6,7 @@
 \usage{
 getStartingPoints(nodes, edgeDf)
 }
+\description{
+Obtains starting nodes in a graph given nodes and edges
+}
 \keyword{internal}

@@ -15,6 +15,9 @@
 \value{
 an object of class "\code{StreamingAnalysisPipeline}", initialized with the input Spark DataFrame provided
 }
+\description{
+Constructor for the \code{StreamingAnalysisPipeline} object
+}
 \details{
 \code{input} needs to be provded and the argument needs to be of class \code{SparkDataFrame}, which is
      generally created through operations using SparkR
@@ -22,3 +25,4 @@ an object of class "\code{StreamingAnalysisPipeline}", initialized with the inpu
 \seealso{
 Other Package core functions for Streaming Analyses: \code{\link{StreamingAnalysisPipeline}}
 }
+\concept{Package core functions for Streaming Analyses}

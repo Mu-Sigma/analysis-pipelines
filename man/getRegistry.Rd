@@ -9,12 +9,11 @@ getRegistry()
 \value{
 Tibble describing the registry
 }
+\description{
+Obtains the function registry
+}
 \details{
-Obtains the function registry from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble,
-     including both predefined and user defined functions
-
-This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
-which extend this class
+Obtains the function registry as a tibble, including both predefined and user defined functions
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
@@ -35,3 +34,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
+\concept{Package core functions}
