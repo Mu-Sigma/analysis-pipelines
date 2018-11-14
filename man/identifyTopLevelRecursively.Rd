@@ -4,7 +4,10 @@
 \alias{identifyTopLevelRecursively}
 \title{Recursive function to identify the toplogical levels of the functions in a pipeline}
 \usage{
-identifyTopLevelRecursively(input = list(topDf = dplyr::tibble(), nodes = c(),
-  edgeDf = dplyr::tibble(), level = 1))
+identifyTopLevelRecursively(input = list(topDf = dplyr::tibble(), nodes =
+  c(), edgeDf = dplyr::tibble(), level = 1))
+}
+\description{
+Recursive function to identify the toplogical levels of the functions in a pipeline
 }
 \keyword{internal}

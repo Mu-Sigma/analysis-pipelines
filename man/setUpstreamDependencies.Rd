@@ -6,4 +6,7 @@
 \usage{
 setUpstreamDependencies(pipeline)
 }
+\description{
+Sets upstream dependencies for the entire pipeline
+}
 \keyword{internal}

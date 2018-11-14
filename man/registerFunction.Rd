@@ -13,8 +13,9 @@ registerFunction(functionName, heading = "", functionType = "batch",
 \arguments{
 \item{functionName}{name of function to be registered}
 
-\item{heading}{heading of that section in report
-#' @param functionType type of function - 'batch' for \code{AnalysisPipeline} objects, 'streaming' for \code{StreamingAnalysisPipeline} objects}
+\item{heading}{heading of that section in report}
+
+\item{functionType}{type of function - 'batch' for \code{AnalysisPipeline} objects, 'streaming' for \code{StreamingAnalysisPipeline} objects}
 
 \item{engine}{specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"}
 
@@ -25,6 +26,9 @@ registerFunction(functionName, heading = "", functionType = "batch",
 \item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not. This is for internal working}
 
 \item{userDefined}{logical parameter defining whether the function is user defined. By default, set to true}
+}
+\description{
+Register a user-defined function to be used with a \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 }
 \details{
 The specified operation along with the heading and engine details is stored in the registry, after which it can be added to a pipeline.
@@ -50,3 +54,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
+\concept{Package core functions}

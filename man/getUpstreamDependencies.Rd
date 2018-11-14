@@ -6,4 +6,7 @@
 \usage{
 getUpstreamDependencies(row)
 }
+\description{
+Obtains upstream dependencies for \code{AnalysisPipeline} objects
+}
 \keyword{internal}

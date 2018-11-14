@@ -12,6 +12,9 @@ visualizePipeline(object)
 \value{
 A graph object which can be printed (or) plotted to visualize the pipeline
 }
+\description{
+Visualizes the pipeline as a graph
+}
 \details{
 Indicates dependencies amongst functions as well as functions for which output
 needs to be stored
@@ -35,3 +38,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{setLoggerDetails}},
   \code{\link{updateObject}}
 }
+\concept{Package core functions}

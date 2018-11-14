@@ -1,6 +1,6 @@
 ######################################################################################################
 # Title: Utility functions for working with Spark through R
-# Version: 18.08.01
+# Author: Naren Srinivasan, Anoop S
 # Created on: August 24, 2018
 # Description: Functions to work with Spark, incuding Structured Streaming
 ######################################################################################################

@@ -1,7 +1,7 @@
 Package: analysisPipelines
 Type: Package
 Title: Compose interoperable analysis pipelines, and put them into production
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
       person("Naren","Srinivasan", email = "Naren.Srinivasan@mu-sigma.com", role = c("cre","aut")),
       person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("ctb")),
@@ -10,14 +10,14 @@ Authors@R: c(
 		  )
 Description: The package aims at enabling data scientists to compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. It also aims to enable data scientists to use tools of their choice through an R interface, and compose interoperable pipelines between R, Spark, and Python.
 Depends: R (>= 3.4.0), tibble, magrittr, data.table, pipeR, devtools
-Imports: ggplot2, dplyr, futile.logger
-Suggests: plotly, knitr, rmarkdown, SparkR, parallel, visNetwork, rjson, DT
+Imports: ggplot2, dplyr, futile.logger, RCurl
+Suggests: plotly, knitr, rmarkdown, SparkR, parallel, visNetwork, rjson, DT, shiny
 Remotes: github::cran/SparkR
 Encoding: UTF-8
 License: Apache License 2.0
 LazyLoad: yes
 LazyData: yes
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 VignetteBuilder: knitr
 Collate: 
     'analysisPipelines_package.R'

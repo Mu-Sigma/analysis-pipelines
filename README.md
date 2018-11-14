@@ -3,7 +3,7 @@
 2. [Usage](#Usage)
 3. [Key features](#Key_features)
 
-# An overview of the package
+#An overview of the package
 
 In a typical data science workflow there are multiple steps involved from data aggregation, cleaning, exploratory analysis, modeling and so on. As the data science community matures, we are seeing that there are a variety of languages which provide better capabilities for specific steps in the data science workflow. *R* is typically used for data transformations, statistical models, and visualizations, while *Python* provides more robust functions for machine learning. In addition to this, *Spark* provides an environment to process high volume data - both as one-time/ batch or as streams.
 
@@ -57,7 +57,7 @@ This package contains 5 vignettes:
 * **Using pipelines inside Shiny widgets or apps** - A brief vignette which illustrates an example of using a pipeline inside a shiny widget with reactive elements and changing data
 
 
-# Usage
+#Usage
 
 ## Loading the package
 
@@ -107,7 +107,7 @@ obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue",
 obj1 %>>% getPipeline
 ```
 
-# Key features
+#Key features
 
 ## User-defined functions
 

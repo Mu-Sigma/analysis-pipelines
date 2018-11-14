@@ -6,4 +6,7 @@
 \usage{
 initializeLoggers(object)
 }
+\description{
+intializes the loggers with the required appenders and layout based on the provided configuration
+}
 \keyword{internal}
