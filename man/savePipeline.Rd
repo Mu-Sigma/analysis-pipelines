@@ -2,27 +2,41 @@
 % Please edit documentation in R/core-functions.R
 \name{savePipeline}
 \alias{savePipeline}
-\title{Saves the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline}  object to the file system without outputs}
+\title{Saves the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object to the file system without outputs}
 \usage{
-savePipeline(object, RDSPath)
+savePipeline(object, path)
 }
 \arguments{
 \item{object}{object that contains input, pipeline, registry and output}
 
-\item{RDSPath}{the path at which the .RDS file containing the pipeline should be stored}
+\item{path}{the path at which the .Rda file containing the pipeline should be stored, along with the name of the file including
+a .Rda extension}
 }
 \value{
 Does not return a value
 }
 \details{
-The \code{AnalysisPipeline} object is saved to the file system in the paths specified
+The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object is saved to the file system in the paths specified
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
-  \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadPipeline}},
-  \code{\link{readInput}}, \code{\link{registerFunction}},
-  \code{\link{updateObject}}
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{generateOutput}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{getRegistry}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}},
+  \code{\link{loadPredefinedFunctionRegistry}},
+  \code{\link{prepExecution}},
+  \code{\link{registerFunction}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
+  \code{\link{updateObject}},
+  \code{\link{visualizePipeline}}
 }

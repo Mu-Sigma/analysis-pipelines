@@ -2,9 +2,10 @@
 % Please edit documentation in R/core-functions.R
 \name{updateObject}
 \alias{updateObject}
-\title{Update the \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object by adding an operation to the pipeline}
+\title{Update the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by adding an operation to the pipeline}
 \usage{
-updateObject(object, operation, heading = "", parameters, outAsIn = F)
+updateObject(object, operation, heading = "", parameters, outAsIn = F,
+  storeOutput = F)
 }
 \arguments{
 \item{object}{object that contains input, pipeline, registry and output}
@@ -16,21 +17,36 @@ updateObject(object, operation, heading = "", parameters, outAsIn = F)
 \item{parameters}{parameters passed to that function}
 
 \item{outAsIn}{whether to use original input or output from previous function}
+
+\item{storeOutput}{whether the output of this operation is to be stored}
 }
 \value{
-Updated \code{AnalysisPipeline} object
+Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 }
 \details{
 The specified operation along with the heading and parameters is updated in the pipeline slot
-      of the  \code{AnalysisPipeline} or \code{SparkAnalysisPipeline} object, where the sequence of operations
+      of the  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, where the sequence of operations
      to be performed is stored
+
+This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
+which extend this class
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
-  \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadPipeline}},
-  \code{\link{readInput}}, \code{\link{registerFunction}},
-  \code{\link{savePipeline}}
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{generateOutput}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{getRegistry}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}},
+  \code{\link{loadPredefinedFunctionRegistry}},
+  \code{\link{prepExecution}},
+  \code{\link{registerFunction}},
+  \code{\link{savePipeline}}, \code{\link{setInput}},
+  \code{\link{setLoggerDetails}},
+  \code{\link{visualizePipeline}}
 }

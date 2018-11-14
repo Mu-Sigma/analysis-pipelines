@@ -2,37 +2,51 @@
 % Please edit documentation in R/core-functions.R
 \name{registerFunction}
 \alias{registerFunction}
-\title{Register a user-defined function to be used with \code{AnalysisPipeline} objects}
+\title{Register a user-defined function to be used with a \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object}
 \usage{
-registerFunction(object, functionName, heading = "", outAsIn = F,
-  loadPipeline = F, userDefined = T, session = session)
+registerFunction(functionName, heading = "", functionType = "batch",
+  engine = "r",
+  exceptionFunction = as.character(substitute(genericPipelineException)),
+  isDataFunction = T, firstArgClass = "", loadPipeline = F,
+  userDefined = T)
 }
 \arguments{
-\item{object}{object that contains input, pipeline, registry and output}
-
 \item{functionName}{name of function to be registered}
 
-\item{heading}{heading of that section in report}
+\item{heading}{heading of that section in report
+#' @param functionType type of function - 'batch' for \code{AnalysisPipeline} objects, 'streaming' for \code{StreamingAnalysisPipeline} objects}
 
-\item{outAsIn}{whether to use original input or output from previous function}
+\item{engine}{specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"}
 
-\item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not}
+\item{isDataFunction}{logical parameter which defines whether the function to be registered operates on data i.e. the first parameter is a dataframe}
 
-\item{session}{to load shiny session in the function}
-}
-\value{
-Updated \code{AnalysisPipeline} object
+\item{firstArgClass}{character string with the class of the first argument to the function, if it is a non-data function}
+
+\item{loadPipeline}{logical parameter to see if function is being used in loadPipeline or not. This is for internal working}
+
+\item{userDefined}{logical parameter defining whether the function is user defined. By default, set to true}
 }
 \details{
-The specified operation along with the heading and parameters is updated in the pipeline slot
-      of the AnalysisPipeline object, where the sequence of operations to be performed is stored
+The specified operation along with the heading and engine details is stored in the registry, after which it can be added to a pipeline.
+
+If the function already exists in the registry, registration will be skipped. In order to change the definition, the function needs
+to be reassigned in the Global Environment and then the \code{registerFunction} called again.
 }
 \seealso{
-Other Package core functions: \code{\link{generateOutput}},
-  \code{\link{generateReport}}, \code{\link{getInput}},
-  \code{\link{getOuputByOrderId}},
-  \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initialize}}, \code{\link{loadPipeline}},
-  \code{\link{readInput}}, \code{\link{savePipeline}},
-  \code{\link{updateObject}}
+Other Package core functions: \code{\link{BaseAnalysisPipeline}},
+  \code{\link{assessEngineSetUp}},
+  \code{\link{checkSchemaMatch}},
+  \code{\link{generateOutput}},
+  \code{\link{genericPipelineException}},
+  \code{\link{getInput}}, \code{\link{getLoggerDetails}},
+  \code{\link{getOutputById}}, \code{\link{getPipeline}},
+  \code{\link{getRegistry}},
+  \code{\link{initDfBasedOnType}},
+  \code{\link{initializeBaseAnalysisPipeline}},
+  \code{\link{loadPipeline}},
+  \code{\link{loadPredefinedFunctionRegistry}},
+  \code{\link{prepExecution}}, \code{\link{savePipeline}},
+  \code{\link{setInput}}, \code{\link{setLoggerDetails}},
+  \code{\link{updateObject}},
+  \code{\link{visualizePipeline}}
 }

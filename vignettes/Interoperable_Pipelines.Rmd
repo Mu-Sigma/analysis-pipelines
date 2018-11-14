@@ -1,0 +1,255 @@
+---
+title: "Interoperable analysis pipelines"
+author: "Naren Srinivasan"
+date: "11/13/2018"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    fig_width: 8
+vignette: >
+  %\VignetteIndexEntry{Interoperable analysis pipelines}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Objective
+
+This vignette explains how **interoperable pipelines** containing functions operating on different engines such as R, Spark and Python can be configured and executed through the **analysisPipelines** package. Currently, the package supports interoperable pipelines containing R and Spark batch functions.
+
+If the package is new to you, it is recommended that you go through the *Analysis pipelines - Core functionality and working with R data frames and functions* vignette first.
+
+```{r echo = FALSE}
+library(analysisPipelines)
+knitr::opts_chunk$set(
+    eval = FALSE
+  )
+```
+
+# An example of an interoperable pipeline
+
+In this vignette we demonstrate an interoperable pipeline built using the **analysisPipelines** package, which contains a couple of filtering/ aggregation functions performed in *Spark*, which is then subsequently visualized through *R* functions using *ggplot2*
+
+## Initializing a Spark connection from R and loading the data
+
+We initialize a Spark session using the `sparkRSessionCreateIfNotPresent` helper function in the **analysisPipelines** package, which internally uses *SparkR*. We then read the data into the Spark session using functions in the SparkR package. In this case we read a *.csv* file, though SparkR can work with multiple other data sources
+
+```{r}
+sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
+sparkMaster <- "local[1]"
+sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
+
+sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
+
+inputDataset <- SparkR::read.df(path = system.file("hotel_new.csv", package = "analysisPipelines"),source="csv",header = TRUE, inferSchema = "true")
+```
+
+
+## Creating an analysisPipeline object
+
+We then initialize an *AnalysisPipeline*, with the input dataset
+
+```{r}
+pipelineObj <- AnalysisPipeline(input = inputDataset)
+```
+
+
+## Registering functions to work in the Spark environment
+
+In order to manipulate the data in the Spark environment, we define our own functions using SparkR interface functions. We then **register** these functions with the **AnalysisPipeline** object, so that they can be used in constructing a pipeline.
+
+The `getRegistry` function lists all the registered functions, along with details such as which **engine** they should run on.
+
+```{r}
+getSchema <- function(inputDataset) {
+  sparkSchema <- SparkR::schema(inputDataset)
+ return(sparkSchema)
+}
+
+sparkFilterData <- function(inputDataset, condition) {
+  filteredData <- SparkR::filter(inputDataset, condition)
+ return(filteredData)
+}
+
+registerFunction(functionName = "getSchema", engine = "spark") 
+registerFunction(functionName = "sparkFilterData", engine = "spark") 
+
+
+getRegistry()
+```
+
+## Registering R functions
+
+Similar to the Spark functions, we register some user-defined functions in R. In this case to plot a bivariate plot using *ggplot2*.
+
+```{r}
+
+rBivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
+
+  numeric_cols <- unlist(getDatatype(dataset)['numeric_cols'])
+  cat_cols <- unlist(getDatatype(dataset)['cat_cols'])
+
+  if (select_var_name_1 %in% numeric_cols && select_var_name_2 %in% numeric_cols) {
+    x = dataset[, select_var_name_1]
+    y = dataset[, select_var_name_2]
+    bivarPlot <-
+      ggplot2::ggplot(dataset, ggplot2::aes(x, y)) +
+      ggplot2::geom_point(color = priColor, alpha = 0.7) +
+      ggplot2::geom_smooth(method = lm, color = secColor) +
+      ggplot2::xlab(select_var_name_1) +
+      ggplot2::ylab(select_var_name_2) + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste(
+        'Bivariate plot for',
+        select_var_name_1,
+        'and',
+        select_var_name_2,
+        sep = ' '
+      )) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 10),
+        axis.text = ggplot2::element_text(size = 10),
+        axis.title = ggplot2::element_text(size = 10)
+      )
+
+
+
+  } else if (select_var_name_1 %in% cat_cols &&
+             select_var_name_2 %in% cat_cols) {
+    new_df <- dataset %>% dplyr::group_by_(.dots=c(select_var_name_1,select_var_name_2)) %>% dplyr::summarise(n = dplyr::n())
+    colfunc <- grDevices::colorRampPalette(c(priColor, "white" , secColor))
+    colorvar <- length(unique(new_df[[select_var_name_2]]))
+    a=as.vector(as.character(unique(new_df[[select_var_name_1]])))
+    y=new_df[[select_var_name_1]]
+    label=new_df[[select_var_name_2]]
+    bivarPlot <-ggplot2::ggplot(new_df, ggplot2::aes(x = y, y= n, fill = label)) +
+      ggplot2::geom_bar(position = "dodge", stat = "identity",alpha=0.9) +
+      ggplot2::guides(fill=ggplot2::guide_legend(title=select_var_name_2)) +
+      ggplot2::coord_flip()+
+      ggplot2::xlab(select_var_name_1) +
+      ggplot2::ylab("count") + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste('Bivariate plot for',select_var_name_1,'and',select_var_name_2,sep=' '))+
+      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 10),axis.text = ggplot2::element_text(size=10),
+                     axis.title=ggplot2::element_text(size=10),legend.position="bottom",axis.text.x=ggplot2::element_text(angle=45, hjust=1))+ ggplot2::scale_fill_manual(values = colfunc(colorvar))
+
+
+  } else {
+    cols <- c(select_var_name_1, select_var_name_2)
+    cat_col <- cols[which(cols %in% cat_cols)]
+    num_col <- cols[which(cols %in% numeric_cols)]
+    a = as.vector(as.character(unique(dataset[[cat_col]])))
+    y = dataset[[cat_col]]
+    x = dataset[[num_col]]
+    bivarPlot <-
+      ggplot2::ggplot(dataset, ggplot2::aes(x = y, y = x)) +
+      ggplot2::geom_point(color = priColor, alpha = 0.7) +
+      ggplot2::coord_flip() +
+      ggplot2::xlab(cat_col) +
+      ggplot2::ylab(num_col) + ggplot2::theme_bw() +
+      ggplot2::ggtitle(paste(
+        'Bivariate plot for',
+        select_var_name_1,
+        'and',
+        select_var_name_2,
+        sep = ' '
+      )) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 10),
+        axis.text = ggplot2::element_text(size = 10),
+        axis.title = ggplot2::element_text(size = 10)
+      )
+  }
+
+  return(bivarPlot)
+}
+
+registerFunction(functionName = "rBivarPlots", engine = "r", heading = "Bivariate analysis")
+
+getRegistry()
+```
+
+
+## Interoperable pipeline containing both R & Spark functions
+
+* Here we consider a typical use case of performing data filtering/ aggregations and so on and Spark, and then using R to perform analysis
+* We use ggplot2 in R to visualize the data that is filtered in Spark
+
+We first visualize the data without filtering:
+
+
+```{r}
+
+pipelineObj %>>% rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+                     priColor = "blue", secColor = "green", storeOutput = T) -> vizWithoutFilterPipeline
+vizWithoutFilterPipeline %>>% getPipeline
+vizWithoutFilterPipeline %>>% assessEngineSetUp
+vizWithoutFilterPipeline %>>% generateOutput -> opWithoutFilter
+opWithoutFilter %>>% getOutputById(1)
+```
+
+We then perform filtering on one of the variables in Spark, before visualizing in R
+
+```{r}
+pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
+  rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+                     priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) -> singleFilterPipeline
+singleFilterPipeline %>>% visualizePipeline
+
+singleFilterPipeline %>>% generateOutput -> opWithFilter
+opWithFilter %>>% getOutputById(2)
+```
+
+Finally, we show a case, where sequential filtering steps are performed in Spark, before visualizing in R
+
+```{r}
+pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
+  sparkFilterData("Occupancy > 0.7", outAsIn = T, storeOutput = T) %>>%
+  rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+                     priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) -> twoFilterPipeline
+twoFilterPipeline %>>% generateOutput -> opWith2Filters
+opWith2Filters %>>% getOutputById(3)
+opWith2Filters %>>% visualizePipeline
+# opWith2Filters %>>% generateReport(path = "~/Desktop")
+```
+
+
+# Saving and reloading the pipeline
+
+First, we save the pipeline
+
+```{r}
+twoFilterPipeline %>>% savePipeline(path = "~/Downloads/twoFilterPipeline.Rda")
+```
+
+Then, we clear the R environment and restart the R session
+
+```{r}
+rm(list=ls(all=TRUE)) # Remove all objects in the R environment
+#.rs.restartR()
+```
+
+We then reload the package, and start the Spark connection
+
+```{r sourcing}
+library(analysisPipelines)
+sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
+sparkMaster <- "local[1]"
+sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
+
+sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
+
+inputDataset <- SparkR::read.df(path=system.file("hotel_new.csv", package = "analysisPipelines"),source="csv",header = TRUE, inferSchema = "true")
+```
+
+Then, we load the pipeline and execute on the new data which is the just the first hundred rows of the original dataset 
+
+```{r}
+
+pipelineObjLoaded <- loadPipeline(path = "~/Downloads/twoFilterPipeline.Rda")
+pipelineObjLoaded %>>% checkSchemaMatch(newData = SparkR::as.data.frame(inputDataset)[1:100,]) -> schemaCheck
+pipelineObjLoaded %>>% setInput(input = inputDataset) -> pipelineObjLoaded
+pipelineObjLoaded %>>% generateOutput -> op
+op %>>% getOutputById("3")
+```
+
+# Supplementary Note
+
+The *analysisPipelines* package internally uses the *SparkR* package to interface with *Spark*. *SparkR* masks many typical data manipulation and processing functions from *base* as well as packages like *dplyr*. Therefore, ensure you use function scoping when calling a function.
