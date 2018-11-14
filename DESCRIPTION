@@ -1,17 +1,14 @@
 Package: analysisPipelines
 Type: Package
-Title: Put analyis reports and pipelines into production
+Title: Compose interoperable analysis pipelines, and put them into production
 Version: 0.1.0
 Authors@R: c(
       person("Naren","Srinivasan", email = "Naren.Srinivasan@mu-sigma.com", role = c("cre","aut")),
+      person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("ctb")),
       person("Neeratyoy","Mallik", email = "Neeratyoy.Mallik@mu-sigma.com", role = c("ctb")),
-		  person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("ctb")),
-		  person("Anoop S","",  email = "Anoop.S@mu-sigma.com", role = c("ctb")),
-		  person("Dheekshitha PS","",  email = "Dheekshitha.PS@mu-sigma.com", role = c("ctb")),
-		  person("Vedavyas C","",  email = "Vedavyas.C@mu-sigma.com", role = c("ctb"))
+		  person("Anoop S","",  email = "Anoop.S@mu-sigma.com", role = c("ctb"))
 		  )
-Maintainer: Naren Srinivasan <Naren.Srinivasan@mu-sigma.com>
-Description: This package allows data scientists to compose and generate reports as a set of analytical operations. The sequence of generation can be stored as pipelines and reused, specifically for production systems where these tasks are run repetitively. Additionally, the package implements a form of lazy evaluation where the pipelines are run on datasets only when outputs/ reports need to be generated. The package also has functions implemented for working with Spark through SparkR for both traditional Spark jobs on Spark DataFrames, as well as Spark Structured Streaming.
+Description: The package aims at enabling data scientists to compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. It also aims to enable data scientists to use tools of their choice through an R interface, and compose interoperable pipelines between R, Spark, and Python.
 Depends: R (>= 3.4.0), tibble, magrittr, data.table, pipeR, devtools
 Imports: ggplot2, dplyr, futile.logger
 Suggests: plotly, knitr, rmarkdown, SparkR, parallel, visNetwork, rjson, DT
