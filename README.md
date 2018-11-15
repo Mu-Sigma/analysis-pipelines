@@ -1,9 +1,9 @@
 # Table of contents
-1. [An overview of the package](#An_overview_of_the_package)
+1. [An overview of the package](#overview)
 2. [Usage](#Usage)
-3. [Key features](#Key_features)
+3. [Features](#Features)
 
-#An overview of the package
+# An overview of the package <a name="overview"></a>
 
 In a typical data science workflow there are multiple steps involved from data aggregation, cleaning, exploratory analysis, modeling and so on. As the data science community matures, we are seeing that there are a variety of languages which provide better capabilities for specific steps in the data science workflow. *R* is typically used for data transformations, statistical models, and visualizations, while *Python* provides more robust functions for machine learning. In addition to this, *Spark* provides an environment to process high volume data - both as one-time/ batch or as streams.
 
@@ -107,7 +107,7 @@ obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue",
 obj1 %>>% getPipeline
 ```
 
-#Key features
+# Features
 
 ## User-defined functions
 
