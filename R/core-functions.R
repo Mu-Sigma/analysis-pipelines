@@ -77,17 +77,6 @@ setMethod(
                                  to = character()),
         loggerDetails <- list()
       )
-
-      # .Object@registry <- tibble(
-      #   functionName = character(),
-      #   heading = character(),
-      #   engine = character(),
-      #   exceptionHandlingFunction = character(),
-      #   userDefined = logical(),
-      #   isDataFunction = #logical(),
-      #   firstArgClass = character()
-      # )
-
       .Object@output <- list()
 
       .Object %>>% setLoggerDetails -> .Object
@@ -125,7 +114,7 @@ registerFunction <- function( functionName, heading = "",
                                isDataFunction = T, firstArgClass = "",
                                loadPipeline = F, userDefined = T
                                ){
-    tryCatch({
+    # tryCatch({
 
 
       #Define data frame class according to engine type
@@ -142,11 +131,11 @@ registerFunction <- function( functionName, heading = "",
 
 
       ## Checking if already registered
-      existingM <- c()
+      doesMethodExist <- c()
       tryCatch({
-          existingM <- methods::findMethod(functionName, signature = childClass, where = .GlobalEnv)
+        doesMethodExist <- methods::findMethod(functionName, signature = childClass, where = .GlobalEnv)
 
-          if(length(existingM) > 0){
+          if(length(doesMethodExist) > 0){
 
             futile.logger::flog.error(paste("||  A function of name '%s' has already been registered.",
                                             "If you'd like to change the definition, please re-assign the function definition",
@@ -162,6 +151,7 @@ registerFunction <- function( functionName, heading = "",
         })
       })
 
+      ## Checking if class of first argument provided is valid
       if(!isDataFunction){
         tryCatch({
           getClass(firstArgClass)
@@ -172,73 +162,79 @@ registerFunction <- function( functionName, heading = "",
 
       }
 
-      futile.logger::flog.info(existingM)
-
       #Skip registration if already exists
-      if(length(existingM) == 0){
+      if(length(doesMethodExist) == 0){
+
         parametersName <- ""
+        objectArg <- alist(object = )
+        commonArgs <- alist(outAsIn = F, storeOutput = F)
 
+        f <- get(functionName, .GlobalEnv)
+        originalArgs <- formals(f) %>>% as.list
+        firstArg <- names(originalArgs)[1]
 
-        parametersName <- names(as.list(args(eval(parse(text=functionName)))))
-        parametersName <- paste0(parametersName[c(-1,-length(parametersName))],collapse=",")
+        if(isDataFunction){
+          originalArgs <- originalArgs[-1]
+          firstArgClass <- dataFrameClass
+        }
+
+        parametersList <- originalArgs %>>% names
+        parametersName <- paste0(parametersList,collapse=", ")
+
         if(parametersName != ""){
           parametersName <- paste0(", ", parametersName)
         }
 
-
         methodBody <- paste0(utils::capture.output(body(eval(parse(text=functionName)))),collapse="\n")
-
-        originalArgs <- names(as.list(args(eval(parse(text=functionName)))))
-        firstArg <- originalArgs[1]
-
-        if(isDataFunction){
-          firstArgClass <- dataFrameClass
-        }else{
-          parametersName <- paste(", ", firstArg, parametersName)
-        }
-
-        methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object"), x = methodBody)
-
-        methodArg <- paste0(utils::capture.output(args(eval(parse(text=functionName)))),collapse="")
-        methodArg <- strsplit(strsplit(methodArg,firstArg)[[1]][2],"NULL")[[1]][1]
-
+        methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object;"), x = methodBody)
 
         ##Assigning the exception function to the global Environment
         assign(exceptionFunction, get(x = exceptionFunction,
                                       envir = environment()),
-               envir = globalenv())
+               envir = .GlobalEnv)
 
-        #Register function
-        registerFunText <- # Generic
-          paste0('setGeneric(name = "', functionName,'",',
-                 'signature = "object",',
-                 'def = function(object ', ', ... ', ', outAsIn = F, storeOutput = F)',
-                 # 'def = function(object, ',firstArg, ', ...)',
-                 'standardGeneric("', functionName,'"));',
 
+        newArgs <- append(objectArg, originalArgs)
+        newArgs <- append(newArgs, commonArgs)
+        formals(f) <- newArgs
+        body(f) <- paste('standardGeneric("', functionName,'")')
+
+        registerFunText <-
+          paste0(
                  # Adding to pipeline when run on a Analysis Pipeline object
                  'setMethod(f = "', functionName,'",',
-                 'signature = "', childClass, '",',
-                 'definition = function(object',
-                 parametersName, ',',
-                 'outAsIn, storeOutput){',
-                 'parametersList <- unlist(strsplit(x = "', sub(", ", "", parametersName), '", split = ","' ,'));',
-                 'parametersPassed <- lapply(parametersList, function(x){eval(parse(text = x))});',
-                 'return(updateObject(object,
-                 operation = "', functionName, '",',
-                 'heading = "', heading, '",',
-                 'parameters = parametersPassed, outAsIn = outAsIn, storeOutput = storeOutput));});',
+                     'signature = "', childClass, '",',
+                     'definition = function(object',
+                     parametersName, ',',
+                     'outAsIn, storeOutput){',
+                         'parametersList <- unlist(strsplit(x = "', sub(", ", "", parametersName), '", split = ","' ,'));',
+                         'parametersPassed <- lapply(parametersList, function(x){eval(parse(text = x))});',
+                         'return(updateObject(object,
+                              operation = "', functionName, '",',
+                             'heading = "', heading, '",',
+                             'parameters = parametersPassed, outAsIn = outAsIn, storeOutput = storeOutput));});',
 
                  #Executing the actual function when pipeline is executed
                  'setMethod(f = "',functionName,'",',
-                 'signature = "', firstArgClass, '",',
-                 'definition = function(object ', parametersName,')',
-                 methodBody, ')'
+                     'signature = "', firstArgClass, '",',
+                     'definition = function(object ', parametersName,')',
+                     methodBody, ')'
           )
 
+        #Register function
+        # Generic
+       setGeneric(name = functionName,
+                         signature = "object",
+                         def = f,
+                         where = .GlobalEnv)
+        try({
+          removeMethod(f = get(functionName, .GlobalEnv), signature = "ANY", where = .GlobalEnv)
+        }, silent = T)
+
+        # Methods for pipeline object, and first argument
         eval(parse(text = registerFunText), envir=.GlobalEnv)
 
-
+        # Updating registry
         if(loadPipeline==F){
           fn <- paste0(functionName)
           if(nrow(getRegistry() %>>% dplyr::filter(functionName == fn)) == 0){
@@ -254,12 +250,11 @@ registerFunction <- function( functionName, heading = "",
           }
         }
       }
-    }, error = function(e){
-    futile.logger::flog.error(e, name = "logger.base")
-    stop()
-    })
+    # }, error = function(e){
+    #   futile.logger::flog.error(e, name = "logger.base")
+    #   stop()
+    # })
   }
-# )
 
 .updateRegistry <- function(functionName,
                             heading = "",
@@ -295,6 +290,8 @@ loadPredefinedFunctionRegistry <- function(){
                        heading =  .batchPredefFunctions[['heading']][[rowNo]],
                        engine = .batchPredefFunctions[['engine']][[rowNo]],
                        exceptionFunction = .batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
+                       isDataFunction = .batchPredefFunctions[['isDataFunction']][[rowNo]],
+                       firstArgClass = .batchPredefFunctions[['firstArgClass']][[rowNo]],
                        userDefined = F, loadPipeline = F )
     }
 
@@ -305,12 +302,14 @@ loadPredefinedFunctionRegistry <- function(){
                         heading =  .streamingPredefFunctions[['heading']][[rowNo]],
                         engine = .streamingPredefFunctions[['engine']][[rowNo]],
                         exceptionFunction = .streamingPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
+                        isDataFunction = .streamingPredefFunctions[['isDataFunction']][[rowNo]],
+                        firstArgClass = .streamingPredefFunctions[['firstArgClass']][[rowNo]],
                         userDefined = F, loadPipeline = F)
     }
+    futile.logger::flog.info('||  Predefined utility functions registered  ||', name = "logger.base")
   }, error = function(e){
     futile.logger::flog.error(e, name = "logger.base")
   })
-  futile.logger::flog.info('||  Predefined utility functions registered  ||', name = "logger.base")
 }
 
 #' @name setInput
@@ -595,24 +594,6 @@ getRegistry <- function(){
   registry <- .analysisPipelinesEnvir$.functionRegistry
   return(registry)
 }
-
-# setGeneric(
-#   name = "getRegistry",
-#   def = function(object)
-#   {
-#     standardGeneric("getRegistry")
-#   }
-# )
-#
-# .getRegistry = function(object){
-#   return(object@registry)
-# }
-#
-# setMethod(
-#   f = "getRegistry",
-#   signature = "BaseAnalysisPipeline",
-#   definition = .getRegistry
-# )
 
 #' @name getInput
 #' @title Obtains the initializedInput

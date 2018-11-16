@@ -73,7 +73,7 @@ Users can define their own functions and use it as a part of the pipeline. These
 
 # Function to convert datatype json struct to colums
 convertStructToDf <- function(streamObj) {
-  streamObj <- select(streamObj,list(getField(streamObj$`jsontostructs(value)`,"bannerId"),
+  streamObj <- SparkR::select(streamObj,list(getField(streamObj$`jsontostructs(value)`,"bannerId"),
                                    getField(streamObj$`jsontostructs(value)`,"mobile"),
                                    getField(streamObj$`jsontostructs(value)`,"homeAppliance"),
                                    getField(streamObj$`jsontostructs(value)`,"gamingConsole"),
@@ -99,17 +99,17 @@ convertStructToDf <- function(streamObj) {
 
 # Function to cast columns as string, integer, etc
 castDfColumns <- function(streamObj) {
-  streamObj <- selectExpr(streamObj, "bannerId","mobile","homeAppliance","gamingConsole","accessories","brand",
+  streamObj <- SparkR::selectExpr(streamObj, "bannerId","mobile","homeAppliance","gamingConsole","accessories","brand",
                           "CAST(previousPrice as INTEGER)","CAST(currentPrice as INTEGER)","CAST(discount as INTEGER)","emi",
                           "crossSale","customerId","ts","CAST(click as INTEGER)","CAST(conversion as INTEGER)",
                           "CAST(age as INTEGER)","CAST(income as INTEGER)","maritalStatus","segment")
-  streamObj$ts <- to_timestamp(streamObj$ts,"yyyy-MM-dd HH:mm:ss")
+  streamObj$ts <- SparkR::to_timestamp(streamObj$ts,"yyyy-MM-dd HH:mm:ss")
   return (streamObj)
 }
 
 # Function to convert datatype json struct to colums
 convertDfToKafkaKeyValuePairs <- function (streamObj, kafkaKey) {
-  streamObj <- toJSON(streamObj)
+  streamObj <- SparkR::toJSON(streamObj)
   streamObj$key <- kafkaKey
   return(streamObj)
 }
@@ -117,11 +117,11 @@ convertDfToKafkaKeyValuePairs <- function (streamObj, kafkaKey) {
 # Function to summarize click stream data
 globalUiMetrics <- function (streamObj) {
   ## Aggregation query
-  streamObj <- summarize(groupBy(streamObj,streamObj$bannerId),
+  streamObj <- SparkR::summarize(SparkR::groupBy(streamObj,streamObj$bannerId),
                          impressions=count(streamObj$customerId),
                          clicks=sum(streamObj$click),
                          conversions=sum(streamObj$conversion))
-  colnames(streamObj) <- c("banner_id","impressions","clicks","conversions")
+  SparkR::colnames(streamObj) <- c("banner_id","impressions","clicks","conversions")
   return (streamObj)
 }
 
@@ -166,7 +166,8 @@ getRegistry()
 
 # Define pipeline 
 # Do data prep
-pipelineObj %>% castKafkaStreamAsString() %>% convertKafkaValueFromJson(schema = consumerDataSchema, outAsIn = T) %>% convertStructToDf(outAsIn = T) %>% castDfColumns(outAsIn = T, storeOutput = T) -> pipelineObj
+pipelineObj %>% castKafkaStreamAsString() %>% 
+  convertKafkaValueFromJson(schema = consumerDataSchema, outAsIn = T) %>% convertStructToDf(outAsIn = T) %>% castDfColumns(outAsIn = T, storeOutput = T) -> pipelineObj
 
 pipelineObj %>>% getPipeline
 pipelineObj %>>% visualizePipeline
