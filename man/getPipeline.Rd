@@ -12,9 +12,6 @@ getPipeline(object)
 \value{
 Tibble describing the pipeline
 }
-\description{
-Obtain the pipeline
-}
 \details{
 Obtains the pipeline from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object as a tibble
 
@@ -40,4 +37,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

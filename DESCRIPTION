@@ -1,7 +1,7 @@
 Package: analysisPipelines
 Type: Package
 Title: Compose interoperable analysis pipelines, and put them into production
-Version: 0.1.1
+Version: 0.0.0.9002
 Authors@R: c(
       person("Naren","Srinivasan", email = "Naren.Srinivasan@mu-sigma.com", role = c("cre","aut")),
       person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("ctb")),

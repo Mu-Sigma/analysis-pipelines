@@ -16,9 +16,6 @@ setLoggerDetails(object, target = "console",
 
 \item{targetLayout}{Specify the layout according to 'futile.logger' package convention}
 }
-\description{
-Sets the logger configuration for the pipeline
-}
 \details{
 This function sets the logger configuration for the pipeline.
 }
@@ -41,4 +38,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

@@ -16,9 +16,6 @@ setInput(object, input, filePath = "")
 \value{
 Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 }
-\description{
-Sets the input for an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
-}
 \details{
 Assigns the input to the pipeline for an  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 
@@ -45,4 +42,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

@@ -5,10 +5,6 @@
 \title{Identifies the topological levels of the functions in a pipeline}
 \usage{
 identifyTopologicalLevels(nodes = c(), edgeDf = dplyr::tibble(),
-  topDf = dplyr::tibble(id = character(), level = character()),
-  level = 1)
-}
-\description{
-Identifies the topological levels of the functions in a pipeline
+  topDf = dplyr::tibble(id = character(), level = character()), level = 1)
 }
 \keyword{internal}

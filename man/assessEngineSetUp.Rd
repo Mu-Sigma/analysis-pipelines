@@ -13,9 +13,6 @@ assessEngineSetUp(object)
 Tibble containing the details of available engines, whether they are required for a recipe, a logical reporting
         whether the engine has been set up, and comments.
 }
-\description{
-Assesses engine (R, Spark, Python, Spark Structured Streaming) set up
-}
 \details{
 Assesses whether engines required for executing functions in an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}
       object have been set up
@@ -42,4 +39,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

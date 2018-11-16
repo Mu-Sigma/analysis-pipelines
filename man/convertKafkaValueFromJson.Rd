@@ -16,9 +16,6 @@ attribute of the incoming Kafka stream}
 Spark Structured Streaming DataFrame with the json data in the \code{value} attribute of the Kafka stream parsed
 into a DataFrame format
 }
-\description{
-Connect to a Spark session
-}
 \details{
 Takes in a Structured Stream from Kafka created from \code{read.stream(source = 'kafka', ...)} and returns
 a Structured Streaming DataFrame where the \code{key} and \code{value} from the Kafka stream are cast to string
@@ -27,4 +24,3 @@ a Structured Streaming DataFrame where the \code{key} and \code{value} from the 
 Other Spark utilities: \code{\link{castKafkaStreamAsString}},
   \code{\link{sparkRSessionCreateIfNotPresent}}
 }
-\concept{Spark utilities}

@@ -45,7 +45,7 @@ sparkRSessionCreateIfNotPresent <- function(...){
 #' @export
 
 castKafkaStreamAsString <- function(streamObj){
-  streamObj <- selectExpr(streamObj, "CAST(key AS STRING)", "CAST(value AS STRING)","topic","timestamp")
+  streamObj <- SparkR::selectExpr(streamObj, "CAST(key AS STRING)", "CAST(value AS STRING)","topic","timestamp")
   return(streamObj)
 }
 

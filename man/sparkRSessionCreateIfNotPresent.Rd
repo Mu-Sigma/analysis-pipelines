@@ -9,9 +9,6 @@ sparkRSessionCreateIfNotPresent(...)
 \arguments{
 \item{...}{Arguments to sparkR.session}
 }
-\description{
-Connect to a Spark session
-}
 \details{
 Loads the SparkR package and intializes a Spark session from R
 }
@@ -19,4 +16,3 @@ Loads the SparkR package and intializes a Spark session from R
 Other Spark utilities: \code{\link{castKafkaStreamAsString}},
   \code{\link{convertKafkaValueFromJson}}
 }
-\concept{Spark utilities}

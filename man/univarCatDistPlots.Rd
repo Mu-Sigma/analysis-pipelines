@@ -16,9 +16,6 @@ univarCatDistPlots(data, uniCol, priColor, optionalPlots)
 \value{
 A univariate categoric distribution plot
 }
-\description{
-Univariate Categoric Distribution
-}
 \details{
 A univariate distribution graph on the selected categorical columns from the dataframe
 }
@@ -30,4 +27,3 @@ Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{multiVarOutlierPlot}},
   \code{\link{outlierPlot}}
 }
-\concept{Package EDA Utilites functions}

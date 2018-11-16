@@ -12,9 +12,6 @@ castKafkaStreamAsString(streamObj)
 \value{
 Updated Spark Structured Streaming DataFrame with key, value, topic and timestamp from the Kafka stream
 }
-\description{
-Connect to a Spark session
-}
 \details{
 Takes in a Structured Stream from Kafka created from \code{read.stream(source = 'kafka', ...)} and returns
 a Structured Streaming DataFrame where the \code{key} and \code{value} from the Kafka stream are cast to string
@@ -23,4 +20,3 @@ a Structured Streaming DataFrame where the \code{key} and \code{value} from the 
 Other Spark utilities: \code{\link{convertKafkaValueFromJson}},
   \code{\link{sparkRSessionCreateIfNotPresent}}
 }
-\concept{Spark utilities}

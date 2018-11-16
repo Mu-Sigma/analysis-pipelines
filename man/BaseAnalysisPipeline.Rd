@@ -4,9 +4,6 @@
 \name{BaseAnalysisPipeline}
 \alias{BaseAnalysisPipeline}
 \title{Base class for \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} objects}
-\description{
-Base class for \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} objects
-}
 \details{
 The class which holds the metadata including the registry of available functions,
 the data on which the pipeline is to be applied, as well as the pipeline itself, and serves
@@ -51,4 +48,3 @@ Other Package core functions: \code{\link{assessEngineSetUp}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}
