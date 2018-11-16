@@ -4,6 +4,9 @@
 \name{StreamingAnalysisPipeline}
 \alias{StreamingAnalysisPipeline}
 \title{Class for constructing Analysis Pipelines for streaming analyeses}
+\description{
+Class for constructing Analysis Pipelines for streaming analyeses
+}
 \details{
 Inherits the base class \link{BaseAnalysisPipeline} class which holds the metadata including the registry of available functions,
 the data on which the pipeline is to be applied, as well as the pipeline itself
@@ -24,3 +27,4 @@ constructor - \link{initializeStreamingAnalysisPipeline}
 \seealso{
 Other Package core functions for Streaming Analyses: \code{\link{initializeStreamingAnalysisPipeline}}
 }
+\concept{Package core functions for Streaming Analyses}

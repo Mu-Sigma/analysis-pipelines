@@ -6,4 +6,7 @@
 \usage{
 getEndPoints(nodes, edgeDf)
 }
+\description{
+Obtains end nodes in a graph given nodes and edges
+}
 \keyword{internal}
