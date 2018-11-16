@@ -22,7 +22,7 @@ vignette: >
 * Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
-    eval = TRUE
+    eval = FALSE
   )
 library(ggplot2)
 library(analysisPipelines)
