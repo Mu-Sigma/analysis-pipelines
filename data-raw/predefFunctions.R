@@ -14,26 +14,31 @@
 ##################################################################################################
 .batchPredefFunctions <- data.frame(functionName = c("univarCatDistPlots"),
                                 heading = c("Univariate Distribution Categorical"),
-                                # outAsIn = c(FALSE),
                                 engine = c("r"),
                                 exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
+                                isDataFunction = T,
+                                firstArgClass = "",
                                 stringsAsFactors = F)
 
 .batchPredefFunctions %>>% dplyr::add_row(functionName = "outlierPlot",
                                    heading = "Univariate Outlier",
                                    # outAsIn = FALSE,
                                    engine = "r",
-                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))           -> .batchPredefFunctions
+                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
+                                   isDataFunction = T,
+                                   firstArgClass = "")           -> .batchPredefFunctions
 .batchPredefFunctions %>>% dplyr::add_row(functionName = "multiVarOutlierPlot",
                                    heading = "Multivariate Outlier",
-                                   # outAsIn = FALSE,
                                    engine = "r",
-                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))           -> .batchPredefFunctions
+                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
+                                   isDataFunction = T,
+                                   firstArgClass = "")           -> .batchPredefFunctions
 .batchPredefFunctions %>>% dplyr::add_row(functionName = "ignoreCols",
-                                   heading = "",
-                                   # outAsIn = TRUE,
+                                   heading = "Ignore Columns",
                                    engine = "r",
-                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))))            -> .batchPredefFunctions
+                                   exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
+                                   isDataFunction = T,
+                                   firstArgClass = "")            -> .batchPredefFunctions
 
 ##################################################################################################
 
@@ -46,17 +51,19 @@
 ##################################################################################################
 
 .streamingPredefFunctions <- data.frame(functionName = c("castKafkaStreamAsString"),
-                                        heading = c(""),
+                                        heading = c("Cast Kafka stream to a string"),
                                         engine = c("spark-structured-streaming"),
                                        exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
-                                        # outAsIn = c(TRUE),
+                                       isDataFunction = T,
+                                       firstArgClass = "",
                                        stringsAsFactors = F)
 
 .streamingPredefFunctions %>>% dplyr::add_row(functionName = "convertKafkaValueFromJson",
-                                       heading = "",
+                                       heading = "Convert Kafka Value from JSON",
                                        engine = c("spark-structured-streaming"),
-                                       exceptionHandlingFunction = c(as.character(substitute(genericPipelineException)))
-                                       # outAsIn = TRUE
+                                       exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
+                                       isDataFunction = T,
+                                       firstArgClass = ""
                                        )           -> .streamingPredefFunctions
 
 

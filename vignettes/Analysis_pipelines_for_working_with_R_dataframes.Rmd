@@ -208,7 +208,7 @@ obj2 <- obj2 %>>%
                  priColor = "blue", secColor = "black")
 
 # Printing the updated pipeline
-obj2 %>>% getPipeline
+obj2 %>>% getPipeline 
 ```
 
 The newly added function will also lazy evaluate depending on the trigger.
@@ -250,7 +250,7 @@ obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy") %
 
 complexPipeline %>>% getPipeline
 complexPipeline %>>% generateOutput -> op
-op %>>% getOutputById("4")
+op %>>% getOutputById("3")
 ```
 
 # Visualizing pipelines
