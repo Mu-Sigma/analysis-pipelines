@@ -19,9 +19,6 @@ checkSchemaMatch(object, newData)
 Returns a list with details on added columns, removed columns, comparison between column classes, and a logical
         whether the schema has remained the same from the old dataframe to the new one
 }
-\description{
-Checks the schema of the input to a Pipeline object against the original
-}
 \details{
 Checks the schema of the new data frame that the pipeline is to be initialized with against
          the original schema that the pipeline was saved with. Provides a detailed comparison
@@ -45,4 +42,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

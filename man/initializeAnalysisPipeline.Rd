@@ -5,8 +5,8 @@
 \alias{initializeAnalysisPipeline}
 \title{Constructor for the \link{AnalysisPipeline} class}
 \usage{
-\S4method{initialize}{AnalysisPipeline}(.Object, ...,
-  input = data.frame(), filePath = "")
+\S4method{initialize}{AnalysisPipeline}(.Object, ..., input = data.frame(),
+  filePath = "")
 }
 \arguments{
 \item{.Object}{The \code{AnalysisPipeline} object}
@@ -18,9 +18,6 @@
 \value{
 an object of class \code{AnalysisPipeline}, initialized with the input data frame provided
 }
-\description{
-Constructor for the \link{AnalysisPipeline} class
-}
 \details{
 Either one of \code{input} or \code{filePath} need to be provided i.e. either the
      data frame or the file path to a csv file
@@ -29,4 +26,3 @@ Either one of \code{input} or \code{filePath} need to be provided i.e. either th
 Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPipeline}},
   \code{\link{checkSchema}}, \code{\link{generateReport}}
 }
-\concept{Package core functions for batch/one-time analyses}

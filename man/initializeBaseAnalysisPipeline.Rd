@@ -15,9 +15,6 @@
 \value{
 an object of class "\code{BaseAnalysisPipeline}"
 }
-\description{
-This is the constructor for the \link{BaseAnalysisPipeline} class
-}
 \details{
 This is a constructor function for the base class for various types of Analysis Pipelines. This method gets
      internally called by \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} constructors.
@@ -41,4 +38,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

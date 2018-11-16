@@ -9,9 +9,6 @@ getRegistry()
 \value{
 Tibble describing the registry
 }
-\description{
-Obtains the function registry
-}
 \details{
 Obtains the function registry as a tibble, including both predefined and user defined functions
 }
@@ -34,4 +31,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

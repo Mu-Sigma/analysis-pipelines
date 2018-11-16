@@ -20,9 +20,6 @@ If includeCall = T, it is a list containing to elements
         - call: tibble with 1 row containing the function call for the output desired
         - output: output generated
 }
-\description{
-Obtains a specific output
-}
 \details{
 Obtains a specific output from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by passing the position
      of the function for which the output is desired, in the sequence of operations in the pipeline. This can be obtained by passing the number
@@ -50,4 +47,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

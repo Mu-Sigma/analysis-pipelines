@@ -21,7 +21,7 @@ If the package is new to you, it is recommended that you go through the *Analysi
 ```{r echo = FALSE}
 library(analysisPipelines)
 knitr::opts_chunk$set(
-    eval = FALSE
+    eval = TRUE
   )
 ```
 

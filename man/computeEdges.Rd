@@ -6,7 +6,4 @@
 \usage{
 computeEdges(pipelineRegistryJoin)
 }
-\description{
-Computes edges (dependencies) in a pipeline given the joined tibble of the pipeline and registry
-}
 \keyword{internal}

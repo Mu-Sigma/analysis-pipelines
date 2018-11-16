@@ -14,9 +14,6 @@ generateReport(object, path)
 \value{
 Updated \code{AnalysisPipeline} object
 }
-\description{
-Generate a HTML report from an \code{AnalysisPipeline} object
-}
 \details{
 The sequence of operations stored in the \code{AnalysisPipeline} object are run, outputs generated,
       and a HTML report is generated with outputs in the same sequence as the pipeline created by the user
@@ -26,4 +23,3 @@ Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPi
   \code{\link{checkSchema}},
   \code{\link{initializeAnalysisPipeline}}
 }
-\concept{Package core functions for batch/one-time analyses}

@@ -16,9 +16,6 @@ loadPipeline(path, input = data.frame(), filePath = "")
 \value{
 An \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, optinally initialized with the data frame provided
 }
-\description{
-Loads the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object from the file system
-}
 \details{
 The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object is loaded into the file system from the file system
       based on the path specified.
@@ -50,4 +47,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}
