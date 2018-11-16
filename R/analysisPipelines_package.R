@@ -1,9 +1,8 @@
 #' analysisPipelines
 #'
-#' This package allows data scientists to compose and generate reports as a set of analytical operations.
-#' The sequence of generation can be stored as a pipeline and reused, specifically for production systems where these
-#' tasks are run repetitively. Additionally, the package implements a form of lazy evaluation where the pipelines are
-#'  run on datasets only when outputs/ reports need to be generated
+#' The package aims at enabling data scientists to compose pipelines of analysis which consist of data manipulation,
+#' exploratory analysis & reporting, as well as modeling steps. It also aims to enable data scientists to use tools
+#' of their choice through an R interface, and compose interoperable pipelines between R, Spark, and Python.
 #' @docType package
 #' @name analysisPipelines
 NULL

@@ -12,6 +12,9 @@ getInput(object)
 \value{
 Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{StreamingAnalysisPipeline}
 }
+\description{
+Obtains the initializedInput
+}
 \details{
 Obtains the input from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 
@@ -38,3 +41,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
+\concept{Package core functions}

@@ -15,6 +15,9 @@ checkSchema(dfOld, dfNew)
 Returns a list with details on added columns, removed columns, comparison between column classes, and a logical
         whether the schema has remained the same from the old dataframe to the new one
 }
+\description{
+Compare the schemas of two dataframes
+}
 \details{
 Compares the schemas of two dataframes, providing information on added and removed columns in the new dataframe
       as compared to the old
@@ -24,4 +27,5 @@ Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPi
   \code{\link{generateReport}},
   \code{\link{initializeAnalysisPipeline}}
 }
+\concept{Package core functions for batch/one-time analyses}
 \keyword{internal}

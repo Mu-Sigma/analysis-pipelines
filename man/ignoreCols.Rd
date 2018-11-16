@@ -14,6 +14,9 @@ ignoreCols(data, columns)
 \value{
 Updated dataframe object
 }
+\description{
+Ignores the columns in the loaded dataframe object
+}
 \details{
 The columns selected are removed from the object
 }
@@ -26,3 +29,4 @@ Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{outlierPlot}},
   \code{\link{univarCatDistPlots}}
 }
+\concept{Package EDA Utilites functions}
