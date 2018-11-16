@@ -14,9 +14,6 @@ initDfBasedOnType(input, filePath)
 \value{
 \code{AnalysisPipeline} object initialized with input
 }
-\description{
-initializes the \code{AnalysisPipeline} object with the input based on the provided type
-}
 \details{
 Transforms provided inputs into R data frame regardless of the input provided, be it Spark DataFrames
      or Python data frames
@@ -40,5 +37,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}
 \keyword{internal}

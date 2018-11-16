@@ -436,11 +436,6 @@ checkSchema <- function(dfOld, dfNew){
 
                            })
 
-        ##outAsIn
-        # if(funcDetails$outAsIn){
-        #   outputCache$workingInput <- output
-        # }
-
         opName <- paste0("f", funcDetails$id, ".out") #eg: f1.out
         if(funcDetails$storeOutput){
           assign(opName, value = output, envir = outputCache)

@@ -4,9 +4,6 @@
 \name{AnalysisPipeline}
 \alias{AnalysisPipeline}
 \title{Class for constructing Analysis Pipelines for batch/ one-time analyeses}
-\description{
-Class for constructing Analysis Pipelines for batch/ one-time analyeses
-}
 \details{
 Inherits the base class \link{BaseAnalysisPipeline} class which holds the metadata including the registry of available functions,
 the data on which the pipeline is to be applied, as well as the pipeline itself
@@ -30,4 +27,3 @@ Other Package core functions for batch/one-time analyses: \code{\link{checkSchem
   \code{\link{generateReport}},
   \code{\link{initializeAnalysisPipeline}}
 }
-\concept{Package core functions for batch/one-time analyses}

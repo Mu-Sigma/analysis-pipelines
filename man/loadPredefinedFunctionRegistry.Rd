@@ -6,9 +6,6 @@
 \usage{
 loadPredefinedFunctionRegistry()
 }
-\description{
-Loading the registry of predefined functions
-}
 \details{
 Loads the registry of predefined functions
 }
@@ -30,4 +27,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}

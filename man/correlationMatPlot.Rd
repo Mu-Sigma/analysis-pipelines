@@ -23,4 +23,3 @@ Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{outlierPlot}},
   \code{\link{univarCatDistPlots}}
 }
-\concept{Package EDA Utilites functions}

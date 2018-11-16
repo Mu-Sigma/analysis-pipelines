@@ -4,8 +4,8 @@
 \alias{bivarPlots}
 \title{Bi-Variate Plot}
 \usage{
-bivarPlots(dataset, select_var_name_1, select_var_name_2,
-  priColor = "blue", secColor = "black")
+bivarPlots(dataset, select_var_name_1, select_var_name_2, priColor = "blue",
+  secColor = "black")
 }
 \arguments{
 \item{dataset}{the dataframe that needs to be loaded}
@@ -21,9 +21,6 @@ bivarPlots(dataset, select_var_name_1, select_var_name_2,
 \value{
 Bivariate plot
 }
-\description{
-Bi-Variate Plot
-}
 \details{
 A bivariate distribution graph on the selected columns from the dataframe.Selected two columns are on two axis' and a plot is generated
 }
@@ -35,4 +32,3 @@ Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{outlierPlot}},
   \code{\link{univarCatDistPlots}}
 }
-\concept{Package EDA Utilites functions}

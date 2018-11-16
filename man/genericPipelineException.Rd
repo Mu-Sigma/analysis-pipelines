@@ -9,9 +9,6 @@ genericPipelineException(error)
 \arguments{
 \item{error}{Error encountered during the execution of a particular pipeline function}
 }
-\description{
-Default exception for pipeline functions
-}
 \details{
 This functions defines the default function which will be called in case of an exception occurring while
 executing any of the pipeline functions. While a function is registered, a custom function to deal with exceptions
@@ -37,4 +34,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
-\concept{Package core functions}
