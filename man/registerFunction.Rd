@@ -27,6 +27,9 @@ registerFunction(functionName, heading = "", functionType = "batch",
 
 \item{userDefined}{logical parameter defining whether the function is user defined. By default, set to true}
 }
+\description{
+Register a user-defined function to be used with a \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
+}
 \details{
 The specified operation along with the heading and engine details is stored in the registry, after which it can be added to a pipeline.
 
@@ -51,3 +54,4 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{updateObject}},
   \code{\link{visualizePipeline}}
 }
+\concept{Package core functions}

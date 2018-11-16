@@ -12,6 +12,9 @@ getDatatype(dataset)
 \value{
 list with \code{numeric_cols} and \code{cat_cols}
 }
+\description{
+Get Data Type
+}
 \details{
 Based on the datatype the columns are seperated into categorical and numerical columns
 }
@@ -24,3 +27,4 @@ Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{outlierPlot}},
   \code{\link{univarCatDistPlots}}
 }
+\concept{Package EDA Utilites functions}
