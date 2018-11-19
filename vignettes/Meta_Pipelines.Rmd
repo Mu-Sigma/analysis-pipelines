@@ -94,6 +94,7 @@ pipelineProtoLoaded$fn_univarCatDistPlots$arg_param1 <- "Species"
 
 loadedMetaPipeline %>>% createPipelineInstance(pipelineProtoLoaded) -> newPipelineObjLoaded
 
-newPipelineObjLoaded %>>% setInput(input = iris) %>>% generateOutput %>>% getOutputById("3")
+newPipelineObjLoaded %>>% setInput(input = iris) %>>%
+                        generateOutput %>>% getOutputById("3")
 ```
 
