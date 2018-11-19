@@ -1,0 +1,99 @@
+---
+title: "Meta-pipelines - A classification example"
+author: "Naren Srinivasan"
+date: "11/19/2018"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    fig_width: 8
+vignette: >
+  %\VignetteIndexEntry{Meta-pipelines}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+---
+
+```{r}
+
+knitr::opts_chunk$set(
+    eval = FALSE
+  )
+library(analysisPipelines)
+pipeline <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
+getColor <- function(color){
+  return(color)
+}
+
+getColumnName <-function(columnName){
+  return(columnName)
+}
+
+registerFunction(functionName = "getColor", isDataFunction = F, firstArgClass = "character")
+registerFunction(functionName = "getColumnName", isDataFunction = F, firstArgClass = "character")
+
+getRegistry()
+```
+
+```{r}
+pipeline %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy") %>>%
+      univarCatDistPlots(uniCol = "building_type", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
+      outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
+
+complexPipeline %>>% getPipeline
+
+complexPipeline %>>% generateOutput -> op
+op %>>% getOutputById("3")
+
+```
+
+```{r}
+
+complexPipeline %>>% exportAsMetaPipeline -> complexMetaPipeline
+pipelineProto <- getPipelinePrototype(complexMetaPipeline)
+str(pipelineProto)
+
+pipelineProto$fn_getColor$arg_param1 <- "green"
+pipelineProto$fn_getColumnName$arg_param1 <- "Sepal.Length"
+pipelineProto$fn_univarCatDistPlots$arg_param1 <- "Species"
+
+complexMetaPipeline %>>% visualizePipeline
+complexMetaPipeline %>>% createPipelineInstance(pipelineProto) -> newPipelineObj
+
+newPipelineObj %>>% setInput(input = iris) %>>% generateOutput %>>% getOutputById("3")
+
+getRegistry()
+```
+
+# Saving and loading meta-pipelines
+
+```{r}
+
+complexMetaPipeline %>>% savePipeline("metaPipeline.RDS")
+
+#Checking if registry is updated
+getC <- function(color){
+  return(color)
+}
+
+getCol <-function(columnName){
+  return(columnName)
+}
+
+registerFunction(functionName = "getC", isDataFunction = F, firstArgClass = "character")
+registerFunction(functionName = "getCol", isDataFunction = F, firstArgClass = "character")
+
+loadMetaPipeline(path = "metaPipeline.RDS") -> loadedMetaPipeline
+getRegistry()
+
+pipelineProtoLoaded <- getPipelinePrototype(loadedMetaPipeline)
+str(pipelineProtoLoaded)
+
+pipelineProtoLoaded$fn_getColor$arg_param1 <- "green"
+pipelineProtoLoaded$fn_getColumnName$arg_param1 <- "Sepal.Length"
+pipelineProtoLoaded$fn_univarCatDistPlots$arg_param1 <- "Species"
+
+loadedMetaPipeline %>>% createPipelineInstance(pipelineProtoLoaded) -> newPipelineObjLoaded
+
+newPipelineObjLoaded %>>% setInput(input = iris) %>>% generateOutput %>>% getOutputById("3")
+```
+

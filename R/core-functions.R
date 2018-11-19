@@ -315,6 +315,10 @@ registerFunction <- function( functionName, heading = "",
   return(.analysisPipelinesEnvir$.outputCache)
 }
 
+.setRegistry <- function(.registry){
+  .analysisPipelinesEnvir$.functionRegistry <- .registry
+}
+
 #' @name loadPredefinedFunctionRegistry
 #' @title Loading the registry of predefined functions
 #' @details Loads the registry of predefined functions
@@ -574,7 +578,8 @@ setGeneric(
   tryCatch({
     object@output <- list()
     object@input <- data.frame()
-    listToBeSaved <- c("object", getRegistry()$functionName, getRegistry()$exceptionHandlingFunction)
+    .registry <- getRegistry()
+    listToBeSaved <- c("object", ".registry", getRegistry()$functionName, getRegistry()$exceptionHandlingFunction)
     save(list = listToBeSaved,file = path)
   },error = function(e){
     futile.logger::flog.error(e, name = "logger.base")
@@ -1128,6 +1133,8 @@ setMethod(
   definition = .visualizePipeline
 )
 
+
+
 ########### Changing generics ############################################
 
 #' @rdname generateOutput
@@ -1298,12 +1305,21 @@ genericPipelineException <- function(error){
 
 loadPipeline <- function(path, input = data.frame() , filePath = ""){
   tryCatch({
+
+    futile.logger::flog.warn("||  The existing registry will be overwritten with the registry from the RDS file  ||",
+                             name = "logger.base")
     load(path, envir = environment())
-    functionNames = setdiff(ls(envir = environment()), c("RDSPath", "object", "input", "filePath"))
+    functionNames = setdiff(ls(envir = environment()), c("path", "object", "input", "filePath", ".registry"))
+
 
     lapply(functionNames, function(x){
       assign(x, get(x, environment()), globalenv())
     })
+
+    .setRegistry(.registry)
+    futile.logger::flog.info("||  Registry loaded succesfully  ||",
+                             name = "logger.base")
+
 
     input <- initDfBasedOnType(input, filePath)
     schemaCheck <- object %>>% checkSchemaMatch(input)
@@ -1388,5 +1404,52 @@ initDfBasedOnType <- function(input, filePath){
 }
 
 
+#' @name saveRegistry
+#' @title TBW
+#' @param path TBW
+#' @details TBW
+#'@return TBW
+#' @family Package core functions
+#' @export
+saveRegistry <- function(path){
+    tryCatch({
+      .registry <- getRegistry()
+      listToBeSaved <- c(".registry", getRegistry()$functionName, getRegistry()$exceptionHandlingFunction)
+      save(list = listToBeSaved,file = path)
+    },error = function(e){
+      futile.logger::flog.error(e, name = "logger.base")
+      stop()
+    })
+}
+
+
+#' @name loadRegistry
+#' @title TBW
+#' @param path TBW
+#' @details TBW
+#'@return TBW
+#' @family Package core functions
+#' @export
+loadRegistry <- function(path){
+  tryCatch({
+    futile.logger::flog.warn("||  The existing registry will be overwritten with the registry from the RDS file  ||",
+                             name = "logger.base")
+
+    load(path, envir = environment())
+    functionNames = setdiff(ls(envir = environment()), c("path", ".registry"))
+    .setRegistry(.registry)
+
+    lapply(functionNames, function(x){
+      assign(x, get(x, environment()), globalenv())
+    })
+
+
+    futile.logger::flog.info("||  Registry loaded succesfully  ||",
+                             name = "logger.base")
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+    stop()
+  })
+}
 
 
