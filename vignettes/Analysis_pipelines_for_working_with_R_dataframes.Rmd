@@ -235,7 +235,6 @@ getColumnName <-function(columnName){
 }
 
 registerFunction(functionName = "getColor", isDataFunction = F, firstArgClass = "character")
-
 registerFunction(functionName = "getColumnName", isDataFunction = F, firstArgClass = "character")
 
 getRegistry()
@@ -298,6 +297,10 @@ obj2 <- loadPipeline('pipeline.RDS',filePath = system.file("hotel_new.csv", pack
 getRegistry()
 obj2 %>% getPipeline
 ```
+
+# Saving and loading registries
+
+TBW
 
 # Details of execution
 
