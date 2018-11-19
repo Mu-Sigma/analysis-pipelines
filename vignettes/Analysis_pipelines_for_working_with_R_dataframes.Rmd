@@ -60,7 +60,7 @@ As of this version, the package supports functions executed on *R*, or *Spark* t
 This package contains 5 vignettes:
 
 * This is the main vignette describing the package's core functionality, and explaining this through **batch** pipelines in just **R**
-* **Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses** - This vignette describes creating **batch** pipelines to execute in solely in a *Spark* environment 
+* **Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses** - This vignette describes creating **batch** pipelines to execute solely in a *Spark* environment 
 * **Interoperable analysis pipelines** - This vignette describes creating and executing **batch** pipelines which are composed of functions executing across *supported engines*
 * **Streaming Analysis Pipelines for working with Apache Spark Structured Streaming** - This vignette describes setting up streaming pipelines on *Apache Spark Structured Streaming*
 * **Using pipelines inside Shiny widgets or apps** - A brief vignette which illustrates an example of using a pipeline inside a shiny widget with reactive elements and changing data
