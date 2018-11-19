@@ -114,7 +114,38 @@ registerFunction <- function( functionName, heading = "",
                                isDataFunction = T, firstArgClass = "",
                                loadPipeline = F, userDefined = T
                                ){
-    # tryCatch({
+    tryCatch({
+
+      #NULL checks
+      if(is.null(functionName) || functionName == ""){
+        functionName <- paste("userDefinedFunction_", Sys.time())
+        futile.logger::flog.warn(paste("||  NULL or empty name provided. Setting function name automatically as '%s'   ||"),
+                                 functionName, name = "logger.base")
+      }
+
+      if(!functionType %in% c("batch", "streaming")){
+        futile.logger::flog.error(paste("||  The provided 'functionType' must be 'batch' or 'streaming'   ||"),
+                                  name = "logger.base")
+        stop()
+      }
+
+      if(!engine %in% c("r", "spark", "spark-structured-streaming", "python")){
+        futile.logger::flog.error(paste("|| 'engine' must be one of the supported engines. Please check ",
+                                        "with this version of the packge in the documentation  ||"),
+                                  name = "logger.base")
+        stop()
+      }
+
+      if(is.null(exceptionFunction)){
+        futile.logger::flog.warn(paste("|| 'exceptionFunction' must not be NULL. Setting automatically to default.  "),
+                                  name = "logger.base")
+      }
+
+      if(!is.logical(isDataFunction)){
+        futile.logger::flog.error(paste("|| 'isDataFunction' must be a logical value.  "),
+                                 name = "logger.base")
+        stop()
+      }
 
 
       #Define data frame class according to engine type
@@ -141,6 +172,7 @@ registerFunction <- function( functionName, heading = "",
                                             "If you'd like to change the definition, please re-assign the function definition",
                                              "and then call 'registerFunction' again.  ||"),
                                       functionName, name = "logger.base")
+            stop()
           }
       }, warning = function(w){
         tryCatch({
@@ -148,6 +180,7 @@ registerFunction <- function( functionName, heading = "",
         }, error = function(e){
           futile.logger::flog.error(paste("||  The provided function name does not exist in the Global environment  ||"),
                                     name = "logger.base")
+          stop()
         })
       })
 
@@ -158,6 +191,7 @@ registerFunction <- function( functionName, heading = "",
         }, error = function(e){
           futile.logger::flog.error(paste("||  The provided class of the first argument is not defined  ||"),
                                     name = "logger.base")
+          stop()
         })
 
       }
@@ -250,10 +284,10 @@ registerFunction <- function( functionName, heading = "",
           }
         }
       }
-    # }, error = function(e){
-    #   futile.logger::flog.error(e, name = "logger.base")
-    #   stop()
-    # })
+    }, error = function(e){
+      futile.logger::flog.error(e, name = "logger.base")
+      stop()
+    })
   }
 
 .updateRegistry <- function(functionName,
@@ -1347,53 +1381,6 @@ initDfBasedOnType <- function(input, filePath){
   stop()
   })
 }
-
-
-#' @name checkPipelineCompatibilityWithNewData
-#' @title Checks whether the pipeline is compatible new dataset
-#' @details
-#'      Internally compares the schema of the new dataset with the original dataset with which the pipeline
-#'      was initialized. Additionally, it checks whether all functions in the pipeline are compatible with the new
-#'      dataset.
-#' @param pipeline An \code{AnalysisPipeline} object
-#' @param dfToBeChecked Dataframe to be checked for compatibility
-#' @return logical value (T or R) specifying whether the new dataset is compatible with the pipeline
-#' @family Package core functions
-#' @keywords internal
-#'
-
-#' @name updatePackageRegistry
-#' @title Updates the package registry
-#' @details
-#'       Updates the registry of predefined functions available in the package (For developer use)
-#' @param functionName the name of the function
-#' @param functionHeader the header caption that will feature in the report for this function's output
-#' @param flag a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
-#' @return An \code{AnalysisPipeline} object, optinally initialized with the data frame provided
-#' @family Package core functions
-#' @keywords internal
-#'
-#' ####TODO - This function needs rework to comply with R package structures and mechanisms. Currently, the name of
-#' the function needs to be manually added in the data-raw
-#'
-# updatePackageRegistry <- function(functionName, functionHeader, flag){
-#   tryCatch({
-#     functionsDefined <- readRDS("support/predefFunctions.RDS")
-#     invisible(source("EDA.R"))
-#     functionList <- ls(envir = .GlobalEnv)
-#     if(functionName %in% functionList){
-#       functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
-#       print(functionsDefined)
-#       saveRDS(functionsDefined, "support/predefFunctions.RDS")
-#       print("Successfully Registered function into package!")
-#     }else
-#       print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))
-#   }, error = function(e){
-#     stop(e)
-#   }, warning = function(e){
-#     warning(e)
-#   })
-# }
 
 
 

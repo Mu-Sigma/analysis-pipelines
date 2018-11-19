@@ -54,14 +54,6 @@ setMethod(
       ## Calling the parent constructor
       .Object <- methods::callNextMethod(.Object, ...)
 
-      # for(rowNo in 1:nrow(batchPredefFunctions)){
-      #   .Object %>>% registerFunction(functionName = batchPredefFunctions[['functionName']][[rowNo]],
-      #                                 heading =  batchPredefFunctions[['heading']][[rowNo]],
-      #                                 # batchPredefFunctions[['outAsIn']][[rowNo]],
-      #                                 engine = batchPredefFunctions[['engine']][[rowNo]],
-      #                                 exceptionFunction = batchPredefFunctions[['exceptionHandlingFunction']][[rowNo]],
-      #                                 userDefined = F, loadPipeline = F ) -> .Object
-      # }
       return(.Object)
 
     },error = function(e){
