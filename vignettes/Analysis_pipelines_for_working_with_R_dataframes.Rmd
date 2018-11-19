@@ -235,6 +235,7 @@ getColumnName <-function(columnName){
 }
 
 registerFunction(functionName = "getColor", isDataFunction = F, firstArgClass = "character")
+
 registerFunction(functionName = "getColumnName", isDataFunction = F, firstArgClass = "character")
 
 getRegistry()
