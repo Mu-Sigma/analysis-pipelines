@@ -271,7 +271,7 @@ registerFunction <- function( functionName, heading = "",
         # Updating registry
         if(loadPipeline==F){
           fn <- paste0(functionName)
-          if(nrow(getRegistry() %>>% dplyr::filter(functionName == fn)) == 0){
+
             .updateRegistry(functionName = fn,
                             heading = heading,
                             engine = engine,
@@ -281,7 +281,6 @@ registerFunction <- function( functionName, heading = "",
                             firstArgClass = firstArgClass)
             invisible("Registration Successful")
             futile.logger::flog.info("||  Function '%s' was registered successfully  ||", fn, name = "logger.base")
-          }
         }
       }
     }, error = function(e){
@@ -297,6 +296,11 @@ registerFunction <- function( functionName, heading = "",
                             userDefined = F,
                             isDataFunction = T,
                             firstArgClass = ""){
+  fn <- paste(functionName)
+  if(nrow(.analysisPipelinesEnvir$.functionRegistry  %>>% dplyr::filter(functionName == fn)) == 1){
+    .analysisPipelinesEnvir$.functionRegistry %>>%
+                              dplyr::filter(functionName != fn) -> .analysisPipelinesEnvir$.functionRegistry
+  }
   .analysisPipelinesEnvir$.functionRegistry %>>% dplyr::add_row(functionName = functionName,
                                                                 heading = heading,
                                                                 engine = engine,
@@ -304,6 +308,7 @@ registerFunction <- function( functionName, heading = "",
                                                                 userDefined = userDefined,
                                                                 isDataFunction = isDataFunction,
                                                                 firstArgClass = firstArgClass) -> .analysisPipelinesEnvir$.functionRegistry
+
 }
 
 .getCache <- function(){
