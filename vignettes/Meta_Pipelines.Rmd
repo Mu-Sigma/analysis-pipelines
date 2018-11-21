@@ -40,6 +40,7 @@ pipeline %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupanc
       outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
 
 complexPipeline %>>% getPipeline
+complexPipeline %>>% prepExecution -> complexPipeline
 
 complexPipeline %>>% generateOutput -> op
 op %>>% getOutputById("3")
@@ -52,9 +53,9 @@ complexPipeline %>>% exportAsMetaPipeline -> complexMetaPipeline
 pipelineProto <- getPipelinePrototype(complexMetaPipeline)
 str(pipelineProto)
 
-pipelineProto$fn_getColor$arg_param1 <- "green"
-pipelineProto$fn_getColumnName$arg_param1 <- "Sepal.Length"
-pipelineProto$fn_univarCatDistPlots$arg_param1 <- "Species"
+pipelineProto$getColor$color<- "green"
+pipelineProto$getColumnName$columnName<- "Sepal.Length"
+pipelineProto$univarCatDistPlots$uniCol <- "Species"
 
 complexMetaPipeline %>>% visualizePipeline
 complexMetaPipeline %>>% createPipelineInstance(pipelineProto) -> newPipelineObj
@@ -82,15 +83,16 @@ getCol <-function(columnName){
 registerFunction(functionName = "getC", isDataFunction = F, firstArgClass = "character")
 registerFunction(functionName = "getCol", isDataFunction = F, firstArgClass = "character")
 
+getRegistry()
 loadMetaPipeline(path = "metaPipeline.RDS") -> loadedMetaPipeline
 getRegistry()
 
 pipelineProtoLoaded <- getPipelinePrototype(loadedMetaPipeline)
 str(pipelineProtoLoaded)
 
-pipelineProtoLoaded$fn_getColor$arg_param1 <- "green"
-pipelineProtoLoaded$fn_getColumnName$arg_param1 <- "Sepal.Length"
-pipelineProtoLoaded$fn_univarCatDistPlots$arg_param1 <- "Species"
+pipelineProto$getColor$color<- "green"
+pipelineProto$getColumnName$columnName<- "Sepal.Length"
+pipelineProto$univarCatDistPlots$uniCol <- "Species"
 
 loadedMetaPipeline %>>% createPipelineInstance(pipelineProtoLoaded) -> newPipelineObjLoaded
 
