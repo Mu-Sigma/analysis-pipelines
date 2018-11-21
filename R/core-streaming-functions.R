@@ -113,12 +113,15 @@ setMethod(
 
         params <- lapply(params, function(p){
           if(class(p) == "formula"){
-            formulaTerm <- attr(terms(p), "term.label")
-            if(length(formulaTerm) == 1 && formulaTerm %in% depTerms){
+            isDepParam <- isDependencyParam(p)
+            if(isDepParam){
+              formulaTerm <- getTerm(p)
+              if(formulaTerm %in% depTerms){
 
-              ## Formula of previous function in pipeline
-              actualParamObjectName <- paste0(formulaTerm, ".out")
-              p <-  get(actualParamObjectName, envir = outputCache)
+                ## Formula of previous function in pipeline
+                actualParamObjectName <- paste0(formulaTerm, ".out")
+                p <-  get(actualParamObjectName, envir = outputCache)
+              }
             }
           }
 
@@ -129,9 +132,21 @@ setMethod(
         #Call
         startFunc <- Sys.time()
         #Assign as named parameters
+        #Get names of params
+        paramNames <- lapply(params, function(p){
+          return(names(p))
+        })  %>>% unlist
+        params <-lapply(params, function(p){
+          names(p) <- NULL
+          return(p)
+        })
+        names(params) <- paramNames
+        args <- params
+        if(funcDetails$isDataFunction){
+          args <- append(list(object = inputToExecute), params)
+        }
         output <- tryCatch({do.call(what = funcDetails$operation,
-                                    args = append(list(inputToExecute),
-                                                  params))},
+                                    args = args)},
                            error = function(e){
                              futile.logger::flog.error("||  ERROR Occurred in Function ID '%s' named '%s'. EXITING PIPELINE EXECUTION. Calling Exception Function - '%s'  ||",
                                                        funcDetails$id, funcDetails$operation, funcDetails$exceptionHandlingFunction,

@@ -200,27 +200,59 @@ registerFunction <- function( functionName, heading = "",
       if(length(doesMethodExist) == 0){
 
         parametersName <- ""
+        paramsToBeParsed <- ""
+        methodParams <- ""
+        genericSignature <- c()
+        objectName <- "object"
+
+        packageMethodSignature <- c()
+        origMethodSignature <- c()
+
         objectArg <- alist(object = )
         commonArgs <- alist(outAsIn = F, storeOutput = F)
+        newArgs <- alist()
 
         f <- get(functionName, .GlobalEnv)
         originalArgs <- formals(f) %>>% as.list
         firstArg <- names(originalArgs)[1]
 
+
         if(isDataFunction){
-          originalArgs <- originalArgs[-1]
+          # originalArgs <- originalArgs[-1]
+          newArgs <- originalArgs
           firstArgClass <- dataFrameClass
+          paramsToBeParsed <- paste0(originalArgs[-1] %>>% names, collapse = ", ")
+          genericSignature <- names(originalArgs)[1]
+          objectName <- names(originalArgs)[1]
+
+          packageMethodSignature <- paste0('"', childClass, '"')
+          origMethodSignature <-paste0('"', dataFrameClass, '"')
+        }else{
+          newArgs <- append(objectArg, originalArgs)
+          paramsToBeParsed <- paste0(originalArgs %>>% names, collapse = ", ")
+          genericSignature <- c("object", names(originalArgs)[1])
+
+          formulaUnionClassName <- paste0("formulaOR", firstArgClass)
+           setClassUnion(name = formulaUnionClassName,
+                                             c("formula", firstArgClass),
+                                             where = .GlobalEnv)
+          packageMethodSignature <- c(childClass, formulaUnionClassName)
+          origMethodSignature <- c("missing", firstArgClass)
+
+          #Converting to string
+          packageMethodSignature <- paste0('c("', paste(packageMethodSignature, collapse = '", "'), '")')
+          origMethodSignature <- paste0('c("', paste(origMethodSignature, collapse = '", "'), '")')
         }
 
-        parametersList <- originalArgs %>>% names
-        parametersName <- paste0(parametersList,collapse=", ")
+        parametersName <- paste0(newArgs %>>% names, collapse = ", ")
+        methodParams <- paste0(originalArgs %>>% names, collapse = ", ")
 
-        if(parametersName != ""){
-          parametersName <- paste0(", ", parametersName)
-        }
+        # if(parametersName != ""){
+        #   parametersName <- paste0(", ", parametersName)
+        # }
 
         methodBody <- paste0(utils::capture.output(body(eval(parse(text=functionName)))),collapse="\n")
-        methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object;"), x = methodBody)
+        # methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object;"), x = methodBody)
 
         ##Assigning the exception function to the global Environment
         assign(exceptionFunction, get(x = exceptionFunction,
@@ -228,39 +260,53 @@ registerFunction <- function( functionName, heading = "",
                envir = .GlobalEnv)
 
 
-        newArgs <- append(objectArg, originalArgs)
-        newArgs <- append(newArgs, commonArgs)
-        formals(f) <- newArgs
+
+        genericArgs <- append(newArgs, commonArgs)
+        formals(f) <- genericArgs
         body(f) <- paste('standardGeneric("', functionName,'")')
 
         registerFunText <-
           paste0(
                  # Adding to pipeline when run on a Analysis Pipeline object
                  'setMethod(f = "', functionName,'",',
-                     'signature = "', childClass, '",',
-                     'definition = function(object',
+                     'signature = ', packageMethodSignature, ',',
+                     'definition = function(',
                      parametersName, ',',
                      'outAsIn, storeOutput){',
-                         'parametersList <- unlist(strsplit(x = "', sub(", ", "", parametersName), '", split = ","' ,'));',
-                         'parametersPassed <- lapply(parametersList, function(x){eval(parse(text = x))});',
-                         'return(updateObject(object,
-                              operation = "', functionName, '",',
+                         'parametersList <- unlist(strsplit(x = "', paramsToBeParsed, '", split = ","' ,'));',
+                          'parametersList <- trimws(parametersList);',
+                         'parametersPassed <- lapply(parametersList, function(x){',
+                                                                              'val <- eval(parse(text = x));',
+                                                                              'if(class(val) == "formula"){',
+                                                                                'if(analysisPipelines:::isDependencyParam(val)){',
+                                                                                   'val <- as.formula(paste(x,"~",analysisPipelines:::getTerm(val)))',
+                                                                                '};',#else{',
+                                                                                  # 'names(val) <- x',
+                                                                                # '};',
+                                                                              '};', #else{',
+                                                                                # 'names(val) <- x',
+                                                                              # '};',
+                                                                               'return(val);}',
+                                                    ');',
+                          'names(parametersPassed) <- parametersList;',
+                         'return(updateObject(', objectName, ',',
+                              'operation = "', functionName, '",',
                              'heading = "', heading, '",',
                              'parameters = parametersPassed, outAsIn = outAsIn, storeOutput = storeOutput));});',
 
                  #Executing the actual function when pipeline is executed
                  'setMethod(f = "',functionName,'",',
-                     'signature = "', firstArgClass, '",',
-                     'definition = function(object ', parametersName,')',
+                     'signature = ', origMethodSignature, ',',
+                     'definition = function( ', methodParams,')',
                      methodBody, ')'
           )
 
         #Register function
         # Generic
        setGeneric(name = functionName,
-                         signature = "object",
-                         def = f,
-                         where = .GlobalEnv)
+                  signature = genericSignature,
+                  def = f,
+                  where = .GlobalEnv)
         try({
           removeMethod(f = get(functionName, .GlobalEnv), signature = "ANY", where = .GlobalEnv)
         }, silent = T)
@@ -728,6 +774,48 @@ setMethod(
   definition = .getOutputById
 )
 
+######################## Formula helper functions ############
+
+#' @name getResponse
+#' @title Obtains the response term from the formula
+#' @keywords internal
+getResponse <- function(f){
+  resp <- dimnames(attr(terms(f), "factors"))[[1]][1]
+  return(resp)
+}
+
+#' @name getTerm
+#' @title Obtains the dependency term from the formula
+#' @keywords internal
+getTerm <- function(f){
+  t <- attr(terms(f), "term.labels")
+  return(t)
+}
+
+#' @name isDependencyParam
+#' @title Checks if the parameter is the dependency parameter
+#' @keywords internal
+isDependencyParam <- function(f){
+  termRegexPattern <- "[f]|[:digit:]"
+  t <- NULL
+  isDepParam <- F
+  numDepTerms <- 0
+  t <- getTerm(f)
+
+  if(!is.null(t)){
+    if(length(t) == 1){
+      depTerms <- grep(termRegexPattern, t)
+    }
+  }
+
+  if(length(depTerms) > 0){
+    isDepParam <- T
+  }
+
+  return(isDepParam)
+}
+
+
 
 ######################## Execution helper functions ############
 
@@ -737,23 +825,20 @@ setMethod(
 getUpstreamDependencies <- function(row){
   tryCatch({
     ## dependencies from parameters
-    termRegexPattern <- "[f]|[:digit:]"
-    params <- row$parameters
+
+    params <- unlist(row$parameters, recursive = F)
+    # params <- row$parameters
     dep <- lapply(params, function(p){
+      isDepParam <- F
       t <- NULL
       tId <- NA
+      # p <- unlist(p)
       if(class(p) == "formula"){
-        t <- attr(terms(p), "term.labels")
+        isDepParam <- isDependencyParam(p)
       }
-
-      isDependencyParam <- c()
-
-      if(!is.null(t)){
-        isDependencyParam <- grep(termRegexPattern, t)
-      }
-
-      if(length(isDependencyParam) > 0){
+      if(isDepParam){
         # Dependency param
+        t <- getTerm(p)
         tId <- as.numeric(gsub(pattern = "f", replacement = "", t))
       }
       return(tId)
@@ -954,14 +1039,6 @@ setGeneric(
     topOrdering <- identifyTopologicalLevels(nodes, edgeDf)
     object@pipelineExecutor$topologicalOrdering <- topOrdering
     object@pipelineExecutor$dependencyLinks <- edgeDf
-
-    # if(!pipelineRegistryJoin[nrow(pipelineRegistryJoin), "storeOutput"]){
-    #   object@pipeline[nrow(object@pipeline), "storeOutput"] <- TRUE
-    #   futile.logger::flog.info(msg = paste("||  The last function in the pipeline, '%s', has NOT been configured to store output.",
-    #                                        "Automatically reconfiguring to STORE output  ||"),
-    #                            pipelineRegistryJoin[nrow(pipelineRegistryJoin), "operation"],
-    #                            name='logger.prep')
-    # }
 
     endPipelinePrep <- Sys.time()
     prepTime <- endPipelinePrep - startPipelinePrep
