@@ -6,6 +6,7 @@
 #' @exportClass MetaAnalysisPipeline
 #' @export MetaAnalysisPipeline
 
+setOldClass("proto")
 MetaAnalysisPipeline <- setClass("MetaAnalysisPipeline",
                                  slots = c(
                                    pipeline = "tbl",
@@ -61,6 +62,7 @@ setGeneric(
 )
 
 .exportAsMetaPipeline <- function(object){
+  object %>>% setLoggerDetails(target = "none") -> object
   metaPipeline <- MetaAnalysisPipeline()
   pipelineProto <- proto::proto()
   if(class(object) == "AnalysisPipeline"){
@@ -69,19 +71,26 @@ setGeneric(
     metaPipeline@type <- "streaming"
   }
 
+  if(nrow(object@pipelineExecutor$topologicalOrdering) == 0){
+    object %>>% prepExecution -> object
+  }
+
   object@pipeline -> pipeline
   pipeline %>>% purrr::pmap(function(id, operation, heading,
-                                     parameters, outAsIn, storeOutput){
-    # print(operation)
-    fnName <- paste0("fn_", operation)
+                                     parameters, outAsIn, storeOutput, dependencies){
+    # fnName <- paste0("fn_", operation)
+    fnName <- operation
     assign(x = fnName, value = proto::proto(), envir = pipelineProto)
-    paramNames <- names(parameters)
-    if(is.null(paramNames)){
-      names(parameters) <- paste0("param", 1:length(parameters))
-    }
 
-    purrr::imap(parameters, function(p, n){
-      assign(x = paste0("arg_", n),
+    purrr::imap(parameters, function(p, np){
+      # n <- names(p)
+      if(class(p) == "formula"){
+        if(analysisPipelines:::isDependencyParam(p)){
+          n <- analysisPipelines:::getResponse(p)
+          p <- paste0("~", analysisPipelines:::getTerm(p)) %>>% as.formula
+        }
+      }
+      assign(x = paste0(np),
              value = p,
              envir = pipelineProto[[fnName]])
       return(NULL)
@@ -155,23 +164,33 @@ setGeneric(
 
   newParamList <- newParams
   if(any(class(newParams) == "proto")){
-    names(newParams) %>>% grepl(x = ., pattern = "^fn_*" ) -> fnNameInd
-    names(newParams)[fnNameInd] -> fnNames
-    newParamList <- purrr::imap(fnNames, function(fn, n){
-      fnEnvir <- get(fn, envir = newParams)
-      fnEnvir %>>% ls %>>% grepl(x = ., pattern = "^arg_*" ) %>>% which -> argNameInd
-      ls(fnEnvir)[argNameInd] -> argNames
-      params <- mget(x = argNames, envir = newParams[[fn]])
+    names(newParams) %>>% grep(x = ., pattern = "^[.]", value = T, invert = T ) -> fnNames
 
-      #TODO: Remove this once names are set
-      names(params) <- NULL
+    newParamList <- purrr::imap(fnNames, function(fn, nfn){
+      fnEnvir <- get(fn, envir = newParams)
+      fnEnvir %>>% names %>>% grep(x = ., pattern = "^[.]", invert = T, value = T ) -> argNames
+      params <- mget(x = argNames, envir = newParams[[fn]])
+      params <- purrr::imap(params, function(p, np){
+        if(class(p) == "formula"){
+          if(analysisPipelines:::isDependencyParam(p)){
+            p <- paste(np, "~", analysisPipelines:::getTerm(p)) %>>% as.formula
+            # names(p) <- NULL
+          }
+          #TODO: Deal with normal formula parameters
+        } #else{
+          # names(p) <- np
+        # }
+        return(p)
+      })
+      # names(params) <- NULL
       return(params)
     })
-    names(newParamList) <- unlist(lapply(fnNames, function(f) unlist(strsplit(f, "_"))[2]))
+    names(newParamList) <- fnNames
   }
 
   tblOrder <- match(pipelineObj@pipeline$operation, names(newParamList))
   newParamList <- newParamList[tblOrder]
+  names(newParamList) <- NULL
 
   pipelineObj@pipeline %>>% dplyr::mutate(parameters = newParamList) -> pipelineObj@pipeline
 
@@ -188,6 +207,7 @@ setMethod(
 .visualizeMetaPipeline <- function(object){
   object %>>% createPipelineInstance(object@pipelinePrototype) -> sampleObj
   vis <- NULL
+  sampleObj %>>% setLoggerDetails(target = "none") -> sampleObj
   sampleObj %>>% prepExecution -> sampleObj
   sampleObj %>>% visualizePipeline -> vis
   return(vis)
@@ -233,7 +253,7 @@ loadMetaPipeline <- function(path){
                                name = "logger.base")
     load(path, envir = environment())
     functionNames = setdiff(ls(envir = environment()), c("path", "object", ".registry"))
-
+    .setRegistry(.registry)
     lapply(functionNames, function(x){
       assign(x, get(x, environment()), globalenv())
     })

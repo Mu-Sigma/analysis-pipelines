@@ -234,6 +234,7 @@ checkSchema <- function(dfOld, dfNew){
     startPipelineExecution <- Sys.time()
     futile.logger::flog.info("||  Pipeline Execution STARTED  ||" , name='logger.execution')
 
+    maxEngineName <- "r"
     outputCache <- .getCache()
 
     topOrder <- object@pipelineExecutor$topologicalOrdering
@@ -247,9 +248,10 @@ checkSchema <- function(dfOld, dfNew){
     engineCount %>>% dplyr::filter(numOp == max(numOp)) -> maxEngine
 
 
-    maxEngineName <- "r"
     if(nrow(maxEngine) == 1){
       maxEngineName <- maxEngine$engine
+    }else{
+      maxEngineName <- maxEngine$engine[1]
     }
 
     inputToExecute <- object@input
@@ -392,17 +394,21 @@ checkSchema <- function(dfOld, dfNew){
         # Set parameters
 
         params <- unlist(funcDetails$parameters, recursive = F)
-        dep <- unlist(funcDetails$dependencies, recursive = F)
+        dep <- unique(unlist(funcDetails$dependencies, recursive = F))
         depTerms <- paste0("f", dep)
 
         params <- lapply(params, function(p, depTerms, outputCache){
           if(class(p) == "formula"){
-            formulaTerm <- attr(terms(p), "term.label")
-            if(length(formulaTerm) == 1 && formulaTerm %in% depTerms){
+            isDepParam <- analysisPipelines:::isDependencyParam(p)
+            if(isDepParam){
+              formulaTerm <- analysisPipelines:::getTerm(p)
+              argName <-  analysisPipelines:::getResponse(p)
+              if(formulaTerm %in% depTerms){
 
-              ## Formula of previous function in pipeline
-              actualParamObjectName <- paste0(formulaTerm, ".out")
-              p <-  get(actualParamObjectName, envir = outputCache)
+                ## Formula of previous function in pipeline
+                actualParamObjectName <- paste0(formulaTerm, ".out")
+                p <-  get(actualParamObjectName, envir = outputCache)
+              }
             }
           }
 
@@ -413,10 +419,27 @@ checkSchema <- function(dfOld, dfNew){
         #Call
 
         #Assign as named parameters
+        #Get names of params
+        # paramNames <- lapply(params, function(p){
+        #   return(names(p))
+        # })  %>>% unlist
+        # params <-lapply(params, function(p){
+        #   names(p) <- NULL
+        #   return(p)
+        # })
+        # names(params) <- paramNames
         args <- params
         if(funcDetails$isDataFunction){
-          args <- append(list(inputToExecute), params)
+          formals(funcDetails$operation) %>>% as.list %>>% names %>>% dplyr::first() -> firstArgName
+          firstArg <- list(inputToExecute)
+          names(firstArg) <- firstArgName
+          args <- append(firstArg, params)
         }
+        # }else{
+        #   firstParam <- params[1]
+        #   names(firstParam) <- "object"
+        #   args <- append(firstParam, params[-1])
+        # }
         output <- tryCatch({do.call(what = funcDetails$operation,
                                     args = args)},
                            error = function(e){
