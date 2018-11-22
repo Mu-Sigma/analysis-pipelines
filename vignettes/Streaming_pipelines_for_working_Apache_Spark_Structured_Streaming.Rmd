@@ -26,7 +26,7 @@ The vignette aims to show examples of using SparkR as an interface to run stream
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
-    eval = TRUE
+    eval = FALSE
   )
 library(analysisPipelines)
 library(SparkR)

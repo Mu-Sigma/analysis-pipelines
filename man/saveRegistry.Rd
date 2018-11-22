@@ -2,21 +2,19 @@
 % Please edit documentation in R/core-functions.R
 \name{saveRegistry}
 \alias{saveRegistry}
-\title{TBW}
+\title{Saves the registry to the file system}
 \usage{
 saveRegistry(path)
 }
 \arguments{
-\item{path}{TBW}
-}
-\value{
-TBW
+\item{path}{path on the file system, where the registry is to be saved to}
 }
 \description{
-TBW
+Saves the registry to the file system
 }
 \details{
-TBW
+This function saves  the existing function registry and associated function definition loaded in the
+environment into a file.
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
