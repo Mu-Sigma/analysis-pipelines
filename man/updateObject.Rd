@@ -60,4 +60,3 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{visualizePipeline}}
 }
 \concept{Package core functions}
-\keyword{internal}
