@@ -474,7 +474,7 @@ setMethod(
 #' @param storeOutput whether the output of this operation is to be stored
 #' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
-#' @keywords internal
+#' @export
 setGeneric(
   name = "updateObject",
   def = function(object,
