@@ -223,6 +223,8 @@ obj2Output %>>% getPipeline()
 
 In addition to the simple pipelines described above, more complex pipelines can also be defined. There are cases when the outputs of previous functions in the pipeline, as inputs to arbitrary parameters of subsequent functions. This is *apart* from the **data** which is passed through in a more *native* manner through the *outAsIn* argument to subsequent functions in the pipeline.
 
+## Using formulae in pipelines
+
 The package defines certain *formula* semantics to accomplish this. We take the example of two simple user-defined functions, both which simply return the color of the graph, as well as the column on which the graph should be plotted, in order to illustrate how this works.
 
 ```{r}
@@ -252,6 +254,10 @@ complexPipeline %>>% getPipeline
 complexPipeline %>>% generateOutput -> op
 op %>>% getOutputById("3")
 ```
+
+## Differences between `outAsIn` and formulae - When to use what
+
+TBW
 
 # Visualizing pipelines
 

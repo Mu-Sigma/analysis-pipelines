@@ -16,6 +16,7 @@ vignette: >
 library(analysisPipelines)
 ```
 
+# Pipelines in shiny apps
 Pipelines can be used as part of Shiny widgets or apps. In the following example, we define a simple pipeline which generates a chart, and use that to power a shiny widget.
 
 In this example, we emulate streaming dataset using the `shiny::reactivePoll` function and randomly sampling from an existing sample dataset in the package.
@@ -48,3 +49,7 @@ We then use the pipeline within the `shiny::renderPlot` function, and set the sa
     })
 ```
 ---
+
+# Meta-pipelines in shiny apps
+
+TBW
