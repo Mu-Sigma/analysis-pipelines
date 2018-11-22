@@ -30,8 +30,7 @@ DT::datatable(head(input),options = list(scrollX = T, scrollY = T))
 
 ```{r, echo =FALSE,warnings=FALSE,results='asis'}
 
-# rowNo <- 1
-outputDiagram <- ""
+knitString <- ""
 
 storedOps <- pipelineDetails %>>% dplyr::filter(storeOutput == T)
 
@@ -47,46 +46,11 @@ for(i in storedOps$id){
             \n```
             \n\n"
         )
-        outputDiagram <- paste0(outputDiagram, knit_expanded)
+        knitString <- paste0(knitString, knit_expanded)
 }
-
-# while(1) {
-# 
-#     if(pipelineDetails[['operation']][[rowNo]] != pipelineDetails[['operation']][[rowNo+1]]){
-# 
-#         rowNo <- rowNo + 1
-# 
-#     }
-    # else
-    # # {
-    #   outputDiagram <- paste0(outputDiagram, "\n`r {\"## ",pipelineDetails[['heading']][rowNo]," {.tabset}\"}`\n\n")
-    #   tabNo=1
-    #   while (1){
-    #     knit_expanded <- paste0(
-    #         "\n```{r chunk",rowNo,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
-    #         \n\n
-    #         cat('### ",tabNo," \n')
-    #         \n\n
-    #         output[[",rowNo,"]]
-    #         \n```
-    #         \n\n"
-    #     )
-    #     outputDiagram <- paste0(outputDiagram, knit_expanded)
-    #     rowNo <- rowNo + 1
-    #     tabNo <- tabNo + 1
-    #     if(pipelineDetails[['operation']][rowNo] != pipelineDetails[['operation']][rowNo-1])
-    #       break
-    #   }
-    # }
-    # 
-    # if(rowNo > length(output))
-    #   break    
-
-# }
-
 
 ```
 
 
-`r paste(knitr::knit(text = outputDiagram), collapse = '\n')`
+`r paste(knitr::knit(text = knitString), collapse = '\n')`
 
