@@ -189,9 +189,12 @@ registerFunction <- function( functionName, heading = "",
         tryCatch({
           getClass(firstArgClass)
         }, error = function(e){
-          futile.logger::flog.error(paste("||  The provided class of the first argument is not defined  ||"),
+          setOldClass(firstArgClass, where = .GlobalEnv)
+          futile.logger::flog.error(paste("||  The provided class of the first argument is not a defined S4 class.',
+                                          ' Assuming that it is an S3 class and setting the definition in the ',
+                                          environment  ||"),
                                     name = "logger.base")
-          stop()
+          # stop()
         })
 
       }
