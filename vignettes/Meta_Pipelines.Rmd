@@ -1,5 +1,5 @@
 ---
-title: "Meta-pipelines - A classification example"
+title: "An introduction to meta-pipelines"
 author: "Naren Srinivasan"
 date: "11/19/2018"
 output: 
@@ -11,14 +11,36 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
----
 
-```{r}
-
+```{r message=F, results='hide'}
 knitr::opts_chunk$set(
-    eval = FALSE
+    eval = TRUE
   )
 library(analysisPipelines)
+```
+
+# Introduction
+
+The **meta-pipeline** construct is one which allows users to export pipelines they have created for a particular use case to a general analysis flow which can be used for a different dataset and different set of parameters. A *pipeline* is one where the data can change, though retaining the same schema, and the same set of parameters for the functions. A *meta-pipeline* is one where only the analysis flow, function dependencies and so on are retained. The specific parameters for each of the functions can be set differently for a new use case.
+
+The objective of a meta-pipeline is to define and execute reusable analysis flows. They can be used to:
+
+* Document best practices for a particular problem
+* Templatize analyses for particular situations
+
+# Using meta-pipelines
+
+## Creating a meta-pipeline
+
+Through this package, *meta-pipelines* can be created by exporting an already created *pipeline* to a *meta-pipeline*. The export retains the following items:
+
+* Function definitions
+* Flow of the functions and the dependencies (specified through formula semantics)
+* The registry from which the pipeline is defined
+
+In the example below, we first create a pipeline, similar to the one described in the other vignettes.
+
+```{r}
 pipeline <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
 getColor <- function(color){
   return(color)
@@ -34,6 +56,8 @@ registerFunction(functionName = "getColumnName", isDataFunction = F, firstArgCla
 getRegistry()
 ```
 
+We then generate an output from the pipeline, just to validate that the pipeline works properly. Of course, to define a meta-pipeline generation of output is not required.
+
 ```{r}
 pipeline %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy") %>>%
       univarCatDistPlots(uniCol = "building_type", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
@@ -47,27 +71,58 @@ op %>>% getOutputById("3")
 
 ```
 
+## Exporting and reusing for a different case
+
+Once a pipeline has been created, be it a batch or a streaming pipeline, it can be exported using the `exportAsMetaPipeline` method. This returns an object of class `MetaAnalysisPipeline` which stores the required information.
+
+The meta-pipeline can be *visualized* similar to a normal pipeline object by calling the `visualizePipeline` method on the `MetaAnalysisPipeline` object.
+
 ```{r}
 
 complexPipeline %>>% exportAsMetaPipeline -> complexMetaPipeline
+complexMetaPipeline %>>% visualizePipeline
+```
+
+## Setting the new parameters
+
+The next part of using the meta-pipeline is creating another pipeline with a different set of parameters. For this purpose, the user can first export the *pipeline prototype* which basically contains the set of functions used in the pipeline and their respective arguments.
+
+The pipeline prototype is exported as an object of class `proto` from the 'proto' package, which is a thin skin over environments, with usability advantages such as using methods like `names` to get the names of objects contained in it, as well as using the '$' operator to refer to specific objects. The aim of using this class is to provide an easy-to-use interface to set the new values of the arguments.
+
+The pipeline prototype has a nested structure. The first level is a list of objects which represent the list of functions in the pipeline. A specific function can just be referred to through its name. The second level, is the list of arguments for each of those functions (again referred by the usual name).
+
+The new values of the parameters can simply be set by using the '$' operator to refer to the values. The exported pipeline prototype by default contains the values of the parameters defined in the original pipeline. Therefore, the user can simply change some of the values as required or for all of the parameters.
+
+In the following example, we reconfigure the pipeline for use with the 'iris' dataset.
+
+```{r}
 pipelineProto <- getPipelinePrototype(complexMetaPipeline)
 str(pipelineProto)
-
 pipelineProto$getColor$color<- "green"
 pipelineProto$getColumnName$columnName<- "Sepal.Length"
 pipelineProto$univarCatDistPlots$uniCol <- "Species"
 
 complexMetaPipeline %>>% visualizePipeline
+```
+
+## Execution
+
+Now once the parameters have been set, a new pipeline object (which is executable) can be created by calling the `createPipelineInstance` method, and passing the meta-pipeline object and the pipeline prototype. This creates a pipeline object with the usual properties.
+
+We set the input of the pipeline object to the `iris` dataset and then execute to generate the output.
+
+```{r}
 complexMetaPipeline %>>% createPipelineInstance(pipelineProto) -> newPipelineObj
 
 newPipelineObj %>>% setInput(input = iris) %>>% generateOutput %>>% getOutputById("3")
-
-getRegistry()
 ```
+
 
 # Saving and loading meta-pipelines
 
-```{r}
+Similar to pipelines, meta-pipelines can be saved and loaded using the `savePipeline` method and the `loadMetaPipeline` function. As with pipelines, when a meta-pipeline is loaded, it overwrites the existing registry with the registry stored with the meta-pipeline. 
+
+```{r eval = FALSE}
 
 complexMetaPipeline %>>% savePipeline("metaPipeline.RDS")
 
