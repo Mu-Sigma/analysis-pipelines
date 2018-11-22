@@ -2,7 +2,7 @@
 % Please edit documentation in R/core-functions-meta-pipelines.R
 \name{exportAsMetaPipeline}
 \alias{exportAsMetaPipeline}
-\title{Method to export a Meta pipeline}
+\title{Method to export a meta-pipeline}
 \usage{
 exportAsMetaPipeline(object)
 }
@@ -13,10 +13,11 @@ exportAsMetaPipeline(object)
 an object of class "\code{MetaAnalysisPipeline}"
 }
 \description{
-Method to export a Meta pipeline
+Method to export a meta-pipeline
 }
 \details{
-TBW
+This method exports a Pipeline object i.e. of the classes \code{AnalysisPipeline} or
+\code{StreamingAnalysisPipeline} as a meta-pipeline
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
