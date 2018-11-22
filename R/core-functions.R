@@ -5,6 +5,9 @@
 # Description: An R package version which works both on R data frames, and a Spark environment i.e.
 #              Spark DataFrames including Structured Streaming
 ##################################################################################################
+
+#' This section defines the environment which the package uses for maintaining the registry and an outputCache
+#' @keywords internal
 .analysisPipelinesEnvir <- new.env(parent = emptyenv())
 
 .analysisPipelinesEnvir$.functionRegistry <- tibble(
@@ -51,7 +54,7 @@ BaseAnalysisPipeline <- setClass("BaseAnalysisPipeline",
 #' @details
 #'      This is a constructor function for the base class for various types of Analysis Pipelines. This method gets
 #'      internally called by \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} constructors.
-#' @return an object of class "\code{BaseAnalysisPipeline}"
+#' @return an object of class \code{BaseAnalysisPipeline}"
 #' @family Package core functions
 #' @export
 
@@ -114,7 +117,38 @@ registerFunction <- function( functionName, heading = "",
                                isDataFunction = T, firstArgClass = "",
                                loadPipeline = F, userDefined = T
                                ){
-    # tryCatch({
+    tryCatch({
+
+      #NULL checks
+      if(is.null(functionName) || functionName == ""){
+        functionName <- paste("userDefinedFunction_", Sys.time())
+        futile.logger::flog.warn(paste("||  NULL or empty name provided. Setting function name automatically as '%s'   ||"),
+                                 functionName, name = "logger.base")
+      }
+
+      if(!functionType %in% c("batch", "streaming")){
+        futile.logger::flog.error(paste("||  The provided 'functionType' must be 'batch' or 'streaming'   ||"),
+                                  name = "logger.base")
+        stop()
+      }
+
+      if(!engine %in% c("r", "spark", "spark-structured-streaming", "python")){
+        futile.logger::flog.error(paste("|| 'engine' must be one of the supported engines. Please check ",
+                                        "with this version of the packge in the documentation  ||"),
+                                  name = "logger.base")
+        stop()
+      }
+
+      if(is.null(exceptionFunction)){
+        futile.logger::flog.warn(paste("|| 'exceptionFunction' must not be NULL. Setting automatically to default.  "),
+                                  name = "logger.base")
+      }
+
+      if(!is.logical(isDataFunction)){
+        futile.logger::flog.error(paste("|| 'isDataFunction' must be a logical value.  "),
+                                 name = "logger.base")
+        stop()
+      }
 
 
       #Define data frame class according to engine type
@@ -141,6 +175,7 @@ registerFunction <- function( functionName, heading = "",
                                             "If you'd like to change the definition, please re-assign the function definition",
                                              "and then call 'registerFunction' again.  ||"),
                                       functionName, name = "logger.base")
+            stop()
           }
       }, warning = function(w){
         tryCatch({
@@ -148,6 +183,7 @@ registerFunction <- function( functionName, heading = "",
         }, error = function(e){
           futile.logger::flog.error(paste("||  The provided function name does not exist in the Global environment  ||"),
                                     name = "logger.base")
+          stop()
         })
       })
 
@@ -156,8 +192,12 @@ registerFunction <- function( functionName, heading = "",
         tryCatch({
           getClass(firstArgClass)
         }, error = function(e){
-          futile.logger::flog.error(paste("||  The provided class of the first argument is not defined  ||"),
+          setOldClass(firstArgClass, where = .GlobalEnv)
+          futile.logger::flog.error(paste("||  The provided class of the first argument is not a defined S4 class.',
+                                          ' Assuming that it is an S3 class and setting the definition in the ',
+                                          environment  ||"),
                                     name = "logger.base")
+          # stop()
         })
 
       }
@@ -166,27 +206,59 @@ registerFunction <- function( functionName, heading = "",
       if(length(doesMethodExist) == 0){
 
         parametersName <- ""
+        paramsToBeParsed <- ""
+        methodParams <- ""
+        genericSignature <- c()
+        objectName <- "object"
+
+        packageMethodSignature <- c()
+        origMethodSignature <- c()
+
         objectArg <- alist(object = )
         commonArgs <- alist(outAsIn = F, storeOutput = F)
+        newArgs <- alist()
 
         f <- get(functionName, .GlobalEnv)
         originalArgs <- formals(f) %>>% as.list
         firstArg <- names(originalArgs)[1]
 
+
         if(isDataFunction){
-          originalArgs <- originalArgs[-1]
+          # originalArgs <- originalArgs[-1]
+          newArgs <- originalArgs
           firstArgClass <- dataFrameClass
+          paramsToBeParsed <- paste0(originalArgs[-1] %>>% names, collapse = ", ")
+          genericSignature <- names(originalArgs)[1]
+          objectName <- names(originalArgs)[1]
+
+          packageMethodSignature <- paste0('"', childClass, '"')
+          origMethodSignature <-paste0('"', dataFrameClass, '"')
+        }else{
+          newArgs <- append(objectArg, originalArgs)
+          paramsToBeParsed <- paste0(originalArgs %>>% names, collapse = ", ")
+          genericSignature <- c("object", names(originalArgs)[1])
+
+          formulaUnionClassName <- paste0("formulaOR", firstArgClass)
+           setClassUnion(name = formulaUnionClassName,
+                                             c("formula", firstArgClass),
+                                             where = .GlobalEnv)
+          packageMethodSignature <- c(childClass, formulaUnionClassName)
+          origMethodSignature <- c("missing", firstArgClass)
+
+          #Converting to string
+          packageMethodSignature <- paste0('c("', paste(packageMethodSignature, collapse = '", "'), '")')
+          origMethodSignature <- paste0('c("', paste(origMethodSignature, collapse = '", "'), '")')
         }
 
-        parametersList <- originalArgs %>>% names
-        parametersName <- paste0(parametersList,collapse=", ")
+        parametersName <- paste0(newArgs %>>% names, collapse = ", ")
+        methodParams <- paste0(originalArgs %>>% names, collapse = ", ")
 
-        if(parametersName != ""){
-          parametersName <- paste0(", ", parametersName)
-        }
+        # if(parametersName != ""){
+        #   parametersName <- paste0(", ", parametersName)
+        # }
 
         methodBody <- paste0(utils::capture.output(body(eval(parse(text=functionName)))),collapse="\n")
-        methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object;"), x = methodBody)
+        # methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object;"), x = methodBody)
 
         ##Assigning the exception function to the global Environment
         assign(exceptionFunction, get(x = exceptionFunction,
@@ -194,39 +266,53 @@ registerFunction <- function( functionName, heading = "",
                envir = .GlobalEnv)
 
 
-        newArgs <- append(objectArg, originalArgs)
-        newArgs <- append(newArgs, commonArgs)
-        formals(f) <- newArgs
+
+        genericArgs <- append(newArgs, commonArgs)
+        formals(f) <- genericArgs
         body(f) <- paste('standardGeneric("', functionName,'")')
 
         registerFunText <-
           paste0(
                  # Adding to pipeline when run on a Analysis Pipeline object
                  'setMethod(f = "', functionName,'",',
-                     'signature = "', childClass, '",',
-                     'definition = function(object',
+                     'signature = ', packageMethodSignature, ',',
+                     'definition = function(',
                      parametersName, ',',
                      'outAsIn, storeOutput){',
-                         'parametersList <- unlist(strsplit(x = "', sub(", ", "", parametersName), '", split = ","' ,'));',
-                         'parametersPassed <- lapply(parametersList, function(x){eval(parse(text = x))});',
-                         'return(updateObject(object,
-                              operation = "', functionName, '",',
+                         'parametersList <- unlist(strsplit(x = "', paramsToBeParsed, '", split = ","' ,'));',
+                          'parametersList <- trimws(parametersList);',
+                         'parametersPassed <- lapply(parametersList, function(x){',
+                                                                              'val <- eval(parse(text = x));',
+                                                                              'if(class(val) == "formula"){',
+                                                                                'if(analysisPipelines:::isDependencyParam(val)){',
+                                                                                   'val <- as.formula(paste(x,"~",analysisPipelines:::getTerm(val)))',
+                                                                                '};',#else{',
+                                                                                  # 'names(val) <- x',
+                                                                                # '};',
+                                                                              '};', #else{',
+                                                                                # 'names(val) <- x',
+                                                                              # '};',
+                                                                               'return(val);}',
+                                                    ');',
+                          'names(parametersPassed) <- parametersList;',
+                         'return(updateObject(', objectName, ',',
+                              'operation = "', functionName, '",',
                              'heading = "', heading, '",',
                              'parameters = parametersPassed, outAsIn = outAsIn, storeOutput = storeOutput));});',
 
                  #Executing the actual function when pipeline is executed
                  'setMethod(f = "',functionName,'",',
-                     'signature = "', firstArgClass, '",',
-                     'definition = function(object ', parametersName,')',
+                     'signature = ', origMethodSignature, ',',
+                     'definition = function( ', methodParams,')',
                      methodBody, ')'
           )
 
         #Register function
         # Generic
        setGeneric(name = functionName,
-                         signature = "object",
-                         def = f,
-                         where = .GlobalEnv)
+                  signature = genericSignature,
+                  def = f,
+                  where = .GlobalEnv)
         try({
           removeMethod(f = get(functionName, .GlobalEnv), signature = "ANY", where = .GlobalEnv)
         }, silent = T)
@@ -237,7 +323,7 @@ registerFunction <- function( functionName, heading = "",
         # Updating registry
         if(loadPipeline==F){
           fn <- paste0(functionName)
-          if(nrow(getRegistry() %>>% dplyr::filter(functionName == fn)) == 0){
+
             .updateRegistry(functionName = fn,
                             heading = heading,
                             engine = engine,
@@ -247,15 +333,17 @@ registerFunction <- function( functionName, heading = "",
                             firstArgClass = firstArgClass)
             invisible("Registration Successful")
             futile.logger::flog.info("||  Function '%s' was registered successfully  ||", fn, name = "logger.base")
-          }
         }
       }
-    # }, error = function(e){
-    #   futile.logger::flog.error(e, name = "logger.base")
-    #   stop()
-    # })
+    }, error = function(e){
+      futile.logger::flog.error(e, name = "logger.base")
+      stop()
+    })
   }
 
+#' This is an internal function used to update the registry, in order to override existing function registrations
+#' @name .updateRegistry
+#' @keywords internal
 .updateRegistry <- function(functionName,
                             heading = "",
                             engine = "r",
@@ -263,6 +351,11 @@ registerFunction <- function( functionName, heading = "",
                             userDefined = F,
                             isDataFunction = T,
                             firstArgClass = ""){
+  fn <- paste(functionName)
+  if(nrow(.analysisPipelinesEnvir$.functionRegistry  %>>% dplyr::filter(functionName == fn)) == 1){
+    .analysisPipelinesEnvir$.functionRegistry %>>%
+                              dplyr::filter(functionName != fn) -> .analysisPipelinesEnvir$.functionRegistry
+  }
   .analysisPipelinesEnvir$.functionRegistry %>>% dplyr::add_row(functionName = functionName,
                                                                 heading = heading,
                                                                 engine = engine,
@@ -270,10 +363,21 @@ registerFunction <- function( functionName, heading = "",
                                                                 userDefined = userDefined,
                                                                 isDataFunction = isDataFunction,
                                                                 firstArgClass = firstArgClass) -> .analysisPipelinesEnvir$.functionRegistry
+
 }
 
+#' This is an internal function which returns the cache from the package namespace
+#' @name .getCache
+#' @keywords internal
 .getCache <- function(){
   return(.analysisPipelinesEnvir$.outputCache)
+}
+
+#' Internal function used to set the registry object in case of loading pipelines or meta-pipelines
+#' @name .setRegistry
+#' @keywords internal
+.setRegistry <- function(.registry){
+  .analysisPipelinesEnvir$.functionRegistry <- .registry
 }
 
 #' @name loadPredefinedFunctionRegistry
@@ -535,7 +639,8 @@ setGeneric(
   tryCatch({
     object@output <- list()
     object@input <- data.frame()
-    listToBeSaved <- c("object", getRegistry()$functionName, getRegistry()$exceptionHandlingFunction)
+    .registry <- getRegistry()
+    listToBeSaved <- c("object", ".registry", getRegistry()$functionName, getRegistry()$exceptionHandlingFunction)
     save(list = listToBeSaved,file = path)
   },error = function(e){
     futile.logger::flog.error(e, name = "logger.base")
@@ -684,6 +789,48 @@ setMethod(
   definition = .getOutputById
 )
 
+######################## Formula helper functions ############
+
+#' @name getResponse
+#' @title Obtains the response term from the formula
+#' @keywords internal
+getResponse <- function(f){
+  resp <- dimnames(attr(terms(f), "factors"))[[1]][1]
+  return(resp)
+}
+
+#' @name getTerm
+#' @title Obtains the dependency term from the formula
+#' @keywords internal
+getTerm <- function(f){
+  t <- attr(terms(f), "term.labels")
+  return(t)
+}
+
+#' @name isDependencyParam
+#' @title Checks if the parameter is the dependency parameter
+#' @keywords internal
+isDependencyParam <- function(f){
+  termRegexPattern <- "[f]|[:digit:]"
+  t <- NULL
+  isDepParam <- F
+  numDepTerms <- 0
+  t <- getTerm(f)
+
+  if(!is.null(t)){
+    if(length(t) == 1){
+      depTerms <- grep(termRegexPattern, t)
+    }
+  }
+
+  if(length(depTerms) > 0){
+    isDepParam <- T
+  }
+
+  return(isDepParam)
+}
+
+
 
 ######################## Execution helper functions ############
 
@@ -693,23 +840,20 @@ setMethod(
 getUpstreamDependencies <- function(row){
   tryCatch({
     ## dependencies from parameters
-    termRegexPattern <- "[f]|[:digit:]"
-    params <- row$parameters
+
+    params <- unlist(row$parameters, recursive = F)
+    # params <- row$parameters
     dep <- lapply(params, function(p){
+      isDepParam <- F
       t <- NULL
       tId <- NA
+      # p <- unlist(p)
       if(class(p) == "formula"){
-        t <- attr(terms(p), "term.labels")
+        isDepParam <- isDependencyParam(p)
       }
-
-      isDependencyParam <- c()
-
-      if(!is.null(t)){
-        isDependencyParam <- grep(termRegexPattern, t)
-      }
-
-      if(length(isDependencyParam) > 0){
+      if(isDepParam){
         # Dependency param
+        t <- getTerm(p)
         tId <- as.numeric(gsub(pattern = "f", replacement = "", t))
       }
       return(tId)
@@ -911,14 +1055,6 @@ setGeneric(
     object@pipelineExecutor$topologicalOrdering <- topOrdering
     object@pipelineExecutor$dependencyLinks <- edgeDf
 
-    # if(!pipelineRegistryJoin[nrow(pipelineRegistryJoin), "storeOutput"]){
-    #   object@pipeline[nrow(object@pipeline), "storeOutput"] <- TRUE
-    #   futile.logger::flog.info(msg = paste("||  The last function in the pipeline, '%s', has NOT been configured to store output.",
-    #                                        "Automatically reconfiguring to STORE output  ||"),
-    #                            pipelineRegistryJoin[nrow(pipelineRegistryJoin), "operation"],
-    #                            name='logger.prep')
-    # }
-
     endPipelinePrep <- Sys.time()
     prepTime <- endPipelinePrep - startPipelinePrep
     futile.logger::flog.info(msg = "||  Pipeline Prep. COMPLETE. Time taken : %s seconds||", prepTime, name='logger.prep')
@@ -1089,6 +1225,8 @@ setMethod(
   definition = .visualizePipeline
 )
 
+
+
 ########### Changing generics ############################################
 
 #' @rdname generateOutput
@@ -1250,7 +1388,9 @@ genericPipelineException <- function(error){
 #' @details Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
 #'       and the object will be initialized with this data frame. The \code{filePath} parameter takes precedence over
 #'       \code{input} parameter. This is applicable only from \code{AnalysisPipeline} objects
-#' @param path the path at which the .Rda file containing the pipeline is located
+#' @details Note - When a pipeline is loaded, the existing registry is overwritten with the registry saved with the
+#' pipeline
+#' @param path the path at which the .Rds file containing the pipeline is located
 #' @param input (optional) data frame with which the pipeline object should be initialized
 #' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
 #' @return An \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, optinally initialized with the data frame provided
@@ -1259,12 +1399,21 @@ genericPipelineException <- function(error){
 
 loadPipeline <- function(path, input = data.frame() , filePath = ""){
   tryCatch({
+
+    futile.logger::flog.warn("||  The existing registry will be overwritten with the registry from the RDS file  ||",
+                             name = "logger.base")
     load(path, envir = environment())
-    functionNames = setdiff(ls(envir = environment()), c("RDSPath", "object", "input", "filePath"))
+    functionNames = setdiff(ls(envir = environment()), c("path", "object", "input", "filePath", ".registry"))
+
 
     lapply(functionNames, function(x){
       assign(x, get(x, environment()), globalenv())
     })
+
+    .setRegistry(.registry)
+    futile.logger::flog.info("||  Registry loaded succesfully  ||",
+                             name = "logger.base")
+
 
     input <- initDfBasedOnType(input, filePath)
     schemaCheck <- object %>>% checkSchemaMatch(input)
@@ -1349,52 +1498,52 @@ initDfBasedOnType <- function(input, filePath){
 }
 
 
-#' @name checkPipelineCompatibilityWithNewData
-#' @title Checks whether the pipeline is compatible new dataset
-#' @details
-#'      Internally compares the schema of the new dataset with the original dataset with which the pipeline
-#'      was initialized. Additionally, it checks whether all functions in the pipeline are compatible with the new
-#'      dataset.
-#' @param pipeline An \code{AnalysisPipeline} object
-#' @param dfToBeChecked Dataframe to be checked for compatibility
-#' @return logical value (T or R) specifying whether the new dataset is compatible with the pipeline
+#' @name saveRegistry
+#' @title Saves the registry to the file system
+#' @param path path on the file system, where the registry is to be saved to
+#' @details This function saves  the existing function registry and associated function definition loaded in the
+#' environment into a file.
 #' @family Package core functions
-#' @keywords internal
-#'
+#' @export
+saveRegistry <- function(path){
+    tryCatch({
+      .registry <- getRegistry()
+      listToBeSaved <- c(".registry", getRegistry()$functionName, getRegistry()$exceptionHandlingFunction)
+      save(list = listToBeSaved,file = path)
+    },error = function(e){
+      futile.logger::flog.error(e, name = "logger.base")
+      stop()
+    })
+}
 
-#' @name updatePackageRegistry
-#' @title Updates the package registry
-#' @details
-#'       Updates the registry of predefined functions available in the package (For developer use)
-#' @param functionName the name of the function
-#' @param functionHeader the header caption that will feature in the report for this function's output
-#' @param flag a boolean which dictates if the 'functionName' function returns a data.frame to be used an input
-#' @return An \code{AnalysisPipeline} object, optinally initialized with the data frame provided
+
+#' @name loadRegistry
+#' @title Loads a function registry from a file
+#' @param path path on the file system, where the registry is to be loaded from
+#' @details This function loads a function registry and associated function definition stored in an RDS file into the
+#' environment. The existing registry is overwritten with the newly loaded registry
 #' @family Package core functions
-#' @keywords internal
-#'
-#' ####TODO - This function needs rework to comply with R package structures and mechanisms. Currently, the name of
-#' the function needs to be manually added in the data-raw
-#'
-# updatePackageRegistry <- function(functionName, functionHeader, flag){
-#   tryCatch({
-#     functionsDefined <- readRDS("support/predefFunctions.RDS")
-#     invisible(source("EDA.R"))
-#     functionList <- ls(envir = .GlobalEnv)
-#     if(functionName %in% functionList){
-#       functionsDefined <- add_row(functionsDefined, functionName = functionName, heading = functionHeader, outAsIn = flag)
-#       print(functionsDefined)
-#       saveRDS(functionsDefined, "support/predefFunctions.RDS")
-#       print("Successfully Registered function into package!")
-#     }else
-#       print(paste0("Failed to register function into package. Could not find function '", functionName, "' in the environment."))
-#   }, error = function(e){
-#     stop(e)
-#   }, warning = function(e){
-#     warning(e)
-#   })
-# }
+#' @export
+loadRegistry <- function(path){
+  tryCatch({
+    futile.logger::flog.warn("||  The existing registry will be overwritten with the registry from the RDS file  ||",
+                             name = "logger.base")
+
+    load(path, envir = environment())
+    functionNames = setdiff(ls(envir = environment()), c("path", ".registry"))
+    .setRegistry(.registry)
+
+    lapply(functionNames, function(x){
+      assign(x, get(x, environment()), globalenv())
+    })
 
 
+    futile.logger::flog.info("||  Registry loaded succesfully  ||",
+                             name = "logger.base")
+  },error = function(e){
+    futile.logger::flog.error(e, name = "logger.base")
+    stop()
+  })
+}
 
 
