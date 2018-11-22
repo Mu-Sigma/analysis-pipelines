@@ -22,11 +22,11 @@ The vignette aims to show examples of using SparkR as an interface to run stream
 
 * Initialize the analysisPipelines and SparkR libraries
 * Ensure you have a local installation of Spark and SparkR package is installed
-* Check is SPARK_HOME environment variable is set to Spark installation folder. Else, define it using `sys.setenv()` function.
+* Check if the SPARK_HOME environment variable is set to Spark installation folder. Else, define it using `sys.setenv()` function.
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
-    eval = FALSE
+    eval = TRUE
   )
 library(analysisPipelines)
 library(SparkR)

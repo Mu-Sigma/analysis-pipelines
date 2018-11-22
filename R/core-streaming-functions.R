@@ -108,14 +108,15 @@ setMethod(
         # Set parameters
 
         params <- unlist(funcDetails$parameters, recursive = F)
-        dep <- unlist(funcDetails$dependencies, recursive = F)
+        dep <- unique(unlist(funcDetails$dependencies, recursive = F))
         depTerms <- paste0("f", dep)
 
-        params <- lapply(params, function(p){
+        params <- lapply(params, function(p, depTerms, outputCache){
           if(class(p) == "formula"){
-            isDepParam <- isDependencyParam(p)
+            isDepParam <- analysisPipelines:::isDependencyParam(p)
             if(isDepParam){
-              formulaTerm <- getTerm(p)
+              formulaTerm <- analysisPipelines:::getTerm(p)
+              argName <-  analysisPipelines:::getResponse(p)
               if(formulaTerm %in% depTerms){
 
                 ## Formula of previous function in pipeline
@@ -126,24 +127,27 @@ setMethod(
           }
 
           return(p)
-        })
+        }, depTerms, outputCache)
 
 
         #Call
         startFunc <- Sys.time()
         #Assign as named parameters
         #Get names of params
-        paramNames <- lapply(params, function(p){
-          return(names(p))
-        })  %>>% unlist
-        params <-lapply(params, function(p){
-          names(p) <- NULL
-          return(p)
-        })
-        names(params) <- paramNames
+        # paramNames <- lapply(params, function(p){
+        #   return(names(p))
+        # })  %>>% unlist
+        # params <-lapply(params, function(p){
+        #   names(p) <- NULL
+        #   return(p)
+        # })
+        # names(params) <- paramNames
         args <- params
         if(funcDetails$isDataFunction){
-          args <- append(list(object = inputToExecute), params)
+          formals(funcDetails$operation) %>>% as.list %>>% names %>>% dplyr::first() -> firstArgName
+          firstArg <- list(inputToExecute)
+          names(firstArg) <- firstArgName
+          args <- append(firstArg, params)
         }
         output <- tryCatch({do.call(what = funcDetails$operation,
                                     args = args)},
