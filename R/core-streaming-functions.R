@@ -108,30 +108,49 @@ setMethod(
         # Set parameters
 
         params <- unlist(funcDetails$parameters, recursive = F)
-        dep <- unlist(funcDetails$dependencies, recursive = F)
+        dep <- unique(unlist(funcDetails$dependencies, recursive = F))
         depTerms <- paste0("f", dep)
 
-        params <- lapply(params, function(p){
+        params <- lapply(params, function(p, depTerms, outputCache){
           if(class(p) == "formula"){
-            formulaTerm <- attr(terms(p), "term.label")
-            if(length(formulaTerm) == 1 && formulaTerm %in% depTerms){
+            isDepParam <- analysisPipelines:::isDependencyParam(p)
+            if(isDepParam){
+              formulaTerm <- analysisPipelines:::getTerm(p)
+              argName <-  analysisPipelines:::getResponse(p)
+              if(formulaTerm %in% depTerms){
 
-              ## Formula of previous function in pipeline
-              actualParamObjectName <- paste0(formulaTerm, ".out")
-              p <-  get(actualParamObjectName, envir = outputCache)
+                ## Formula of previous function in pipeline
+                actualParamObjectName <- paste0(formulaTerm, ".out")
+                p <-  get(actualParamObjectName, envir = outputCache)
+              }
             }
           }
 
           return(p)
-        })
+        }, depTerms, outputCache)
 
 
         #Call
         startFunc <- Sys.time()
         #Assign as named parameters
+        #Get names of params
+        # paramNames <- lapply(params, function(p){
+        #   return(names(p))
+        # })  %>>% unlist
+        # params <-lapply(params, function(p){
+        #   names(p) <- NULL
+        #   return(p)
+        # })
+        # names(params) <- paramNames
+        args <- params
+        if(funcDetails$isDataFunction){
+          formals(funcDetails$operation) %>>% as.list %>>% names %>>% dplyr::first() -> firstArgName
+          firstArg <- list(inputToExecute)
+          names(firstArg) <- firstArgName
+          args <- append(firstArg, params)
+        }
         output <- tryCatch({do.call(what = funcDetails$operation,
-                                    args = append(list(inputToExecute),
-                                                  params))},
+                                    args = args)},
                            error = function(e){
                              futile.logger::flog.error("||  ERROR Occurred in Function ID '%s' named '%s'. EXITING PIPELINE EXECUTION. Calling Exception Function - '%s'  ||",
                                                        funcDetails$id, funcDetails$operation, funcDetails$exceptionHandlingFunction,

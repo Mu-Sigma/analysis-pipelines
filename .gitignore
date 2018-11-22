@@ -5,7 +5,7 @@
 metastore_db/
 .DS_Store
 vignettes/metastore_db/
-vignettes/pipeline.RDS
+vignettes/*.RDS
 vignettes/*.out
 vignettes/*.R
 vignettes/*.html
