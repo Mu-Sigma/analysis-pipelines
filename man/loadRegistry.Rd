@@ -2,21 +2,19 @@
 % Please edit documentation in R/core-functions.R
 \name{loadRegistry}
 \alias{loadRegistry}
-\title{TBW}
+\title{Loads a function registry from a file}
 \usage{
 loadRegistry(path)
 }
 \arguments{
-\item{path}{TBW}
-}
-\value{
-TBW
+\item{path}{path on the file system, where the registry is to be loaded from}
 }
 \description{
-TBW
+Loads a function registry from a file
 }
 \details{
-TBW
+This function loads a function registry and associated function definition stored in an RDS file into the
+environment. The existing registry is overwritten with the newly loaded registry
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},

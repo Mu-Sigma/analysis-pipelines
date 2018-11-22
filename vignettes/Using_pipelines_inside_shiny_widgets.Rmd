@@ -14,6 +14,9 @@ vignette: >
 
 ```{r setup, include=FALSE, echo=FALSE, message=FALSE}
 library(analysisPipelines)
+knitr::opts_chunk$set(
+    eval = FALSE
+  )
 ```
 
 # Pipelines in shiny apps
@@ -50,6 +53,3 @@ We then use the pipeline within the `shiny::renderPlot` function, and set the sa
 ```
 ---
 
-# Meta-pipelines in shiny apps
-
-TBW
