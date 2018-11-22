@@ -1,12 +1,26 @@
+##################################################################################################
+# Title: Meta pipelines
+# Author: Naren Srinivasan
+# Created on: Nov 20, 2018
+# Description: Functions/ Methods to define and use meta-pipelines
+##################################################################################################
+
+# proto' is an S3 class whic is used as a slot, and hence it is defined in the environment
+setOldClass("proto")
+
 #' @name MetaAnalysisPipeline
-#' @title TBW
-#' @details TBW
-#' @slot pipeline TBW
+#' @title Class for creating and working with meta-pipelines
+#' @details This class works with the \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} classes, and allows the
+#' pipeline to be exported as meta-pipeline. A meta-pipeline is a construct, where the input dataset as well as the arguments
+#' to functions in the pipeline are not defined. Only the analysis flow and dependencies are stored.
+#' @slot pipeline A tibble which holds functions to be called in the pipeline
+#' @slot pipelinePrototype An object of class \code{proto} from the 'proto' package which maintains the prototype of the
+#' functions in the pipeline and their respective arguments
+#' @slot type A string defining whether it is a batch or streaming pipeline. Acceptable values are 'batch' & 'streaming'
 #' @family Package core functions
 #' @exportClass MetaAnalysisPipeline
 #' @export MetaAnalysisPipeline
 
-setOldClass("proto")
 MetaAnalysisPipeline <- setClass("MetaAnalysisPipeline",
                                  slots = c(
                                    pipeline = "tbl",
@@ -17,8 +31,9 @@ MetaAnalysisPipeline <- setClass("MetaAnalysisPipeline",
 #' @name initializeMetaAnalysisPipeline
 #' @title This is the constructor for the \link{MetaAnalysisPipeline} class
 #' @param .Object The \code{MetaAnalysisPipeline} object
-#' @details TBW
-#' @return an object of class "\code{MetaAnalysisPipeline}"
+#' @param type A string defining whether it is a batch or streaming pipeline. Acceptable values are 'batch' & 'streaming'
+#' @details This method is a constructor for the \code{MetaAnalysisPipeline} class
+#' @return an object of class \code{MetaAnalysisPipeline}"
 #' @family Package core functions
 #' @export
 
@@ -48,9 +63,10 @@ setMethod(
 )
 
 #' @name exportAsMetaPipeline
-#' @title Method to export a Meta pipeline
+#' @title Method to export a meta-pipeline
+#' @details This method exports a Pipeline object i.e. of the classes \code{AnalysisPipeline} or
+#' \code{StreamingAnalysisPipeline} as a meta-pipeline
 #' @param .Object A Pipeline object
-#' @details TBW
 #' @return an object of class "\code{MetaAnalysisPipeline}"
 #' @family Package core functions
 #' @export
@@ -108,11 +124,15 @@ setMethod(
   definition = .exportAsMetaPipeline
 )
 
+
 #' @name getPipelinePrototype
-#' @title TBW
-#' @param object  TBW
-#' @details TBW
-#' @return TBW
+#' @title Obtain the prototype of the functions in the pipeline
+#' @param object  A \code{MetaAnalysisPipeline} object
+#' @details This method returns the prototype of functions in the pipeline and their respective arguments as \code{proto} object.
+#' Functions in the pipeline can be accessed easily by using the '$' operator, and within the functions the arguments can
+#' be accessed the same way. These can be accessed and set to new values. This pipeline prototype can then be passed to the
+#' \code{createPipelineInstance} method which will instantiate an executable pipeline with the inputs set in the prototype
+#' @return An object og class \code{proto} from the 'proto' package
 #' @family Package core functions
 #' @export
 setGeneric(
@@ -134,10 +154,14 @@ setMethod(
 
 
 #' @name createPipelineInstance
-#' @title TBW
-#' @param object  TBW
-#' @details TBW
-#' @return TBW
+#' @title Create a Pipeline object from a meta-pipeline
+#' @param metaPipelineObj  A \code{MetaAnalysisPipeline} object
+#' @param newParams Either a nested named list containing all the functions in the pipeline, their arguments and
+#' corresponding values (OR) an object of class \code{proto} which is a pipeline prototype, with the new values of the arguments
+#' set. Refer the \code{getPipelinePrototype} method.
+#' @details This method instantiates a Pipeline object (both \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline}) from
+#' a meta-pipeline as well as an object containing the new set of values for the arguments of all the functions in the pipeline.
+#' @return A Pipeline object
 #' @family Package core functions
 #' @export
 setGeneric(
@@ -203,7 +227,10 @@ setMethod(
   definition = .createPipelineInstance
 )
 
-
+#' A method definition for visualizing meta-pipelines, called when the 'visualizePipeline' method is called against the
+#' \code{MetaAnalysisPipeline} signature
+#' @name .visualizeMetaPipeline
+#' @keywords internal
 .visualizeMetaPipeline <- function(object){
   object %>>% createPipelineInstance(object@pipelinePrototype) -> sampleObj
   vis <- NULL
@@ -220,6 +247,10 @@ setMethod(
 )
 
 
+#' A method definition for saving meta-pipelines, called when the 'savePipeline' method is called against the
+#' \code{MetaAnalysisPipeline} signature
+#' @name .saveMetaPipeline
+#' @keywords internal
 .saveMetaPipeline <- function(object, path){
   tryCatch({
     .registry <- getRegistry()
@@ -240,10 +271,13 @@ setMethod(
 )
 
 #' @name loadMetaPipeline
-#' @title TBW
-#' @param path TBW
-#' @details TBW
-#'@return TBW
+#' @title Load a meta-pipeline
+#' @param path the path at which the .Rds file containing the pipeline is located
+#' @details This function loads a meta-pipeline from a file system, and returns the meta-pipeline object, which can be assigned
+#' to an object in the environment.
+#' @details Note - When a meta-pipeline is loaded, the existing registry is overwritten with the registry saved with the
+#' meta-pipeline
+#' @return An \code{MetaAnalysisPipeline} object
 #' @family Package core functions
 #' @export
 loadMetaPipeline <- function(path){

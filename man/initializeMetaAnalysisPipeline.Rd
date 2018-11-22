@@ -9,15 +9,17 @@
 }
 \arguments{
 \item{.Object}{The \code{MetaAnalysisPipeline} object}
+
+\item{type}{A string defining whether it is a batch or streaming pipeline. Acceptable values are 'batch' & 'streaming'}
 }
 \value{
-an object of class "\code{MetaAnalysisPipeline}"
+an object of class \code{MetaAnalysisPipeline}"
 }
 \description{
 This is the constructor for the \link{MetaAnalysisPipeline} class
 }
 \details{
-TBW
+This method is a constructor for the \code{MetaAnalysisPipeline} class
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},
