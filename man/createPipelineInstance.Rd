@@ -2,21 +2,26 @@
 % Please edit documentation in R/core-functions-meta-pipelines.R
 \name{createPipelineInstance}
 \alias{createPipelineInstance}
-\title{TBW}
+\title{Create a Pipeline object from a meta-pipeline}
 \usage{
 createPipelineInstance(metaPipelineObj, newParams)
 }
 \arguments{
-\item{object}{TBW}
+\item{metaPipelineObj}{A \code{MetaAnalysisPipeline} object}
+
+\item{newParams}{Either a nested named list containing all the functions in the pipeline, their arguments and
+corresponding values (OR) an object of class \code{proto} which is a pipeline prototype, with the new values of the arguments
+set. Refer the \code{getPipelinePrototype} method.}
 }
 \value{
-TBW
+A Pipeline object
 }
 \description{
-TBW
+Create a Pipeline object from a meta-pipeline
 }
 \details{
-TBW
+This method instantiates a Pipeline object (both \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline}) from
+a meta-pipeline as well as an object containing the new set of values for the arguments of all the functions in the pipeline.
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},

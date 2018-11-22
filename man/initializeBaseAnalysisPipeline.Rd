@@ -13,7 +13,7 @@
 \item{loggerDetails}{Provide logger details}
 }
 \value{
-an object of class "\code{BaseAnalysisPipeline}"
+an object of class \code{BaseAnalysisPipeline}"
 }
 \description{
 This is the constructor for the \link{BaseAnalysisPipeline} class

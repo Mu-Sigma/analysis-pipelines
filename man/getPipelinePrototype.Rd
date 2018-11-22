@@ -2,21 +2,24 @@
 % Please edit documentation in R/core-functions-meta-pipelines.R
 \name{getPipelinePrototype}
 \alias{getPipelinePrototype}
-\title{TBW}
+\title{Obtain the prototype of the functions in the pipeline}
 \usage{
 getPipelinePrototype(metaPipelineObj)
 }
 \arguments{
-\item{object}{TBW}
+\item{object}{A \code{MetaAnalysisPipeline} object}
 }
 \value{
-TBW
+An object og class \code{proto} from the 'proto' package
 }
 \description{
-TBW
+Obtain the prototype of the functions in the pipeline
 }
 \details{
-TBW
+This method returns the prototype of functions in the pipeline and their respective arguments as \code{proto} object.
+Functions in the pipeline can be accessed easily by using the '$' operator, and within the functions the arguments can
+be accessed the same way. These can be accessed and set to new values. This pipeline prototype can then be passed to the
+\code{createPipelineInstance} method which will instantiate an executable pipeline with the inputs set in the prototype
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},

@@ -2,21 +2,25 @@
 % Please edit documentation in R/core-functions-meta-pipelines.R
 \name{loadMetaPipeline}
 \alias{loadMetaPipeline}
-\title{TBW}
+\title{Load a meta-pipeline}
 \usage{
 loadMetaPipeline(path)
 }
 \arguments{
-\item{path}{TBW}
+\item{path}{the path at which the .Rds file containing the pipeline is located}
 }
 \value{
-TBW
+An \code{MetaAnalysisPipeline} object
 }
 \description{
-TBW
+Load a meta-pipeline
 }
 \details{
-TBW
+This function loads a meta-pipeline from a file system, and returns the meta-pipeline object, which can be assigned
+to an object in the environment.
+
+Note - When a meta-pipeline is loaded, the existing registry is overwritten with the registry saved with the
+meta-pipeline
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline}},

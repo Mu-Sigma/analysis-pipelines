@@ -5,6 +5,9 @@
 # Description: An R package version which works both on R data frames, and a Spark environment i.e.
 #              Spark DataFrames including Structured Streaming
 ##################################################################################################
+
+#' This section defines the environment which the package uses for maintaining the registry and an outputCache
+#' @keywords internal
 .analysisPipelinesEnvir <- new.env(parent = emptyenv())
 
 .analysisPipelinesEnvir$.functionRegistry <- tibble(
@@ -51,7 +54,7 @@ BaseAnalysisPipeline <- setClass("BaseAnalysisPipeline",
 #' @details
 #'      This is a constructor function for the base class for various types of Analysis Pipelines. This method gets
 #'      internally called by \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} constructors.
-#' @return an object of class "\code{BaseAnalysisPipeline}"
+#' @return an object of class \code{BaseAnalysisPipeline}"
 #' @family Package core functions
 #' @export
 
@@ -338,6 +341,9 @@ registerFunction <- function( functionName, heading = "",
     })
   }
 
+#' This is an internal function used to update the registry, in order to override existing function registrations
+#' @name .updateRegistry
+#' @keywords internal
 .updateRegistry <- function(functionName,
                             heading = "",
                             engine = "r",
@@ -360,10 +366,16 @@ registerFunction <- function( functionName, heading = "",
 
 }
 
+#' This is an internal function which returns the cache from the package namespace
+#' @name .getCache
+#' @keywords internal
 .getCache <- function(){
   return(.analysisPipelinesEnvir$.outputCache)
 }
 
+#' Internal function used to set the registry object in case of loading pipelines or meta-pipelines
+#' @name .setRegistry
+#' @keywords internal
 .setRegistry <- function(.registry){
   .analysisPipelinesEnvir$.functionRegistry <- .registry
 }
@@ -462,7 +474,7 @@ setMethod(
 #' @param storeOutput whether the output of this operation is to be stored
 #' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
-#' @export
+#' @keywords internal
 setGeneric(
   name = "updateObject",
   def = function(object,
@@ -1376,7 +1388,9 @@ genericPipelineException <- function(error){
 #' @details Another provided option, is to specify a filePath where the input dataset is present (in a .CSV format)
 #'       and the object will be initialized with this data frame. The \code{filePath} parameter takes precedence over
 #'       \code{input} parameter. This is applicable only from \code{AnalysisPipeline} objects
-#' @param path the path at which the .Rda file containing the pipeline is located
+#' @details Note - When a pipeline is loaded, the existing registry is overwritten with the registry saved with the
+#' pipeline
+#' @param path the path at which the .Rds file containing the pipeline is located
 #' @param input (optional) data frame with which the pipeline object should be initialized
 #' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
 #' @return An \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, optinally initialized with the data frame provided
