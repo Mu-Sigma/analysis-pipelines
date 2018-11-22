@@ -359,10 +359,6 @@ getRegistry()
 obj2 %>% getPipeline
 ```
 
-# Saving and loading registries
-
-TBW
-
 # Details of execution
 
 This section provides an overview of how pipelines are executed, along with additional features such as **logging** and **exception handling.**
@@ -413,7 +409,19 @@ registerFunction(functionName = 'sampleFunction', "Sample", exceptionFunction = 
 getRegistry()
 ```
 
+# Saving and loading registries
 
+Registries can be saved and loaded like pipelines. The characteristic of the registry is that it is shared across all pipelines in a particular session. Therefore, when a registry is loaded it overwrites the existing registry in the session
+```{r eval = F}
+getRegistry()
+saveRegistry("./registry.RDS")
+##.rs.restartR() # Run this on console to restart the R session
+rm(list=ls(all=TRUE)) # Remove all objects in the R environment
+getRegistry()
+
+loadRegistry("./registry.RDS")
+getRegistry()
+```
 
 
 

@@ -19,7 +19,7 @@ vignette: >
 
 * Load the *analysisPipelines* and *SparkR* libraries
 * Ensure you have a local installation of spark and SparkR package is installed
-* Check is SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
+* Check if the  SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
     eval = FALSE

@@ -1499,10 +1499,10 @@ initDfBasedOnType <- function(input, filePath){
 
 
 #' @name saveRegistry
-#' @title TBW
-#' @param path TBW
-#' @details TBW
-#'@return TBW
+#' @title Saves the registry to the file system
+#' @param path path on the file system, where the registry is to be saved to
+#' @details This function saves  the existing function registry and associated function definition loaded in the
+#' environment into a file.
 #' @family Package core functions
 #' @export
 saveRegistry <- function(path){
@@ -1518,10 +1518,10 @@ saveRegistry <- function(path){
 
 
 #' @name loadRegistry
-#' @title TBW
-#' @param path TBW
-#' @details TBW
-#'@return TBW
+#' @title Loads a function registry from a file
+#' @param path path on the file system, where the registry is to be loaded from
+#' @details This function loads a function registry and associated function definition stored in an RDS file into the
+#' environment. The existing registry is overwritten with the newly loaded registry
 #' @family Package core functions
 #' @export
 loadRegistry <- function(path){
