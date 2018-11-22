@@ -55,6 +55,7 @@ This package contains 5 vignettes:
 * **Interoperable analysis pipelines** - This vignette describes creating and executing **batch** pipelines which are composed of functions executing across *supported engines*
 * **Streaming Analysis Pipelines for working with Apache Spark Structured Streaming** - This vignette describes setting up streaming pipelines on *Apache Spark Structured Streaming*
 * **Using pipelines inside Shiny widgets or apps** - A brief vignette which illustrates an example of using a pipeline inside a shiny widget with reactive elements and changing data
+* **An introduction to meta-pipelines** - This vignette which illustrates the use of meta-pipelines
 
 
 #Usage
@@ -201,6 +202,15 @@ Outputs generated from pipelines can easily be exported to formatted reports, sh
 <br>
 <img src="./inst/report3.png" alt="Report 3" width="400"/>
 
+## Meta-pipelines
+
+The meta-pipeline construct is one which allows users to export pipelines they have created for a particular use case to a general analysis flow which can be used for a different dataset and different set of parameters. A pipeline is one where the data can change, though retaining the same schema, and the same set of parameters for the functions. A meta-pipeline is one where only the analysis flow, function dependencies and so on are retained. The specific parameters for each of the functions can be set differently for a new use case.
+
+The objective of a meta-pipeline is to define and execute reusable analysis flows. They can be used to:
+* Document best practices for a particular problem
+* Templatize analyses for particular situations
+
+Meta-pipelines can be created by exporting from pipelines, and new pipelines instantiated from a meta-pipeline, with an easy-to-use method to set the new values of parameters.
 
 ## Execution
 

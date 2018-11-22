@@ -223,7 +223,7 @@ Then, we clear the R environment and restart the R session
 
 ```{r}
 rm(list=ls(all=TRUE)) # Remove all objects in the R environment
-#.rs.restartR()
+#.rs.restartR() # Run on console to restart R session
 ```
 
 We then reload the package, and start the Spark connection
