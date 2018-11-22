@@ -263,6 +263,8 @@ Formula semantics are provided to implement more complex pipelines, and are not 
 
 A confusion may arise when the first argument of the function is of type 'data.frame' but this function is not designed to operate on the input data tha the pipeline object was instantiated with, or any transformation of it. In this case, the expected practice is to register the function as *non-data* function, and use formula semantics to define the value to be passed to the first input.
 
+**Important Note** - When using formula semantics for the first argument of a *non-data* function, the `outAsIn` parameter should be specified as `FALSE` (the default), as it is essentially replicating the specification.
+
 For example, in the below flow, the main *path* is:
 
 Data -> filtering the data -> Plot a line chart.
