@@ -7,16 +7,13 @@
 
 In a typical data science workflow there are multiple steps involved from data aggregation, cleaning, exploratory analysis, modeling and so on. As the data science community matures, we are seeing that there are a variety of languages which provide better capabilities for specific steps in the data science workflow. *R* is typically used for data transformations, statistical models, and visualizations, while *Python* provides more robust functions for machine learning. In addition to this, *Spark* provides an environment to process high volume data - both as one-time/ batch or as streams.
 
-The job of today's data scientist is changing from one where they are married to a specific tool or language, to one where they are using all these tools for their specialized purposes. The key problem then becomes one of translation between these tools for seamless analysis.
+The job of today's data scientist is changing from one where they are married to a specific tool or language, to one where they are using all these tools for their specialized purposes. The key problem then becomes one of translation between these tools for seamless analysis. Additionally, in the work of a data scientist, there is a need to perform the same task repeatedly, as well as put certain analysis flows (or) pipelines into production to work on new data periodically, or work on streaming data.
 
-Recently in the data science community, interfaces for using these various tools have been published. In terms of R packages, the *reticulate* package provides an interface to Python, and the *SparkR* and *sparklyr* packages provide an interface to Spark. 
+Recently, interfaces for using these various tools have been published. In terms of R packages, the *reticulate* package provides an interface to Python, and the *SparkR* and *sparklyr* packages provide an interface to Spark. 
 
-The *analysisPipelines* package uses these interfaces to enable *Interoperable Pipelines* i.e. the ability define an execute a reusable data science pipeline which can contain functions to be executed in an R environment, in a Python environment or in a Spark environment. These pipelines can saved and loaded, to enable batch operation as datasets get updated with new data.
+The *analysisPipelines* package uses these interfaces to enable *Interoperable Pipelines* i.e. the ability compose and execute a reusable data science pipeline which can contain functions to be executed in an *R* environment, in a *Python* environment or in a *Spark* environment. These pipelines can saved and loaded, to enable batch operation as datasets get updated with new data.
 
-Additionally, in the work of a data scientist, there is a need to perform the same task repeatedly, as well as put certain analysis flows (or) pipelines into production to work on new data periodically, or work on streaming data.
-
-The goal of the *analysisPipelines* package is to enable data scientists to compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. It also aims to enable data scientists to use tools of their choice through an *R* interface, and compose **interoperable** pipelines between *R, Spark, and Python.*
-
+The goal of the *analysisPipelines* package is to make the job of the data scientist easier and help them compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. The idea is for data scientists to use tools of their choice through an *R* interface, using this package
 Essentially, it allows data scientists to:
 
 * Compose **reusable, interoperable** pipelines in a flexible manner
@@ -26,29 +23,29 @@ Essentially, it allows data scientists to:
 
 ## Types of pipelines
 
-This package supports for both **batch/ repeated** pipelines, as well as *streaming pipelines.*
+This package supports for both *batch/ repeated* pipelines, as well as *streaming pipelines.*
 
 For *batch* pipelines, the vision is to enable interoperable pipelines which execute efficiently with functions in *R*, *Spark* and *Python*
 
-For *streaming* pipelines, the package allows for streaming analyses through *Spark Structured Streaming.*
+For *streaming* pipelines, the package allows for streaming analyses through *Apache Spark Structured Streaming.*
 
 ## Classes and implementation
 
-The *analysisPipelines* package uses S4 classes and methods to implement all the core functionality. The fundamental class exposed in this package is the *BaseAnalysisPipeline* class on which most of the core functions are implemented. The user, however, interacts with the *AnalysisPipeline* and *StreamingAnalysisPipeline* classes for batch and streaming analysis respectively. In this vignette, we work with the *AnalysisPipeline* class, with functions solely in R.
+The *analysisPipelines* package uses S4 classes and methods to implement all the core functionality. The fundamental class exposed in this package is the *BaseAnalysisPipeline* class on which most of the core functions are implemented. The user, however, interacts with the *AnalysisPipeline* and *StreamingAnalysisPipeline* classes for batch and streaming analysis respectively.
 
 ## Pipelining semantics
 
-The package stays true to the *tidyverse* pipelining style which also fits nicely into the idea of creating pipelines. The core mechanism in the package is too instantiate a pipeline with data and then pipeline required functions to the object itself.
+The package stays true to the *tidyverse* pipelining style which also fits nicely into the idea of creating pipelines. The core mechanism in the package is to instantiate a pipeline with data and then pipeline required functions to the object itself.
 
 The package allows both the use of *magrittr* pipe **(%>%)** or the *pipeR* pipe **(%>>%)**.
 
 ## Supported engines
 
-As of this version, the package supports functions executed on *R*, or *Spark* through the SparkR interface for batch pipelines. It also supports *Spark Structured Streaming* pipelines for streaming analyses. In subsequent releases, *Python* will also be supported
+As of this version, the package supports functions executed on *R*, or *Spark* through the SparkR interface for batch pipelines. It also supports *Apache Spark Structured Streaming* pipelines for streaming analyses. In subsequent releases, *Python* will also be supported.
 
 ## Available vignettes
 
-This package contains 5 vignettes:
+This package contains 6 vignettes:
 
 * **Analysis pipelines - Core functionality and working with R data frames and functions** - This is the main vignette describing the package's core functionality, and explaining this through **batch** pipelines in just **R**
 * **Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses** - This vignette describes creating **batch** pipelines to execute in solely in a *Spark* environment 
@@ -84,12 +81,12 @@ obj %>>% getInput %>>% str
 getRegistry()
 ```
 
-The *getRegistry* function retrieves the set of functions and their metadata available for pipelining. Any *AnalysisPipeline* object comes with a set of pre-registered functions which can be used **out-of-the-box**. Of course, the user can register her own functions, to be used in the pipeline. We will look at this later on in the vignette.
+The *getRegistry* function retrieves the set of functions and their metadata available for pipelining. Any *AnalysisPipeline* object comes with a set of pre-registered functions which can be used **out-of-the-box**. Of course, the user can register her own functions, to be used in the pipeline. We will explore this later on.
 
 There are two types of functions which can be pipelined:
 
-* **Data functions** - These functions necessarily take their **first** argument as a dataframe. These are functions focused on performing operations on data
-* **Non-data functions** - These are auxiliary helper functions which are required in a pipeline, which do not operate on data.
+* **Data functions** - These functions necessarily take their **first** argument as a dataframe. These are functions focused on performing operations on data. Specifically, the nomenclature *data functions* is used for those functions which work on the input dataframe set to the pipeline object, and perform some transformation or analysis on them. They help form the main *path* in a pipeline, constituting a linear flow from the input.
+* **Non-data functions** - These are auxiliary helper functions which are required in a pipeline, which may or may not operate on data. However, the *key* difference is that these functions do not operate on the **input (or some direct transformation of it)**. In essence, they help form auxiliary paths in the pipeline, which eventually merge into the main path.
 
 Both pre-registered and user-defined functions work with the *AnalysisPipeline* object in the same way i.e. regardless of who writes the function, they follow the same semantics.
 
