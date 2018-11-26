@@ -8,6 +8,8 @@ correlationMatPlot(dataset, methodused = "everything")
 }
 \arguments{
 \item{dataset}{the dataset that needs to be loaded}
+
+\item{methodused}{methods to be used for computing correlation}
 }
 \value{
 Correlation Matrix graph

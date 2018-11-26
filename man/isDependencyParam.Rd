@@ -6,7 +6,16 @@
 \usage{
 isDependencyParam(f)
 }
+\arguments{
+\item{f}{formula from which term is to be extracted.}
+}
+\value{
+Logical as to whether it is a dependency parameter
+}
 \description{
 Checks if the parameter is the dependency parameter
 }
-\keyword{internal}
+\details{
+This is a helper function to check if the formula provided is a dependency parameter,
+as per the package's formula semantics, capturing function dependencies
+}

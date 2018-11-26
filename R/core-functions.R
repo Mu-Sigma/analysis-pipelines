@@ -6,11 +6,31 @@
 #              Spark DataFrames including Structured Streaming
 ##################################################################################################
 
+#' @importFrom pipeR %>>%
+#' @importFrom rlang .data
+#' @importFrom graphics image
+#' @importFrom methods getClass new removeMethod setClassUnion setGeneric setOldClass
+#' @importFrom stats as.formula lm reorder terms
+#' @importFrom utils installed.packages read.csv
+NULL
+
+
+pos <- 1
+globEnv = as.environment(pos)
+
+try({
+  if(!("SparkR" %in% installed.packages())){
+    devtools::install_github("cran/SparkR")
+    futile.logger::flog.info("||  The SparkR package is not installed. Installing from Github  ||")
+  }
+}, silent = TRUE)
+
+
 #' This section defines the environment which the package uses for maintaining the registry and an outputCache
 #' @keywords internal
 .analysisPipelinesEnvir <- new.env(parent = emptyenv())
 
-.analysisPipelinesEnvir$.functionRegistry <- tibble(
+.analysisPipelinesEnvir$.functionRegistry <- dplyr::tibble(
   functionName = character(),
   heading = character(),
   engine = character(),
@@ -21,19 +41,18 @@
 )
 .analysisPipelinesEnvir$.outputCache <- new.env()
 
-#' @name BaseAnalysisPipeline
+#' @name BaseAnalysisPipeline-class
+#' @rdname BaseAnalysisPipeline-class
 #' @title Base class for \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} objects
 #' @details The class which holds the metadata including the registry of available functions,
 #' the data on which the pipeline is to be applied, as well as the pipeline itself, and serves
 #' as the base class for various types of Pipeline objects such as Batch and Streaming.
 #' @details This base class which contains the slots related to the registry, pipeline and output can be extended
 #' to create custom class for specific scenarios if required.
-#' @details The details of the constructor for this class can be found at \link{initializeBaseAnalysisPipeline}
 #' @details In the documentation, objects of classes which are subclasses of this class are referred to as 'Pipeline' objects
 #' @slot pipeline A tibble which holds functions to be called
 #' @slot pipelineExecutor A list containing details of the execution, such as topological ordering of functions to be executed,
 #' dependency map of functions, as well as logger configuration
-#' @slot registry A tibble which holds all the registered functions
 #' @slot output A list which holds all the functions output
 #' @family Package core functions
 #' @exportClass BaseAnalysisPipeline
@@ -42,21 +61,16 @@
 BaseAnalysisPipeline <- setClass("BaseAnalysisPipeline",
                              slots = c(
                                pipeline = "tbl",
-                               # registry = "tbl",
                                pipelineExecutor = "list",
                                output = "list"
                              ))
 
-#' @name initializeBaseAnalysisPipeline
+#' BaseAnalysisPipeline constructor
+#' @docType methods
+#' @rdname initialize-methods
 #' @title This is the constructor for the \link{BaseAnalysisPipeline} class
-#' @param .Object The \code{BaseAnalysisPipeline} object
-#' @param loggerDetails Provide logger details
-#' @details
-#'      This is a constructor function for the base class for various types of Analysis Pipelines. This method gets
-#'      internally called by \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} constructors.
-#' @return an object of class \code{BaseAnalysisPipeline}"
 #' @family Package core functions
-#' @export
+#' @keywords internal
 
 setMethod(
   f = "initialize",
@@ -64,7 +78,7 @@ setMethod(
   definition = function(.Object)
   {
     tryCatch({
-      .Object@pipeline <- tibble(
+      .Object@pipeline <- dplyr::tibble(
         id = character(),
         operation = character(),
         heading = character(),
@@ -74,9 +88,9 @@ setMethod(
       )
 
       .Object@pipelineExecutor <- list(
-        topologicalOrdering = tibble(id = character(),
+        topologicalOrdering = dplyr::tibble(id = character(),
                                      level = character()),
-        dependencyLinks = tibble(from = character(),
+        dependencyLinks = dplyr::tibble(from = character(),
                                  to = character()),
         loggerDetails <- list()
       )
@@ -105,6 +119,7 @@ setMethod(
 #' @param functionType type of function - 'batch' for \code{AnalysisPipeline} objects, 'streaming' for \code{StreamingAnalysisPipeline} objects
 #' @param engine specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"
 #' @param isDataFunction logical parameter which defines whether the function to be registered operates on data i.e. the first parameter is a dataframe
+#' @param exceptionFunction R object corresponding to the exception function
 #' @param firstArgClass character string with the class of the first argument to the function, if it is a non-data function
 #' @param loadPipeline logical parameter to see if function is being used in loadPipeline or not. This is for internal working
 #' @param userDefined logical parameter defining whether the function is user defined. By default, set to true
@@ -160,7 +175,8 @@ registerFunction <- function( functionName, heading = "",
 
       dataFrameClass <- "data.frame"
       if(engine == "spark" || engine == 'spark-structured-streaming'){
-        dataFrameClass <- "SparkDataFrame"
+        # dataFrameClass <- "SparkDataFrame"
+        dataFrameClass <- "ANY"
       }
 
 
@@ -258,12 +274,16 @@ registerFunction <- function( functionName, heading = "",
         # }
 
         methodBody <- paste0(utils::capture.output(body(eval(parse(text=functionName)))),collapse="\n")
+
+        # if(isDataFunction && childClass == "StreamingAnalysisPipeline"){
+        #   methodBody <- gsub(pattern = "\\{", replacement = paste0("{ check", firstArg , " = object;"), x = methodBody)
+        # }
         # methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object;"), x = methodBody)
 
         ##Assigning the exception function to the global Environment
         assign(exceptionFunction, get(x = exceptionFunction,
                                       envir = environment()),
-               envir = .GlobalEnv)
+               envir = globEnv)
 
 
 
@@ -284,8 +304,8 @@ registerFunction <- function( functionName, heading = "",
                          'parametersPassed <- lapply(parametersList, function(x){',
                                                                               'val <- eval(parse(text = x));',
                                                                               'if(class(val) == "formula"){',
-                                                                                'if(analysisPipelines:::isDependencyParam(val)){',
-                                                                                   'val <- as.formula(paste(x,"~",analysisPipelines:::getTerm(val)))',
+                                                                                'if(analysisPipelines::isDependencyParam(val)){',
+                                                                                   'val <- as.formula(paste(x,"~",analysisPipelines::getTerm(val)))',
                                                                                 '};',#else{',
                                                                                   # 'names(val) <- x',
                                                                                 # '};',
@@ -417,6 +437,7 @@ loadPredefinedFunctionRegistry <- function(){
 }
 
 #' @name setInput
+#' @rdname setInput
 #' @title Sets the input for an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @details
 #'      Assigns the input to the pipeline for an  \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
@@ -428,6 +449,7 @@ loadPredefinedFunctionRegistry <- function(){
 #' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
 #' @export
+
 setGeneric(
   name = "setInput",
   def = function(object,
@@ -452,6 +474,7 @@ setGeneric(
   })
 }
 
+#' @rdname setInput
 setMethod(
   f = "setInput",
   signature = "BaseAnalysisPipeline",
@@ -459,6 +482,7 @@ setMethod(
 )
 
 #' @name updateObject
+#' @rdname updateObject
 #' @title Update the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by adding an operation to the pipeline
 #' @details
 #'       The specified operation along with the heading and parameters is updated in the pipeline slot
@@ -496,7 +520,7 @@ setGeneric(
     }else{
       id = max(as.numeric(object@pipeline$id)) + 1
     }
-    object@pipeline %>>% add_row(id = id,
+    object@pipeline %>>% dplyr::add_row(id = id,
                                  operation = operation,
                                  heading = heading,
                                  parameters = list(parameters),
@@ -511,6 +535,7 @@ setGeneric(
   })
 }
 
+#' @rdname updateObject
 setMethod(
   f = "updateObject",
   signature = "BaseAnalysisPipeline",
@@ -518,6 +543,7 @@ setMethod(
 )
 
 #' @name assessEngineSetUp
+#' @rdname assessEngineSetUp
 #' @title Assesses engine (R, Spark, Python, Spark Structured Streaming) set up
 #' @details
 #'       Assesses whether engines required for executing functions in an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}
@@ -544,7 +570,7 @@ setGeneric(
     startEngineAssessment <- Sys.time()
     futile.logger::flog.info("||  Engine Assessment for pipeline STARTED  ||" , name='logger.engine.assessment')
 
-    engineAssessment <- tibble(engine = character(),
+    engineAssessment <- dplyr::tibble(engine = character(),
                                requiredForPipeline = logical(),
                                isSetup = logical(),
                                comments = character())
@@ -607,7 +633,7 @@ setGeneric(
   })
 }
 
-
+#' @rdname assessEngineSetUp
 setMethod(
   f = "assessEngineSetUp",
   signature = "BaseAnalysisPipeline",
@@ -615,6 +641,7 @@ setMethod(
 )
 
 #' @name savePipeline
+#' @rdname savePipeline
 #' @title Saves the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object to the file system without outputs
 #' @details
 #'       The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object is saved to the file system in the paths specified
@@ -650,6 +677,7 @@ setGeneric(
   })
 }
 
+#' @rdname savePipeline
 setMethod(
   f = "savePipeline",
   signature = "BaseAnalysisPipeline",
@@ -658,6 +686,7 @@ setMethod(
 
 
 #' @name getPipeline
+#' @rdname getPipeline
 #' @title Obtain the pipeline
 #' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @details
@@ -680,6 +709,7 @@ setGeneric(
   return(object@pipeline)
 }
 
+#' @rdname getPipeline
 setMethod(
   f = "getPipeline",
   signature = "BaseAnalysisPipeline",
@@ -701,6 +731,7 @@ getRegistry <- function(){
 }
 
 #' @name getInput
+#' @rdname getInput
 #' @title Obtains the initializedInput
 #' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @details
@@ -723,6 +754,7 @@ setGeneric(
   return(object@input)
 }
 
+#' @rdname getInput
 setMethod(
   f = "getInput",
   signature = "BaseAnalysisPipeline",
@@ -730,9 +762,10 @@ setMethod(
 )
 
 #' @name getOutputById
+#' @rdname getOutputById
 #' @title Obtains a specific output
 #' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
-#' @param id The position of the function for which the output is desired in the sequence of operations in the pipeline.
+#' @param reqId The position of the function for which the output is desired in the sequence of operations in the pipeline.
 #' @param includeCall Logical which defines whether the call used to generate the output should be returned. By, default this is false
 #' @details
 #'      Obtains a specific output from the \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object by passing the position
@@ -760,7 +793,7 @@ setGeneric(
       op <- list(call = data.frame(),
                  output = list())
       reqId <- as.character(reqId)
-      object@pipeline %>>% dplyr::filter(id == reqId) -> call
+      object@pipeline %>>% dplyr::filter(.data$id == reqId) -> call
       if(call$storeOutput){
         object@output[[paste0("f", reqId, ".out")]] -> output
       }else{
@@ -783,6 +816,7 @@ setGeneric(
   })
 }
 
+#' @rdname getOutputById
 setMethod(
   f = "getOutputById",
   signature = "BaseAnalysisPipeline",
@@ -793,23 +827,33 @@ setMethod(
 
 #' @name getResponse
 #' @title Obtains the response term from the formula
-#' @keywords internal
+#' @param f formula from which term is to be extracted.
+#' @details This is a helper function to extract the response variable from a formula
+#' @return The response variable in the formula as a string
+#' @export
 getResponse <- function(f){
-  resp <- dimnames(attr(terms(f), "factors"))[[1]][1]
+  resp <- dimnames(attr(stats::terms(f), "factors"))[[1]][1]
   return(resp)
 }
 
 #' @name getTerm
 #' @title Obtains the dependency term from the formula
-#' @keywords internal
+#' @param f formula from which term is to be extracted.
+#' @details This is a helper function to extract the terms from a formula
+#' @return String with the terms
+#' @export
 getTerm <- function(f){
-  t <- attr(terms(f), "term.labels")
+  t <- attr(stats::terms(f), "term.labels")
   return(t)
 }
 
 #' @name isDependencyParam
 #' @title Checks if the parameter is the dependency parameter
-#' @keywords internal
+#' @param f formula from which term is to be extracted.
+#' @details This is a helper function to check if the formula provided is a dependency parameter,
+#' as per the package's formula semantics, capturing function dependencies
+#' @return Logical as to whether it is a dependency parameter
+#' @export
 isDependencyParam <- function(f){
   termRegexPattern <- "[f]|[:digit:]"
   t <- NULL
@@ -924,13 +968,13 @@ computeEdges <- function(pipelineRegistryJoin){
       }
 
       return(edges)
-    }) %>>% dplyr::bind_rows(.) -> edgesDf
+    }) %>>% dplyr::bind_rows(.data) -> edgesDf
 
     if(nrow(edgesDf) == 0 && ncol(edgesDf) == 0){
-      edgesDf <- tibble(from = character(),
+      edgesDf <- dplyr::tibble(from = character(),
                         to = character())
     }else{
-      edgesDf %>>% dplyr::distinct(from, to, .keep_all = TRUE) -> edgesDf
+      edgesDf %>>% dplyr::distinct(.data$from, .data$to, .keep_all = TRUE) -> edgesDf
     }
     return(edgesDf)
   },error = function(e){
@@ -981,7 +1025,7 @@ identifyTopLevelRecursively <- function(input = list(topDf = dplyr::tibble(),
   }else{
     startingPoints <- getStartingPoints(nodes, edgeDf)
     topDf %>>% dplyr::bind_rows(dplyr::bind_cols(id = startingPoints, level = rep(as.character(l), length(startingPoints)))) -> topDf
-    edgeDf %>>% dplyr::filter(!(from %in% startingPoints)) -> edgeDf
+    edgeDf %>>% dplyr::filter(!(.data$from %in% startingPoints)) -> edgeDf
     nodes %>>% setdiff(startingPoints) -> nodes
 
     output <- list(topDf = topDf,
@@ -1017,9 +1061,11 @@ identifyTopologicalLevels <- function(
 }
 
 ####################### Execution prep #############################
-#' @rdname prepExecution
+
 #' @name prepExecution
+#' @rdname prepExecution
 #' @title Prepare the pipleline for execution
+#' @param object A Pipeline object
 #' @details The pipeline is prepared for execution by identifying the graph of the pipeline as well as its topological ordering,
 #' and dependency map in order to prepare for execution
 #' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
@@ -1067,6 +1113,7 @@ setGeneric(
   })
 }
 
+#' @rdname prepExecution
 setMethod(
   f = "prepExecution",
   signature = "BaseAnalysisPipeline",
@@ -1074,6 +1121,7 @@ setMethod(
 )
 
 #' @name visualizePipeline
+#' @rdname visualizePipeline
 #' @title Visualizes the pipeline as a graph
 #' @details Indicates dependencies amongst functions as well as functions for which output
 #' needs to be stored
@@ -1141,34 +1189,36 @@ setGeneric(
     edge_df <- object@pipelineExecutor$dependencyLinks
 
 
-    storedOutputs <- node_df %>>% dplyr::filter(storeOutput == T)
+    storedOutputs <- node_df %>>% dplyr::filter(.data$storeOutput == T)
     storedOutputs <- storedOutputs$id
 
-    spData <- node_df %>>% dplyr::filter(isDataFunction == T)
-    spData <- spData %>>% dplyr::filter(level == min(as.numeric(level)))
+    spData <- node_df %>>% dplyr::filter(.data$isDataFunction == T)
+    spData <- spData %>>% dplyr::filter(.data$level == min(as.numeric(.data$level)))
     spDataIds <- spData$id
 
-    spParam <-node_df %>>% dplyr::filter(isDataFunction == F)
-    spParam <- spParam %>>% dplyr::filter(level == min(as.numeric(level)))
+    spParam <-node_df %>>% dplyr::filter(.data$isDataFunction == F)
+    spParam <- spParam %>>% dplyr::filter(.data$level == min(as.numeric(.data$level)))
     spParamIds <- spParam$id
 
-    node_df %>>% dplyr::mutate(image = ifelse(engine == "r", rLogo,
-                                              ifelse(engine == "spark", sparkLogo,
-                                                     ifelse(engine == 'spark-structured-streaming', sparkSsLogo,
+    node_df %>>% dplyr::mutate(image = ifelse(.data$engine == "r", rLogo,
+                                              ifelse(.data$engine == "spark", sparkLogo,
+                                                     ifelse(.data$engine == 'spark-structured-streaming', sparkSsLogo,
                                                         pythonLogo)))) -> node_df
     node_df$shape <- "image"
 
     # node_df %>>% dplyr::mutate(group = ifelse(storeOutput == T, "Stored output", "Auxiliary step"))
     node_df$group <- "function"
     node_df %>>%
-      dplyr::select(id, operation, group, shape, image) -> node_df
+      dplyr::select(.data$id, .data$operation, .data$group, .data$shape, .data$image) -> node_df
 
     colnames(node_df) <- c("id", "label", "group","shape", "image")
 
-    node_df %>>% dplyr::add_row(id = "d0", label = "Data", group = "data", shape = "image", image = dataLogo ) -> node_df
+    node_df %>>% dplyr::add_row(id = "d0", label = "Data", group = "data", shape = "image",
+                                image = dataLogo ) -> node_df
 
     for(o in storedOutputs){
-      node_df %>>% dplyr::add_row(id = paste0("o",o), label = paste("Output ID:", o ), group = "output", shape = "image",
+      node_df %>>% dplyr::add_row(id = paste0("o",o), label = paste("Output ID:", o ), group = "output",
+                                  shape = "image",
                                   image = outputLogo) -> node_df
     }
 
@@ -1180,7 +1230,8 @@ setGeneric(
 
     for(s in spParamIds){
       pId <- paste0("p", s)
-      node_df %>>% dplyr::add_row(id = pId, label = "Non-data parameter", group = "parameter", shape = "image",
+      node_df %>>% dplyr::add_row( id = pId, label = "Non-data parameter", group = "parameter",
+                                  shape = "image",
                                   image = paramLogo ) -> node_df
       edge_df %>>% dplyr::add_row(from = paste0("p", s), to = s) -> edge_df
     }
@@ -1219,6 +1270,7 @@ setGeneric(
 
 }
 
+#' @rdname visualizePipeline
 setMethod(
   f = "visualizePipeline",
   signature = "BaseAnalysisPipeline",
@@ -1229,8 +1281,9 @@ setMethod(
 
 ########### Changing generics ############################################
 
-#' @rdname generateOutput
+
 #' @name generateOutput
+#' @rdname generateOutput
 #' @title Generate a list of outputs from Pipeline objects
 #' @details \code{generateOutput} is a generic function that is implemented for various types of pipeline objects
 #' such as \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline}
@@ -1239,7 +1292,7 @@ setMethod(
 #'       are run and outputs generated, stored in a list
 #' @param object object that contains input, pipeline, registry and output
 #' @return Updated Pipeline object with the outputs at each step stored in the \code{output} slot.
-#' @return Specific outputs can be obtained by using the \link{getOuputByOrderId} function
+#' @return Specific outputs can be obtained by using the \link{getOutputById} function
 #' @family Package core functions
 #' @include core-functions.R
 #' @exportMethod generateOutput
@@ -1252,8 +1305,9 @@ setGeneric(
   }
 )
 
-#' @rdname checkSchemaMatch
+
 #' @name checkSchemaMatch
+#' @rdname checkSchemaMatch
 #' @title Checks the schema of the input to a Pipeline object against the original
 #' @param object A Pipeline object
 #' @param newData The newData that the pipeline is to be initialized with
@@ -1274,14 +1328,15 @@ setGeneric(
 ######### Logging functions ###################
 
 
-#' @rdname setLoggerDetails
+
 #' @name setLoggerDetails
+#' @rdname setLoggerDetails
 #' @title Sets the logger configuration for the pipeline
 #' @details This function sets the logger configuration for the pipeline.
 #' @param object A Pipeline object
 #' @param target A string value. 'console' for appending to console, 'file' for appending to a file, or 'console&file' for both
 #' @param targetFile File name of the log file in case the target is 'file'
-#' @param targetLayout Specify the layout according to 'futile.logger' package convention
+#' @param layout Specify the layout according to 'futile.logger' package convention
 #' @family Package core functions
 #' @export
 
@@ -1304,14 +1359,16 @@ setGeneric(
   return(object)
 }
 
+#' @rdname setLoggerDetails
 setMethod(
   f = "setLoggerDetails",
   signature = "BaseAnalysisPipeline",
   definition = .setLoggerDetails
 )
 
-#' @rdname getLoggerDetails
+
 #' @name getLoggerDetails
+#' @rdname getLoggerDetails
 #' @title Obtains the logger configuration for the pipeline
 #' @details This function obtains the logger configuration for the pipeline.
 #' @param object A Pipeline object
@@ -1329,6 +1386,7 @@ setGeneric(
   return(object@pipelineExecutor$loggerDetails )
 }
 
+#' @rdname getLoggerDetails
 setMethod(
   f = "getLoggerDetails",
   signature = "BaseAnalysisPipeline",
@@ -1407,10 +1465,11 @@ loadPipeline <- function(path, input = data.frame() , filePath = ""){
 
 
     lapply(functionNames, function(x){
-      assign(x, get(x, environment()), globalenv())
+      assign(x, get(x, environment()), globEnv)
     })
 
-    .setRegistry(.registry)
+    eval(parse(paste0(".setRegistry(.registry)")))
+
     futile.logger::flog.info("||  Registry loaded succesfully  ||",
                              name = "logger.base")
 
@@ -1486,7 +1545,7 @@ initDfBasedOnType <- function(input, filePath){
       }
     }
     else{
-      input <- read.csv(filePath)
+      input <- utils::read.csv(filePath)
     }
 
     return(input)
@@ -1531,10 +1590,11 @@ loadRegistry <- function(path){
 
     load(path, envir = environment())
     functionNames = setdiff(ls(envir = environment()), c("path", ".registry"))
-    .setRegistry(.registry)
+
+    eval(parse(paste0(".setRegistry(.registry)")))
 
     lapply(functionNames, function(x){
-      assign(x, get(x, environment()), globalenv())
+      assign(x, get(x, environment()), globEnv)
     })
 
 

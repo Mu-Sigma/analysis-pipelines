@@ -6,7 +6,15 @@
 \usage{
 getTerm(f)
 }
+\arguments{
+\item{f}{formula from which term is to be extracted.}
+}
+\value{
+String with the terms
+}
 \description{
 Obtains the dependency term from the formula
 }
-\keyword{internal}
+\details{
+This is a helper function to extract the terms from a formula
+}

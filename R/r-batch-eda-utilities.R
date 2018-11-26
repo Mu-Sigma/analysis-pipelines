@@ -37,6 +37,7 @@ ignoreCols <- function(data, columns){
 #' @name univarCatDistPlots
 #' @title Univariate Categoric Distribution
 #' @details A univariate distribution graph on the selected categorical columns from the dataframe
+#' @param data the dataset where the column on which the plot is to be generated is present
 #' @param uniCol the name of column on which the plot needs to be generated
 #' @param priColor the primary color for the plots
 #' @param optionalPlots A Flag for optional plots
@@ -48,8 +49,10 @@ univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
   data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
   data <- data %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = dplyr::n())
   y=data[[uniCol]]
+  data %>>% dplyr::arrange(.data$count) -> data
+
   catPlot <- ggplot2::ggplot(data,
-                             ggplot2::aes(x = reorder(y, count), y=count)) +
+                             ggplot2::aes_(x = as.name(uniCol), y= as.name("count"))) +
     ggplot2::geom_bar(stat = "identity",  fill = priColor,alpha=0.7) +
     ggplot2::xlab(uniCol) +
     ggplot2::ylab("Frequency") + ggplot2::theme_bw() +
@@ -93,7 +96,7 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
     Outlier<-data$Outlier
     Value<-data[,columnName]
     outlierPlotObj <- ggplot2::ggplot(data) +
-      ggplot2::geom_histogram(ggplot2::aes(x = Value, fill = Outlier),bins=30,alpha=0.7) +
+      ggplot2::geom_histogram(ggplot2::aes(x = Value, fill = .data$Outlier),bins=30,alpha=0.7) +
       ggplot2::scale_fill_manual(values = c(priColor, "red"),breaks=c("FALSE", "TRUE"),
                                  labels=c("Normal", "Outlier"),name = "Status") +
       ggplot2::theme_bw() +
@@ -107,7 +110,7 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
     y<-data[,columnName]
     outlierPlotObj <-
       ggplot2::ggplot(data, ggplot2::aes(x = Zscore, y = y)) +
-      ggplot2::geom_point(ggplot2::aes(color = Outlier),alpha=0.7)+
+      ggplot2::geom_point(ggplot2::aes(color = .data$Outlier),alpha=0.7)+
       ggplot2::scale_color_manual("Status", values = c("TRUE" = "red","FALSE" =priColor))+
       ggplot2::ylab(columnName)+
       ggplot2::theme_bw() +
@@ -148,7 +151,7 @@ multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalP
   y<-data[,depCol]
   size<-data[,sizeCol]
   outlierPlot <- ggplot2::ggplot(data,ggplot2::aes(x = x,y = y),alpha=0.6)+
-    ggplot2::geom_point(ggplot2::aes(color = Outlier, size = size),alpha=0.7)+
+    ggplot2::geom_point(ggplot2::aes(color = .data$Outlier, size = size),alpha=0.7)+
     ggplot2::scale_color_manual("",values = c("Outlier" = "red", "Normal" = priColor))+
     ggplot2::labs(title = paste(depCol,"vs",indepCol)) +  ggplot2::theme_bw() +
     ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),legend.position = "bottom") +
@@ -213,7 +216,7 @@ bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor =
     a=as.vector(as.character(unique(new_df[[select_var_name_1]])))
     y=new_df[[select_var_name_1]]
     label=new_df[[select_var_name_2]]
-    bivarPlot <-ggplot2::ggplot(new_df, ggplot2::aes(x = y, y= n, fill = label)) +
+    bivarPlot <-ggplot2::ggplot(new_df, ggplot2::aes(x = y, y= .data$n, fill = label)) +
       ggplot2::geom_bar(position = "dodge", stat = "identity",alpha=0.9) +
       ggplot2::guides(fill=ggplot2::guide_legend(title=select_var_name_2)) +
       ggplot2::coord_flip()+
@@ -259,6 +262,7 @@ bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor =
 #' @title Correlation Matrix Plot
 #' @description A correlation matrix is created and plotted across all the columns in the dataset
 #' @param dataset the dataset that needs to be loaded
+#' @param methodused methods to be used for computing correlation
 #' @return Correlation Matrix graph
 #' @family Package EDA Utilites functions
 #' @export
