@@ -20,7 +20,7 @@ generateOutput(object)
 \value{
 Updated Pipeline object with the outputs at each step stored in the \code{output} slot.
 
-Specific outputs can be obtained by using the \link{getOuputByOrderId} function
+Specific outputs can be obtained by using the \link{getOutputById} function
 }
 \description{
 Generate a list of outputs from Pipeline objects
@@ -33,8 +33,8 @@ The sequence of operations stored in the pipeline object
       are run and outputs generated, stored in a list
 }
 \seealso{
-Other Package core functions: \code{\link{BaseAnalysisPipeline}},
-  \code{\link{MetaAnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
+  \code{\link{MetaAnalysisPipeline-class}},
   \code{\link{assessEngineSetUp}},
   \code{\link{checkSchemaMatch}},
   \code{\link{createPipelineInstance}},
@@ -45,8 +45,7 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{getPipelinePrototype}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
-  \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{initializeMetaAnalysisPipeline}},
+  \code{\link{initialize,BaseAnalysisPipeline-method}},
   \code{\link{loadMetaPipeline}},
   \code{\link{loadPipeline}},
   \code{\link{loadPredefinedFunctionRegistry}},

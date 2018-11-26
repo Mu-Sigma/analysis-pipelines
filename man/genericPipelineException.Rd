@@ -19,8 +19,8 @@ incurred during the call of the function being registered can be passed by the u
 will be called instead of this function
 }
 \seealso{
-Other Package core functions: \code{\link{BaseAnalysisPipeline}},
-  \code{\link{MetaAnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
+  \code{\link{MetaAnalysisPipeline-class}},
   \code{\link{assessEngineSetUp}},
   \code{\link{checkSchemaMatch}},
   \code{\link{createPipelineInstance}},
@@ -31,8 +31,7 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{getPipelinePrototype}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
-  \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{initializeMetaAnalysisPipeline}},
+  \code{\link{initialize,BaseAnalysisPipeline-method}},
   \code{\link{loadMetaPipeline}},
   \code{\link{loadPipeline}},
   \code{\link{loadPredefinedFunctionRegistry}},

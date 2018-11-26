@@ -12,11 +12,15 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# Objective
+# Introduction
 
 This vignette explains how **interoperable pipelines** containing functions operating on different engines such as R, Spark and Python can be configured and executed through the **analysisPipelines** package. Currently, the package supports interoperable pipelines containing R and Spark batch functions.
 
 If the package is new to you, it is recommended that you go through the *Analysis pipelines - Core functionality and working with R data frames and functions* vignette first.
+
+# Important Note
+
+Using *Spark* as an engine requires the *SparkR* package to be installed. *SparkR* is distributed natively with *Apache Spark* and is not distributed on CRAN.
 
 ```{r echo = FALSE}
 library(analysisPipelines)

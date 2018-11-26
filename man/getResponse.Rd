@@ -6,7 +6,15 @@
 \usage{
 getResponse(f)
 }
+\arguments{
+\item{f}{formula from which term is to be extracted.}
+}
+\value{
+The response variable in the formula as a string
+}
 \description{
 Obtains the response term from the formula
 }
-\keyword{internal}
+\details{
+This is a helper function to extract the response variable from a formula
+}
