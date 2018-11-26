@@ -22,8 +22,8 @@ Transforms provided inputs into R data frame regardless of the input provided, b
      or Python data frames
 }
 \seealso{
-Other Package core functions: \code{\link{BaseAnalysisPipeline}},
-  \code{\link{MetaAnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
+  \code{\link{MetaAnalysisPipeline-class}},
   \code{\link{assessEngineSetUp}},
   \code{\link{checkSchemaMatch}},
   \code{\link{createPipelineInstance}},
@@ -34,8 +34,7 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{getOutputById}},
   \code{\link{getPipelinePrototype}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
-  \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{initializeMetaAnalysisPipeline}},
+  \code{\link{initialize,BaseAnalysisPipeline-method}},
   \code{\link{loadMetaPipeline}},
   \code{\link{loadPipeline}},
   \code{\link{loadPredefinedFunctionRegistry}},

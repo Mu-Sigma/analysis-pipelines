@@ -15,6 +15,10 @@ vignette: >
 
 *Apache Spark* can be leveraged to process large volumes of distributed data that are typically impossible to process on standalone R servers. The vignette describes defining and executing *Spark*-only pipelines using the *analysisPipelines* package.
 
+# Important Note
+
+Using *Spark* as an engine requires the *SparkR* package to be installed. *SparkR* is distributed natively with *Apache Spark* and is not distributed on CRAN.
+
 # Initialize libraries
 
 * Load the *analysisPipelines* and *SparkR* libraries

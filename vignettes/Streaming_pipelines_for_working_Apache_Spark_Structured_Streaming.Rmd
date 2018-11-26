@@ -12,11 +12,17 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+
+
 # Introduction
 
 The vignette aims to show examples of using SparkR as an interface to run streaming Spark jobs through R - using the analysisPipelines package. The major use cases can be categorized as:<br>
 
 * Implement a pipeline using SparkR dataframes for streaming use cases
+
+# Important Note
+
+Using *Spark* as an engine requires the *SparkR* package to be installed. *SparkR* is distributed natively with *Apache Spark* and is not distributed on CRAN.
 
 # Initialize libraries
 

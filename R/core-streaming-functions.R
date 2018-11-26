@@ -12,15 +12,14 @@
 # - Test loadPipeline function
 
 #' @include core-functions.R
+NULL
 
-
-#' @name StreamingAnalysisPipeline
+#' @name StreamingAnalysisPipeline-class
+#' @rdname StreamingAnalysisPipeline-class
 #' @title Class for constructing Analysis Pipelines for streaming analyeses
 #' @details Inherits the base class \link{BaseAnalysisPipeline} class which holds the metadata including the registry of available functions,
 #' the data on which the pipeline is to be applied, as well as the pipeline itself
 #' @details This class currently only supports Apache Spark Structured Streaming, implemented through the SparkR interface
-#' @details More details of how an object of this class should be initialized is provided in the
-#' constructor - \link{initializeStreamingAnalysisPipeline}
 #' @slot input The input Spark DataFrame on which analysis is to be performed
 #' @slot originalSchemaDf Empty Spark DataFrame representing the schema of the input
 #' @family Package core functions for Streaming Analyses
@@ -28,23 +27,20 @@
 #' @exportClass StreamingAnalysisPipeline
 #' @export StreamingAnalysisPipeline
 
+
 StreamingAnalysisPipeline <- setClass("StreamingAnalysisPipeline",
                            slots = c(
-                             input = "SparkDataFrame",
-                             originalSchemaDf = "SparkDataFrame"
+                             input = "ANY",
+                             #Should be a SparkDataFrame, but unable to specify as SparkR is not distributed on CRAN
+                             originalSchemaDf = "ANY"
                            ), contains = "BaseAnalysisPipeline")
 
-#' @name initializeStreamingAnalysisPipeline
+#' StreamingAnalysisPipeline constructor
+#' @docType methods
+#' @rdname initialize-methods
 #' @title Constructor for the \code{StreamingAnalysisPipeline} object
-#' @param .Object The \code{StreamingAnalysisPipeline} object
-#' @param input The Spark DataFrame on which operations need to be performed
-#' @details
-#'      \code{input} needs to be provded and the argument needs to be of class \code{SparkDataFrame}, which is
-#'      generally created through operations using SparkR
-#' @return an object of class "\code{StreamingAnalysisPipeline}", initialized with the input Spark DataFrame provided
-#' @family Package core functions for Streaming Analyses
 #' @include core-functions.R
-#' @export
+#' @keywords internal
 
 setMethod(
   f = "initialize",
@@ -59,6 +55,13 @@ setMethod(
   }
 )
 
+.checkSparkDataFrame <- function(obj){
+  if(class(obj) != "SparkDataFrame"){
+    futile.logger::flog.error("||  The input should be of class 'SparkDataFrame' from the 'SparkR' package  ||",
+                              name = "logger.base")
+    stop()
+  }
+}
 
 .executeStream<- function(object){
 
@@ -81,7 +84,7 @@ setMethod(
     lapply(batches, function(x, object, pipelineRegistryOrderingJoin, outputCache){
 
       # startBatch <- Sys.time()
-      pipelineRegistryOrderingJoin %>>% dplyr::filter(level == x) -> functionsInBatch
+      pipelineRegistryOrderingJoin %>>% dplyr::filter(.data$level == x) -> functionsInBatch
       # futile.logger::flog.info("||  Executing Batch Number : %s/%s containing functions '%s' ||",
                                # x, numBatches, paste(functionsInBatch$operation, collapse = ", "),
                                # name='logger.batch')
@@ -89,7 +92,7 @@ setMethod(
       ## Function execution in a stream
       lapply(functionsInBatch$id, function(y, object, functionsInBatch, outputCache){
 
-        functionsInBatch %>>% dplyr::filter(id == y) %>>% as.list -> funcDetails
+        functionsInBatch %>>% dplyr::filter(.data$id == y) %>>% as.list -> funcDetails
 
         futile.logger::flog.info("||  Function ID '%s' named '%s' STARTED on the '%s' engine ||",
                                  funcDetails$id, funcDetails$operation, funcDetails$engine,
@@ -113,10 +116,10 @@ setMethod(
 
         params <- lapply(params, function(p, depTerms, outputCache){
           if(class(p) == "formula"){
-            isDepParam <- analysisPipelines:::isDependencyParam(p)
+            isDepParam <- analysisPipelines::isDependencyParam(p)
             if(isDepParam){
-              formulaTerm <- analysisPipelines:::getTerm(p)
-              argName <-  analysisPipelines:::getResponse(p)
+              formulaTerm <- analysisPipelines::getTerm(p)
+              argName <-  analysisPipelines::getResponse(p)
               if(formulaTerm %in% depTerms){
 
                 ## Formula of previous function in pipeline
@@ -213,7 +216,7 @@ setMethod(
 
     ## Check engine setup
     object %>>% assessEngineSetUp ->  engineAssessment
-    engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
+    engineAssessment %>>% dplyr::filter(.data$requiredForPipeline == T) -> requiredEngines
 
     if(!all(requiredEngines$isSetup)){
       m <- paste0("All engines required for the pipelines have not been configured. ",
@@ -242,40 +245,3 @@ setMethod(
   signature = "StreamingAnalysisPipeline",
   definition = .generateStreamingOutput
 )
-
-# .generateStreamingOutput = function(object)
-# {
-#   inputToExecute <- object@input
-#
-#   ## Check engine setup
-#   object %>>% assessEngineSetUp ->  engineAssessment
-#   engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
-#
-#   if(!all(requiredEngines$isSetup)){
-#     stop(paste0("All engines required for the pipelines have not been configured. ",
-#                 "Please use the analysisPipelines::assessEngine() function to check"))
-#   }
-#   pipelineRegistryJoin <- dplyr::left_join(object@pipeline, getRegistry(), by = c("operation" = "functionName"))
-#
-#   if(nrow(pipelineRegistryJoin) > 0){
-#     for(rowNo in 1:nrow(pipelineRegistryJoin)){
-#
-#       ## Check outAsIn and engine conversion accordingly
-#       if(pipelineRegistryJoin[['outAsIn']][rowNo] == T && rowNo > 1){
-#           inputToExecute <- object@output[[rowNo-1]]
-#       }else{
-#           inputToExecute <- object@input
-#       }
-#       object@output[[rowNo]] <- do.call(pipelineRegistryJoin[['operation']][[rowNo]],
-#                                         append(list(inputToExecute),
-#                                                pipelineRegistryJoin[['parameters']][[rowNo]]))
-#     }
-#   }else{
-#     stop("No functions have been added to the pipeline")
-#   }
-#
-#   return(object)
-# }
-
-
-

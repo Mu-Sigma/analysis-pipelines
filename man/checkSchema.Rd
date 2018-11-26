@@ -23,9 +23,9 @@ Compares the schemas of two dataframes, providing information on added and remov
       as compared to the old
 }
 \seealso{
-Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPipeline}},
+Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPipeline-class}},
   \code{\link{generateReport}},
-  \code{\link{initializeAnalysisPipeline}}
+  \code{\link{initialize,BaseAnalysisPipeline-method}}
 }
 \concept{Package core functions for batch/one-time analyses}
 \keyword{internal}

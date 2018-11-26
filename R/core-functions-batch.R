@@ -5,14 +5,16 @@
 # Description: An R package version - Currently supports R and Spark
 ##################################################################################################
 
-#' @name AnalysisPipeline
+#' @importFrom magrittr %>%
+NULL
+
+#' @name AnalysisPipeline-class
+#' @rdname AnalysisPipeline-class
 #' @title Class for constructing Analysis Pipelines for batch/ one-time analyeses
 #' @details Inherits the base class \link{BaseAnalysisPipeline} class which holds the metadata including the registry of available functions,
 #' the data on which the pipeline is to be applied, as well as the pipeline itself
 #' @details Additionally, this class is meant to be used for batch/ one-time processing. Contains additional slots to
 #' hold the data frame to be used for the pipeline and associated schema
-#' @details More details of how an object of this class should be initialized is provided in the
-#' constructor - \link{initializeAnalysisPipeline}
 #' @slot input The input dataset on which analysis is to be performed
 #' @slot originalSchemaDf Empty data frame representing the schema of the input
 #' @family Package core functions for batch/one-time analyses
@@ -26,18 +28,13 @@ AnalysisPipeline <- setClass("AnalysisPipeline",
                                originalSchemaDf = "data.frame"
                              ), contains = "BaseAnalysisPipeline")
 
-#' @name initializeAnalysisPipeline
+#' AnalysisPipeline constructor
+#' @docType methods
+#' @rdname initialize-methods
 #' @title Constructor for the \link{AnalysisPipeline} class
-#' @param .Object The \code{AnalysisPipeline} object
-#' @param input The data frame on which operations need to be performed
-#' @param filePath File path for a .csv file to directly read in the dataset from
-#' @details
-#'      Either one of \code{input} or \code{filePath} need to be provided i.e. either the
-#'      data frame or the file path to a csv file
-#' @return an object of class \code{AnalysisPipeline}, initialized with the input data frame provided
 #' @include core-functions.R
 #' @family Package core functions for batch/one-time analyses
-#' @export
+#' @keywords internal
 
 setMethod(
   f = "initialize",
@@ -202,7 +199,7 @@ checkSchema <- function(dfOld, dfNew){
 
     ## Check engine setup
     object %>>% assessEngineSetUp ->  engineAssessment
-    engineAssessment %>>% dplyr::filter(requiredForPipeline == T) -> requiredEngines
+    engineAssessment %>>% dplyr::filter(.data$requiredForPipeline == T) -> requiredEngines
 
     if(!all(requiredEngines$isSetup)){
       m <- paste0("All engines required for the pipelines have not been configured. ",
@@ -243,9 +240,9 @@ checkSchema <- function(dfOld, dfNew){
 
     # Set Input data and set type to engine with max. number of operations
 
-    pipelineRegistryOrderingJoin %>>% dplyr::group_by(engine) %>>% dplyr::summarise(numOp = dplyr::n()) -> engineCount
+    pipelineRegistryOrderingJoin %>>% dplyr::group_by(.data$engine) %>>% dplyr::summarise(numOp = dplyr::n()) -> engineCount
 
-    engineCount %>>% dplyr::filter(numOp == max(numOp)) -> maxEngine
+    engineCount %>>% dplyr::filter(.data$numOp == max(.data$numOp)) -> maxEngine
 
 
     if(nrow(maxEngine) == 1){
@@ -291,7 +288,7 @@ checkSchema <- function(dfOld, dfNew){
     lapply(batches, function(x, object, pipelineRegistryOrderingJoin, outputCache){
 
       startBatch <- Sys.time()
-      pipelineRegistryOrderingJoin %>>% dplyr::filter(level == x) -> functionsInBatch
+      pipelineRegistryOrderingJoin %>>% dplyr::filter(.data$level == x) -> functionsInBatch
       futile.logger::flog.info("||  Executing Batch Number : %s/%s containing functions '%s' ||",
                                x, numBatches, paste(functionsInBatch$operation, collapse = ", "),
                                name='logger.batch')
@@ -299,12 +296,12 @@ checkSchema <- function(dfOld, dfNew){
       # Garbage cleaning in the cache - Previous batch outputs
 
       prevBatch <- as.character(as.numeric(x) - 1)
-      pipelineRegistryOrderingJoin %>>% dplyr::filter(level == prevBatch) -> funcInPrevBatch
+      pipelineRegistryOrderingJoin %>>% dplyr::filter(.data$level == prevBatch) -> funcInPrevBatch
 
       if(nrow(funcInPrevBatch)>0){
         possiblePrevCacheOutputNames <- paste0("f", funcInPrevBatch$id, ".out")
         previousCachedOutputNames <- intersect(possiblePrevCacheOutputNames, ls(outputCache))
-        pipelineRegistryOrderingJoin %>>% dplyr::filter(storeOutput == TRUE) -> requiredOutputs
+        pipelineRegistryOrderingJoin %>>% dplyr::filter(.data$storeOutput == TRUE) -> requiredOutputs
         requiredOutputs <-  paste0("f", requiredOutputs$id, ".out")
 
         unrequiredCachedOutputNames <- setdiff(possiblePrevCacheOutputNames,
@@ -327,7 +324,7 @@ checkSchema <- function(dfOld, dfNew){
         ## Replace formula parameters with actual outputs
         startFunc <- Sys.time()
 
-        functionsInBatch %>>% dplyr::filter(id == y) %>>% as.list -> funcDetails
+        functionsInBatch %>>% dplyr::filter(.data$id == y) %>>% as.list -> funcDetails
 
         futile.logger::flog.info("||  Function ID '%s' named '%s' STARTED on the '%s' engine ||",
                                  funcDetails$id, funcDetails$operation, funcDetails$engine,
@@ -399,10 +396,10 @@ checkSchema <- function(dfOld, dfNew){
 
         params <- lapply(params, function(p, depTerms, outputCache){
           if(class(p) == "formula"){
-            isDepParam <- analysisPipelines:::isDependencyParam(p)
+            isDepParam <- analysisPipelines::isDependencyParam(p)
             if(isDepParam){
-              formulaTerm <- analysisPipelines:::getTerm(p)
-              argName <-  analysisPipelines:::getResponse(p)
+              formulaTerm <- analysisPipelines::getTerm(p)
+              argName <-  analysisPipelines::getResponse(p)
               if(formulaTerm %in% depTerms){
 
                 ## Formula of previous function in pipeline
@@ -483,7 +480,7 @@ checkSchema <- function(dfOld, dfNew){
                              name='logger.pipeline')
 
     #Final garbage cleaning
-    pipelineRegistryOrderingJoin %>>% dplyr::filter(storeOutput == TRUE) -> requiredOutputs
+    pipelineRegistryOrderingJoin %>>% dplyr::filter(.data$storeOutput == TRUE) -> requiredOutputs
     requiredOutputs <-  paste0("f", requiredOutputs$id, ".out")
 
     unrequiredCachedOutputNames <- setdiff(ls(outputCache), requiredOutputs)
@@ -528,6 +525,7 @@ setMethod(
 
 
 #' @name generateReport
+#' @rdname generateReport
 #' @title Generate a HTML report from an \code{AnalysisPipeline} object
 #' @details
 #'       The sequence of operations stored in the \code{AnalysisPipeline} object are run, outputs generated,
@@ -546,6 +544,7 @@ setGeneric(
   }
 )
 
+#' @rdname generateReport
 setMethod(
   f = "generateReport",
   signature = c("AnalysisPipeline", "character"),
@@ -560,7 +559,7 @@ setMethod(
       }
       # object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
 
-      opEngineDetails <- object@pipeline %>>% dplyr::filter(storeOutput == T)
+      opEngineDetails <- object@pipeline %>>% dplyr::filter(.data$storeOutput == T)
       if(!all(unique(opEngineDetails$engine) == 'r')){
         futile.logger::flog.warn(paste("||  Pipeline contains engines other than R.",
                               "Will attempt coercing of outputs for rendinring through 'rmarkdown'.",
