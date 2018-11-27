@@ -1,0 +1,73 @@
+---
+title: "Analysis pipelines for working with Python functions"
+author: "Naren Srinivasan"
+date: "11/27/2018"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    fig_width: 8
+vignette: >
+  %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Setup
+
+```{r}
+knitr::opts_chunk$set(
+    eval = FALSE
+  )
+
+library(analysisPipelines)
+
+analysisPipelines::setPythonEnvir('python', '/Users/naren/anaconda3/bin/python')
+os <- reticulate::import("os")
+numpy <- reticulate::import("numpy")
+pandas <- reticulate::import("pandas")
+sklearn <- reticulate::import("sklearn")
+
+reticulate::source_python(system.file("python/sampleFunctions.py", package = "analysisPipelines"))
+
+reticulate::py_config()
+```
+
+
+# Defining Python functions
+
+```{python eval = F}
+def getColMeans2(df):
+    meanList = []
+    for x in df.columns:
+        meanList.append(df[x].mean())
+    return meanList
+```
+
+
+# Defining pipelines
+
+```{r}
+data("iris")
+d <- iris
+obj <- AnalysisPipeline(input = iris)
+
+registerFunction("trainDecisionTree", engine = "python", isDataFunction = F, firstArgClass = "numpy.ndarray")
+registerFunction("getTargetForPyClassification", engine = "r")
+registerFunction("getFeaturesForPyClassification")
+getRegistry()
+
+obj %>>%  getFeaturesForPyClassification(featureNames = colnames(d)[-ncol(d)]) %>>% 
+          getTargetForPyClassification(targetVarName = "Species", positiveClass = "setosa") %>>%
+          trainDecisionTree_py(data = ~f1, target = ~f2, storeOutput = T) -> objDecisionTree
+
+objDecisionTree %>>% visualizePipeline
+```
+
+
+# Execution
+
+```{r}
+objDecisionTree %>>% generateOutput -> op
+op %>>% getOutputById("3")
+```
+

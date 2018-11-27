@@ -268,7 +268,17 @@ checkSchema <- function(dfOld, dfNew){
                                  name='logger.func')
 
     }else if(maxEngineName == "python"){
-      # TODO: convert to Python data frame
+      startTypeConv <- Sys.time()
+      
+      inputToExecute <- reticulate::r_to_py(object@input)
+      
+      endTypeConv <- Sys.time()
+      typeConvTime <- endTypeConv - startTypeConv
+      futile.logger::flog.info(paste("||  Initial Type conversion from R dataframe to Pandas DataFrame,",
+                                     "as maximum number of operations are on the Python engine.",
+                                     "Time taked : %s seconds  ||"),
+                               typeConvTime,
+                               name='logger.func')
     }
 
     batches <- unique(pipelineRegistryOrderingJoin$level)
@@ -364,7 +374,15 @@ checkSchema <- function(dfOld, dfNew){
                                          typeConvTime,
                                          name='logger.func')
               }else if(currEngine == 'python'){
-                #TODO: python
+                startTypeConv <- Sys.time()
+                
+                inputToExecute <- SparkR::as.data.frame(inputToExecute) %>>% reticulate::r_to_py()
+                
+                endTypeConv <- Sys.time()
+                typeConvTime <- endTypeConv - startTypeConv
+                futile.logger::flog.info("||  Type conversion from Spark DataFrame to Pandas DataFrame took %s seconds  ||",
+                                         typeConvTime,
+                                         name='logger.func')
               }
 
             }else if(prevEngine == 'r'){
@@ -378,11 +396,39 @@ checkSchema <- function(dfOld, dfNew){
                 futile.logger::flog.info("||  Type conversion from R dataframe to Spark DataFrame took %s seconds  ||",
                                          typeConvTime,
                                          name='logger.func')
-              }else if(prevEngine == 'python'){
-                # TODO: python
+              }else if(currEngine == 'python'){
+                startTypeConv <- Sys.time()
+                
+                inputToExecute <- reticulate::r_to_py(inputToExecute)
+                
+                endTypeConv <- Sys.time()
+                typeConvTime <- endTypeConv - startTypeConv
+                futile.logger::flog.info("||  Type conversion from Pandas DataFrame to R dataframe took %s seconds  ||",
+                                         typeConvTime,
+                                         name='logger.func')
               }
             }else if(prevEngine == 'python'){
-              #TODO: python
+              if(currEngine == "spark"){
+                startTypeConv <- Sys.time()
+                
+                inputToExecute <- reticulate::py_to_r(inputToExecute) %>>% SparkR::as.DataFrame()
+                
+                endTypeConv <- Sys.time()
+                typeConvTime <- endTypeConv - startTypeConv
+                futile.logger::flog.info("||  Type conversion from Pandas DataFrame to Spark DataFrame took %s seconds  ||",
+                                         typeConvTime,
+                                         name='logger.func')
+              }else if(currEngine == 'r'){
+                startTypeConv <- Sys.time()
+                
+                inputToExecute <- reticulate::py_to_r(inputToExecute)
+                
+                endTypeConv <- Sys.time()
+                typeConvTime <- endTypeConv - startTypeConv
+                futile.logger::flog.info("||  Type conversion from Pandas DataFrame to R dataframe took %s seconds  ||",
+                                         typeConvTime,
+                                         name='logger.func')
+              }
             }
           }
         }

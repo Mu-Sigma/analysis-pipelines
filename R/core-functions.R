@@ -177,6 +177,8 @@ registerFunction <- function( functionName, heading = "",
       if(engine == "spark" || engine == 'spark-structured-streaming'){
         # dataFrameClass <- "SparkDataFrame"
         dataFrameClass <- "ANY"
+      }else if(engine == 'python'){
+        dataFrameClass <- "pandas.core.frame.DataFrame"
       }
 
 
@@ -235,8 +237,23 @@ registerFunction <- function( functionName, heading = "",
         newArgs <- alist()
 
         f <- get(functionName, .GlobalEnv)
-        originalArgs <- formals(f) %>>% as.list
+        origF <- f
+        
+        argEnv <- NULL
+        #Checking for direct python functions
+        if(any(class(f) == "python.builtin.function")){
+           inspect <- reticulate::import("inspect")
+           argEnv <- inspect$getargspec(f) 
+           originalArgs <- argEnv$args %>>% lapply(function(x){
+             a <- eval(parse(text = paste0("alist(", x, " = )")))
+             return(a)
+           }) %>>% unlist %>>% as.list
+        }else{
+          originalArgs <- formals(f) %>>% as.list
+        }
         firstArg <- names(originalArgs)[1]
+        # originalArgs <- formals(f) %>>% as.list
+        # firstArg <- names(originalArgs)[1]
 
 
         if(isDataFunction){
@@ -274,6 +291,11 @@ registerFunction <- function( functionName, heading = "",
         # }
 
         methodBody <- paste0(utils::capture.output(body(eval(parse(text=functionName)))),collapse="\n")
+        
+        # if(engine == 'python'){
+        #   gsub(pattern = "py_resolve_dots", replacement = "reticulate:::py_resolve_dots", methodBody) -> methodBody
+        #   gsub(pattern = "py_call_impl", replacement = "reticulate:::py_call_impl", methodBody) -> methodBody
+        # }
 
         # if(isDataFunction && childClass == "StreamingAnalysisPipeline"){
         #   methodBody <- gsub(pattern = "\\{", replacement = paste0("{ check", firstArg , " = object;"), x = methodBody)
@@ -290,6 +312,19 @@ registerFunction <- function( functionName, heading = "",
         genericArgs <- append(newArgs, commonArgs)
         formals(f) <- genericArgs
         body(f) <- paste('standardGeneric("', functionName,'")')
+        
+        ## Suffix for python functions
+        if(engine == 'python'){
+          # origFString <- paste0('function( ', methodParams, '){',
+          #                 'val <- ', functionName, '(', methodParams, ');',
+          #                 'return(val);}')
+          # eval(parse(text = paste0('origF <- ', origFString)))
+          methodBody <- paste0('{',
+                             'val <- ', functionName, '(', methodParams, ');',
+                               'return(val);}')
+          functionName <- paste0(functionName, "_py")
+           
+        }
 
         registerFunText <-
           paste0(
@@ -325,6 +360,9 @@ registerFunction <- function( functionName, heading = "",
                      'signature = ', origMethodSignature, ',',
                      'definition = function( ', methodParams,')',
                      methodBody, ')'
+                 # 'setMethod(f = "',functionName,'",',
+                 #     'signature = ', origMethodSignature, ',',
+                 #     'definition = origF)'
           )
 
         #Register function
@@ -1535,10 +1573,12 @@ initDfBasedOnType <- function(input, filePath){
         #Check for R, Spark, Python data frame
         if(class(input) == "SparkDataFrame"){
           input <- SparkR::as.data.frame(input)
-        }else if(class(input) == "data.frame" || class(input) == "tibble"){
-          #do nothing for R
-        }else{
-          m <- "The provided input is not of class - data.frame or SparkDataFrame"
+        }else if(any(class(input) == "pandas.core.frame.DataFrame")){
+          input <- reticulate::py_to_r(input)
+        }else if(any(class(input) %in% c("data.frame", "tibble"))){
+          # do nothing for R - Check is required so that the exception is not thrown
+        } else{
+          m <- "The provided input is not of class - data.frame, SparkDataFrame or Pandas DataFrame"
           futile.logger::flog.error(m, name = 'logger.pipeline')
           stop(m)
         }
