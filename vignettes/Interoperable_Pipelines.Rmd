@@ -25,7 +25,7 @@ Using *Spark* as an engine requires the *SparkR* package to be installed. *Spark
 ```{r echo = FALSE}
 library(analysisPipelines)
 knitr::opts_chunk$set(
-    eval = FALSE
+    eval = TRUE
   )
 ```
 
@@ -45,6 +45,21 @@ sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
 sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
 
 inputDataset <- SparkR::read.df(path = system.file("hotel_new.csv", package = "analysisPipelines"),source="csv",header = TRUE, inferSchema = "true")
+```
+
+
+##Initializing Python connection
+
+```{r}
+analysisPipelines::setPythonEnvir('python', '/Users/naren/anaconda3/bin/python')
+os <- reticulate::import("os")
+numpy <- reticulate::import("numpy")
+pandas <- reticulate::import("pandas")
+sklearn <- reticulate::import("sklearn")
+
+reticulate::source_python(system.file("python/sampleFunctions.py", package = "analysisPipelines"))
+
+reticulate::py_config()
 ```
 
 
@@ -169,12 +184,18 @@ registerFunction(functionName = "rBivarPlots", engine = "r", heading = "Bivariat
 
 getRegistry()
 ```
+## Registering python functions
+
+```{r}
+registerFunction("trainDecisionTree", engine = "python", isDataFunction = F, firstArgClass = "numpy.ndarray")
+registerFunction("getTargetForPyClassification", isDataFunction = F, firstArgClass = "data.frame", engine = "r")
+registerFunction("getFeaturesForPyClassification", isDataFunction = F, firstArgClass = "data.frame", engine = "r")
+```
 
 
-## Interoperable pipeline containing both R & Spark functions
+## Interoperable pipeline containing R, Spark and Python functions
 
-* Here we consider a typical use case of performing data filtering/ aggregations and so on and Spark, and then using R to perform analysis
-* We use ggplot2 in R to visualize the data that is filtered in Spark
+* Here we consider a typical use case of performing data filtering/ aggregations and so on and Spark, and then using R to visualize, and Python to run a Machine learning model
 
 We first visualize the data without filtering:
 
@@ -201,57 +222,26 @@ singleFilterPipeline %>>% generateOutput -> opWithFilter
 opWithFilter %>>% getOutputById(2)
 ```
 
-Finally, we show a case, where sequential filtering steps are performed in Spark, before visualizing in R
+Finally, we show a case, where sequential filtering steps are performed in Spark, before visualizing in R, and running a decision tree model in Python
 
 ```{r}
 pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
-  sparkFilterData("Occupancy > 0.7", outAsIn = T, storeOutput = T) %>>%
+  sparkFilterData("Occupancy > 0.7", outAsIn = T) %>>%
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
-                     priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) -> twoFilterPipeline
+                     priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) %>>%
+  getFeaturesForPyClassification(dataset = ~f2, featureNames = c("direct_call_booking_pct",
+                                                                 "loyalty_pct",
+                                                                 "call_center_booking_pct")) %>>% 
+          getTargetForPyClassification(dataset = ~f2, targetVarName = "Class", positiveClass = "good") %>>%
+          trainDecisionTree_py(data = ~f4, target = ~f5, storeOutput = T) -> twoFilterPipeline
+
+twoFilterPipeline %>>% visualizePipeline
+
 twoFilterPipeline %>>% generateOutput -> opWith2Filters
 opWith2Filters %>>% getOutputById(3)
-opWith2Filters %>>% visualizePipeline
-# opWith2Filters %>>% generateReport(path = "~/Desktop")
-```
+opWith2Filters %>>% getOutputById(6)
 
-
-# Saving and reloading the pipeline
-
-First, we save the pipeline
-
-```{r}
-twoFilterPipeline %>>% savePipeline(path = "~/Downloads/twoFilterPipeline.Rda")
-```
-
-Then, we clear the R environment and restart the R session
-
-```{r}
-rm(list=ls(all=TRUE)) # Remove all objects in the R environment
-#.rs.restartR() # Run on console to restart R session
-```
-
-We then reload the package, and start the Spark connection
-
-```{r sourcing}
-library(analysisPipelines)
-sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
-sparkMaster <- "local[1]"
-sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
-
-sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
-
-inputDataset <- SparkR::read.df(path=system.file("hotel_new.csv", package = "analysisPipelines"),source="csv",header = TRUE, inferSchema = "true")
-```
-
-Then, we load the pipeline and execute on the new data which is the just the first hundred rows of the original dataset 
-
-```{r}
-
-pipelineObjLoaded <- loadPipeline(path = "~/Downloads/twoFilterPipeline.Rda")
-pipelineObjLoaded %>>% checkSchemaMatch(newData = SparkR::as.data.frame(inputDataset)[1:100,]) -> schemaCheck
-pipelineObjLoaded %>>% setInput(input = inputDataset) -> pipelineObjLoaded
-pipelineObjLoaded %>>% generateOutput -> op
-op %>>% getOutputById("3")
+#opWith2Filters %>>% generateReport(path = "~/Desktop")
 ```
 
 # Supplementary Note

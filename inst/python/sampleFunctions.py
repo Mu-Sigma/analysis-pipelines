@@ -12,6 +12,7 @@ def getColMeans(df):
 def trainDecisionTree(data, target):
     model = DecisionTreeClassifier()
     model.fit(data, target)
-    predicted = model.predict(data)
-    return predicted
+    #predicted = model.predict(data)
+    #return predicted
+    return model
 

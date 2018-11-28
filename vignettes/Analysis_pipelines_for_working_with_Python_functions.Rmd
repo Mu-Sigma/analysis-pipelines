@@ -21,6 +21,7 @@ knitr::opts_chunk$set(
 
 library(analysisPipelines)
 
+
 analysisPipelines::setPythonEnvir('python', '/Users/naren/anaconda3/bin/python')
 os <- reticulate::import("os")
 numpy <- reticulate::import("numpy")
@@ -60,6 +61,7 @@ obj %>>%  getFeaturesForPyClassification(featureNames = colnames(d)[-ncol(d)]) %
           getTargetForPyClassification(targetVarName = "Species", positiveClass = "setosa") %>>%
           trainDecisionTree_py(data = ~f1, target = ~f2, storeOutput = T) -> objDecisionTree
 
+objDecisionTree %>>% assessEngineSetUp
 objDecisionTree %>>% visualizePipeline
 ```
 
@@ -68,6 +70,7 @@ objDecisionTree %>>% visualizePipeline
 
 ```{r}
 objDecisionTree %>>% generateOutput -> op
+op %>>% generateReport("~/Desktop")
 op %>>% getOutputById("3")
 ```
 

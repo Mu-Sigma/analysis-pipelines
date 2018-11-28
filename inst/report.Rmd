@@ -37,12 +37,13 @@ storedOps <- pipelineDetails %>>% dplyr::filter(storeOutput == T)
 for(i in storedOps$id){
           opTable <- storedOps %>>% dplyr::filter(id == i)
           obj%>>% getOutputById(i) -> op
+          eval(parse(text = paste0("op_", i, " <- op")))
           knit_expanded <- paste0(
             "\n```{r chunk",i,",results='asis', fig.width = 12, out.width = '100%', echo=FALSE}
             \n\n
             cat('## ",opTable$heading," \n')
             \n\n
-            op
+            op_", i, "
             \n```
             \n\n"
         )
