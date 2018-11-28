@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 metastore_db/
+inst/python/.ipynb_checkpoints/
 .DS_Store
 vignettes/metastore_db/
 vignettes/*.RDS
