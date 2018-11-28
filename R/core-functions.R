@@ -238,12 +238,12 @@ registerFunction <- function( functionName, heading = "",
 
         f <- get(functionName, .GlobalEnv)
         origF <- f
-        
+
         argEnv <- NULL
         #Checking for direct python functions
         if(any(class(f) == "python.builtin.function")){
            inspect <- reticulate::import("inspect")
-           argEnv <- inspect$getargspec(f) 
+           argEnv <- inspect$getargspec(f)
            originalArgs <- argEnv$args %>>% lapply(function(x){
              a <- eval(parse(text = paste0("alist(", x, " = )")))
              return(a)
@@ -291,7 +291,7 @@ registerFunction <- function( functionName, heading = "",
         # }
 
         methodBody <- paste0(utils::capture.output(body(eval(parse(text=functionName)))),collapse="\n")
-        
+
         # if(engine == 'python'){
         #   gsub(pattern = "py_resolve_dots", replacement = "reticulate:::py_resolve_dots", methodBody) -> methodBody
         #   gsub(pattern = "py_call_impl", replacement = "reticulate:::py_call_impl", methodBody) -> methodBody
@@ -312,7 +312,7 @@ registerFunction <- function( functionName, heading = "",
         genericArgs <- append(newArgs, commonArgs)
         formals(f) <- genericArgs
         body(f) <- paste('standardGeneric("', functionName,'")')
-        
+
         ## Suffix for python functions
         if(engine == 'python'){
           # origFString <- paste0('function( ', methodParams, '){',
@@ -323,7 +323,7 @@ registerFunction <- function( functionName, heading = "",
                              'val <- ', functionName, '(', methodParams, ');',
                                'return(val);}')
           functionName <- paste0(functionName, "_py")
-           
+
         }
 
         registerFunText <-
@@ -586,11 +586,10 @@ setMethod(
 #' @details
 #'       Assesses whether engines required for executing functions in an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}
 #'       object have been set up
-#' @details This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
-#' which extend this class
-#' @param object object that contains input, pipeline, registry and output
-#' @return Tibble containing the details of available engines, whether they are required for a recipe, a logical reporting
-#'         whether the engine has been set up, and comments.
+#' @details This method is implemented on the base class as it is a shared functionality across Pipeline objects
+#' @param object A Pipeline object
+#' @return Tibble containing the details of available engines, whether they are required for a pipeline, a logical value
+#'         reporting whether the engine has been set up, and comments.
 #' @family Package core functions
 #' @export
 
@@ -653,7 +652,28 @@ setGeneric(
                                            isSetup = isSparkSetup,
                                            comments = sparkComments)           -> engineAssessment
 
-      #TO DO -  Python
+      #Python
+      isPythonSetup <- F
+      pythonComments <- ""
+      checkSession <- ""
+      checkSession <- tryCatch({
+        reticulate::py_run_string('a = "Is session running"') %>>% reticulate::py_to_r() -> sess
+        if("a" %in% names(sess)){
+          isPythonSetup <- T
+          pythonComments <- reticulate::py_config() %>% as.character %>>% paste(collapse = "\n")
+        }else{
+          pythonComments <- paste0("There does not seem to be a Python Session initialized through reticulate ",
+                                   "which is required to execute pipelines containing Python functions. ")
+        }
+      }, error = function(e){
+         pythonComments <- paste0("There does not seem to be a Python Session initialized through reticulate ",
+                                 "which is required to execute pipelines containing Python functions. ")
+      })
+
+      engineAssessment %>>% dplyr::add_row(engine = "python",
+                                           requiredForPipeline = ifelse("python" %in% requiredEngines, T, F),
+                                           isSetup = isPythonSetup,
+                                           comments = pythonComments)           -> engineAssessment
 
     }
 

@@ -269,9 +269,9 @@ checkSchema <- function(dfOld, dfNew){
 
     }else if(maxEngineName == "python"){
       startTypeConv <- Sys.time()
-      
+
       inputToExecute <- reticulate::r_to_py(object@input)
-      
+
       endTypeConv <- Sys.time()
       typeConvTime <- endTypeConv - startTypeConv
       futile.logger::flog.info(paste("||  Initial Type conversion from R dataframe to Pandas DataFrame,",
@@ -340,6 +340,29 @@ checkSchema <- function(dfOld, dfNew){
                                  funcDetails$id, funcDetails$operation, funcDetails$engine,
                                  name='logger.func')
 
+        # Set parameters
+
+        params <- unlist(funcDetails$parameters, recursive = F)
+        dep <- unique(unlist(funcDetails$dependencies, recursive = F))
+        depTerms <- paste0("f", dep)
+
+        params <- lapply(params, function(p, depTerms, outputCache){
+          if(class(p) == "formula"){
+            isDepParam <- analysisPipelines::isDependencyParam(p)
+            if(isDepParam){
+              formulaTerm <- analysisPipelines::getTerm(p)
+              argName <-  analysisPipelines::getResponse(p)
+              if(formulaTerm %in% depTerms){
+
+                ## Formula of previous function in pipeline
+                actualParamObjectName <- paste0(formulaTerm, ".out")
+                p <-  get(actualParamObjectName, envir = outputCache)
+              }
+            }
+          }
+
+          return(p)
+        }, depTerms, outputCache)
 
         if(funcDetails$isDataFunction){
           if(funcDetails$outAsIn && funcDetails$id  != "1"){
@@ -348,6 +371,12 @@ checkSchema <- function(dfOld, dfNew){
             inputToExecute <-  get(actualDataObjectName, envir = outputCache)
 
           }
+        }else{
+          if(any(class(params[[1]]) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
+            inputToExecute <- params[[1]]
+          }
+        }
+
 
           #Check engine
           ###TODO: Python to be added
@@ -375,9 +404,9 @@ checkSchema <- function(dfOld, dfNew){
                                          name='logger.func')
               }else if(currEngine == 'python'){
                 startTypeConv <- Sys.time()
-                
+
                 inputToExecute <- SparkR::as.data.frame(inputToExecute) %>>% reticulate::r_to_py()
-                
+
                 endTypeConv <- Sys.time()
                 typeConvTime <- endTypeConv - startTypeConv
                 futile.logger::flog.info("||  Type conversion from Spark DataFrame to Pandas DataFrame took %s seconds  ||",
@@ -398,9 +427,9 @@ checkSchema <- function(dfOld, dfNew){
                                          name='logger.func')
               }else if(currEngine == 'python'){
                 startTypeConv <- Sys.time()
-                
+
                 inputToExecute <- reticulate::r_to_py(inputToExecute)
-                
+
                 endTypeConv <- Sys.time()
                 typeConvTime <- endTypeConv - startTypeConv
                 futile.logger::flog.info("||  Type conversion from Pandas DataFrame to R dataframe took %s seconds  ||",
@@ -410,9 +439,9 @@ checkSchema <- function(dfOld, dfNew){
             }else if(prevEngine == 'python'){
               if(currEngine == "spark"){
                 startTypeConv <- Sys.time()
-                
+
                 inputToExecute <- reticulate::py_to_r(inputToExecute) %>>% SparkR::as.DataFrame()
-                
+
                 endTypeConv <- Sys.time()
                 typeConvTime <- endTypeConv - startTypeConv
                 futile.logger::flog.info("||  Type conversion from Pandas DataFrame to Spark DataFrame took %s seconds  ||",
@@ -420,9 +449,9 @@ checkSchema <- function(dfOld, dfNew){
                                          name='logger.func')
               }else if(currEngine == 'r'){
                 startTypeConv <- Sys.time()
-                
+
                 inputToExecute <- reticulate::py_to_r(inputToExecute)
-                
+
                 endTypeConv <- Sys.time()
                 typeConvTime <- endTypeConv - startTypeConv
                 futile.logger::flog.info("||  Type conversion from Pandas DataFrame to R dataframe took %s seconds  ||",
@@ -431,46 +460,18 @@ checkSchema <- function(dfOld, dfNew){
               }
             }
           }
+
+
+        #Conversion of dataframe as first parameter of non-data function
+        if(!funcDetails$isDataFunction&&
+              any(class(params[[1]]) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
+          inputToExecute -> params[[1]]
         }
 
 
-        # Set parameters
-
-        params <- unlist(funcDetails$parameters, recursive = F)
-        dep <- unique(unlist(funcDetails$dependencies, recursive = F))
-        depTerms <- paste0("f", dep)
-
-        params <- lapply(params, function(p, depTerms, outputCache){
-          if(class(p) == "formula"){
-            isDepParam <- analysisPipelines::isDependencyParam(p)
-            if(isDepParam){
-              formulaTerm <- analysisPipelines::getTerm(p)
-              argName <-  analysisPipelines::getResponse(p)
-              if(formulaTerm %in% depTerms){
-
-                ## Formula of previous function in pipeline
-                actualParamObjectName <- paste0(formulaTerm, ".out")
-                p <-  get(actualParamObjectName, envir = outputCache)
-              }
-            }
-          }
-
-          return(p)
-        }, depTerms, outputCache)
 
 
         #Call
-
-        #Assign as named parameters
-        #Get names of params
-        # paramNames <- lapply(params, function(p){
-        #   return(names(p))
-        # })  %>>% unlist
-        # params <-lapply(params, function(p){
-        #   names(p) <- NULL
-        #   return(p)
-        # })
-        # names(params) <- paramNames
         args <- params
         if(funcDetails$isDataFunction){
           formals(funcDetails$operation) %>>% as.list %>>% names %>>% dplyr::first() -> firstArgName
@@ -478,11 +479,7 @@ checkSchema <- function(dfOld, dfNew){
           names(firstArg) <- firstArgName
           args <- append(firstArg, params)
         }
-        # }else{
-        #   firstParam <- params[1]
-        #   names(firstParam) <- "object"
-        #   args <- append(firstParam, params[-1])
-        # }
+
         output <- tryCatch({do.call(what = funcDetails$operation,
                                     args = args)},
                            error = function(e){
@@ -519,7 +516,8 @@ checkSchema <- function(dfOld, dfNew){
 
       futile.logger::flog.info("||  Batch Number %s/%s COMPLETE. Time taken : %s seconds  ||", x, numBatches, batchExecTime, name='logger.batch')
 
-    }, object, pipelineRegistryOrderingJoin, outputCache)
+    }, object,
+    pipelineRegistryOrderingJoin, outputCache)
 
 
     futile.logger::flog.info("||  Performing final garbage cleaning and collection of outputs  ||",
@@ -605,7 +603,8 @@ setMethod(
       }
       # object <- updateObject(object, "emptyRow", "emptyRow",list("emptyRow"),F)
 
-      opEngineDetails <- object@pipeline %>>% dplyr::filter(.data$storeOutput == T)
+      opEngineDetails <- dplyr::left_join(object@pipeline %>>% dplyr::filter(.data$storeOutput == T),
+                                          getRegistry(), by = c("operation" = "functionName"))
       if(!all(unique(opEngineDetails$engine) == 'r')){
         futile.logger::flog.warn(paste("||  Pipeline contains engines other than R.",
                               "Will attempt coercing of outputs for rendinring through 'rmarkdown'.",
