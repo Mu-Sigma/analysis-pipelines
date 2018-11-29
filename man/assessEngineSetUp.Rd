@@ -11,11 +11,11 @@ assessEngineSetUp(object)
 \S4method{assessEngineSetUp}{BaseAnalysisPipeline}(object)
 }
 \arguments{
-\item{object}{object that contains input, pipeline, registry and output}
+\item{object}{A Pipeline object}
 }
 \value{
-Tibble containing the details of available engines, whether they are required for a recipe, a logical reporting
-        whether the engine has been set up, and comments.
+Tibble containing the details of available engines, whether they are required for a pipeline, a logical value
+        reporting whether the engine has been set up, and comments.
 }
 \description{
 Assesses engine (R, Spark, Python, Spark Structured Streaming) set up
@@ -24,8 +24,7 @@ Assesses engine (R, Spark, Python, Spark Structured Streaming) set up
 Assesses whether engines required for executing functions in an \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline}
       object have been set up
 
-This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
-which extend this class
+This method is implemented on the base class as it is a shared functionality across Pipeline objects
 }
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},

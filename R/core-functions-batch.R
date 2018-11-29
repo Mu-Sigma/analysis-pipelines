@@ -365,17 +365,23 @@ checkSchema <- function(dfOld, dfNew){
         }, depTerms, outputCache)
 
         if(funcDetails$isDataFunction){
-          if(funcDetails$outAsIn && funcDetails$id  != "1"){
-            dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
-            actualDataObjectName <- paste0(dataOpFn, ".out")
-            inputToExecute <-  get(actualDataObjectName, envir = outputCache)
-
-          }
-        }else{
-          if(any(class(params[[1]]) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
-            inputToExecute <- params[[1]]
+          # Not passed as a formula
+          if(class(params[[1]]) == "rlang_fake_data_pronoun"){
+            # Checking for outAsIn
+            if(funcDetails$outAsIn && funcDetails$id  != "1"){
+              dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
+              actualDataObjectName <- paste0(dataOpFn, ".out")
+              inputToExecute <-  get(actualDataObjectName, envir = outputCache)
+            }
           }
         }
+
+
+        # }else{
+        # if(any(class(inputToExecute) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
+        #   inputToExecute <- params[[1]]
+        # }
+        # # }
 
 
           #Check engine
@@ -462,10 +468,13 @@ checkSchema <- function(dfOld, dfNew){
           }
 
 
-        #Conversion of dataframe as first parameter of non-data function
-        if(!funcDetails$isDataFunction&&
-              any(class(params[[1]]) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
-          inputToExecute -> params[[1]]
+        #Setting converted dataframe for first parameter of data function
+        if(
+          funcDetails$isDataFunction &&
+            #  any(class(params[[1]]) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
+          class(params[[1]]) == "rlang_fake_data_pronoun"){
+
+            inputToExecute -> params[[1]]
         }
 
 
@@ -473,12 +482,12 @@ checkSchema <- function(dfOld, dfNew){
 
         #Call
         args <- params
-        if(funcDetails$isDataFunction){
-          formals(funcDetails$operation) %>>% as.list %>>% names %>>% dplyr::first() -> firstArgName
-          firstArg <- list(inputToExecute)
-          names(firstArg) <- firstArgName
-          args <- append(firstArg, params)
-        }
+        # if(funcDetails$isDataFunction){
+        #   formals(funcDetails$operation) %>>% as.list %>>% names %>>% dplyr::first() -> firstArgName
+        #   firstArg <- list(inputToExecute)
+        #   names(firstArg) <- firstArgName
+        #   args <- append(firstArg, params)
+        # }
 
         output <- tryCatch({do.call(what = funcDetails$operation,
                                     args = args)},
