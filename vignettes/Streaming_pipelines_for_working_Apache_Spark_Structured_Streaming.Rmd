@@ -195,7 +195,7 @@ pipelineObj %>>% visualizePipeline
 
 The pipeline is run by calling the `generateOutput()` function. The `output` attribute of the pipeline object contains the resultant Spark dataframe(s).
 
-In this example the Spark dataframes are converted to R dataframes to help visualizing the result.
+In this example the Spark DataFrames are converted to R dataframes to help understand the result.
 
 
 ```{r}
