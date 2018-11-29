@@ -9,7 +9,7 @@ getFeaturesForPyClassification(dataset, featureNames)
 \arguments{
 \item{dataset}{an R data frame}
 
-\item{featureNames}{Column names to be extracted from the R data frames. A character vector}
+\item{featureNames}{Column names to be extracted from the R data frames. A character vector.}
 }
 \description{
 Extracts selected columns from a data frame as a Python array
@@ -20,3 +20,7 @@ extracts them from the R data frame as a matrix and converts them to the equival
 
 Typically this function can be used when providing a feature matrix to a Python machine learning function
 }
+\seealso{
+Other R helper utilities for Python: \code{\link{setPythonEnvir}}
+}
+\concept{R helper utilities for Python}

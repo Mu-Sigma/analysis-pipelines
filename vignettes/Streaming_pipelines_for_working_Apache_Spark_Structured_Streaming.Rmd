@@ -12,8 +12,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-
-
 # Introduction
 
 The vignette aims to show examples of using SparkR as an interface to run streaming Spark jobs through R - using the analysisPipelines package. The major use cases can be categorized as:<br>
@@ -22,7 +20,21 @@ The vignette aims to show examples of using SparkR as an interface to run stream
 
 # Important Note
 
-Using *Spark* as an engine requires the *SparkR* package to be installed. *SparkR* is distributed natively with *Apache Spark* and is not distributed on CRAN.
+Using *Spark* as an engine requires the *SparkR* package to be installed. *SparkR* is distributed natively with *Apache Spark* and is not distributed on CRAN. The *SparkR* version needs to directly map to the Spark version (hence the native distribution), and care needs to be taken to ensure that this is configured properly.
+
+To install from Github, run the following command, if you know the Spark version:
+
+```{r eval = F}
+devtools::install_github('apache/spark@v2.x.x', subdir='R/pkg')
+```
+
+The other option is to install R by running the following *terminal* commands if Spark has already been installed.
+
+```{bash eval = F}
+$ export SPARK_HOME=/path/to/spark/directory
+$ cd $SPARK_HOME/R/lib/SparkR/
+$ R -e "devtools::install('.')"
+```
 
 # Initialize libraries
 
@@ -32,7 +44,7 @@ Using *Spark* as an engine requires the *SparkR* package to be installed. *Spark
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
-    eval = FALSE
+    eval = TRUE
   )
 library(analysisPipelines)
 library(SparkR)
@@ -172,8 +184,8 @@ getRegistry()
 
 # Define pipeline 
 # Do data prep
-pipelineObj %>% castKafkaStreamAsString() %>% 
-  convertKafkaValueFromJson(schema = consumerDataSchema, outAsIn = T) %>% convertStructToDf(outAsIn = T) %>% castDfColumns(outAsIn = T, storeOutput = T) -> pipelineObj
+pipelineObj %>% castKafkaStreamAsString_sparkSS() %>% 
+  convertKafkaValueFromJson_sparkSS(schema = consumerDataSchema, outAsIn = T) %>% convertStructToDf_sparkSS(outAsIn = T) %>% castDfColumns_sparkSS(outAsIn = T, storeOutput = T) -> pipelineObj
 
 pipelineObj %>>% getPipeline
 pipelineObj %>>% visualizePipeline

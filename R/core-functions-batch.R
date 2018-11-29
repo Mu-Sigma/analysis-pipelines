@@ -284,16 +284,6 @@ checkSchema <- function(dfOld, dfNew){
     batches <- unique(pipelineRegistryOrderingJoin$level)
     numBatches <- max(as.numeric(batches))
 
-    #   no_cores <- parallel::detectCores() - 1
-    #   cl <- parallel::makeCluster(no_cores)
-    #   parallel::clusterExport(cl = cl, envir = .GlobalEnv, varlist = ls())
-    # .executeBatch <- function(y, functionsInBatch){
-    #
-    #   return(NULL)
-    # }
-
-
-
     # Iterate across batches
     lapply(batches, function(x, object, pipelineRegistryOrderingJoin, outputCache){
 
@@ -375,17 +365,6 @@ checkSchema <- function(dfOld, dfNew){
             }
           }
         }
-
-
-        # }else{
-        # if(any(class(inputToExecute) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
-        #   inputToExecute <- params[[1]]
-        # }
-        # # }
-
-
-          #Check engine
-          ###TODO: Python to be added
 
           currEngine <- funcDetails$engine
 
@@ -482,13 +461,6 @@ checkSchema <- function(dfOld, dfNew){
 
         #Call
         args <- params
-        # if(funcDetails$isDataFunction){
-        #   formals(funcDetails$operation) %>>% as.list %>>% names %>>% dplyr::first() -> firstArgName
-        #   firstArg <- list(inputToExecute)
-        #   names(firstArg) <- firstArgName
-        #   args <- append(firstArg, params)
-        # }
-
         output <- tryCatch({do.call(what = funcDetails$operation,
                                     args = args)},
                            error = function(e){
@@ -546,12 +518,6 @@ checkSchema <- function(dfOld, dfNew){
 
     object@output <- mget(ls(outputCache), envir = outputCache)
     rm(list = ls(outputCache), envir = outputCache)
-
-    # stopCluster(cl)
-    # object@output <- object@pipelineExecutor$cache
-    #
-    # #Clear cache
-    # object@pipelineExecutor$cache <- NULL
 
     endPipelineExecution <- Sys.time()
     executionTime <- endPipelineExecution - startPipelineExecution

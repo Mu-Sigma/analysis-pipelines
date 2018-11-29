@@ -7,7 +7,7 @@ output:
     toc: true
     fig_width: 8
 vignette: >
-  %\VignetteIndexEntry{Analysis pipelines for working with R data frames}
+  %\VignetteIndexEntry{Analysis pipelines for working with Python functions}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -54,18 +54,17 @@ reticulate::py_config()
 
 # Registering Python functions
 
-Python functions which have been sourced through *reticulate* are available as references in the R environment and can be directly registered as part of the pipeline.
+Python functions which have been sourced through *reticulate* are available as references in the R environment and can be directly registered as part of the pipeline, through the usual mechanism.
 
 For non-R engines, such as Spark and Python, a suffix with the engine name is added to the function name on registration. So, functions with this suffix need to be used when pipelining to an *Analysis Pipeline* object. The engine is added as a suffix for better readability. A suffix is used (as opposed to a prefix) to enable easier auto-completes.
 
 The *analysisPipelines* package creates wrapper methods which contain the *argument* signature of the Python function. This allows the user to know what arguments need to passed. Normal *reticulate* imports have a `...` signature.
 
-```{r}
-registerFunction("decisionTreeTrainAndTest", engine = "python", isDataFunction = F, firstArgClass = "numpy.ndarray")
-registerFunction("getTargetForPyClassification")
-registerFunction("getFeaturesForPyClassification")
-getRegistry()
+In our Python sample function file, we have a function called `decisionTreeTrainAndTest` which was sourced. We register this function:
 
+```{r}
+registerFunction('decisionTreeTrainAndTest', engine = "python", isDataFunction = F, firstArgClass = "numpy.ndarray")
+getRegistry()
 ```
 
 # Defining pipelines
