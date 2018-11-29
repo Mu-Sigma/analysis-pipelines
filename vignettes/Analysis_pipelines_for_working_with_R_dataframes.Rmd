@@ -14,13 +14,13 @@ vignette: >
 
 # An overview of the package
 
-In a typical data science workflow there are multiple steps involved from data aggregation, cleaning, exploratory analysis, modeling and so on. As the data science community matures, we are seeing that there are a variety of languages which provide better capabilities for specific steps in the data science workflow. *R* is typically used for data transformations, statistical models, and visualizations, while *Python* provides more robust functions for machine learning. In addition to this, *Spark* provides an environment to process high volume data - both as one-time/ batch or as streams.
+In a typical data science workflow there are multiple steps involved;  from data aggregation, cleaning, exploratory analysis, modeling and so on. As the data science community matures, we are seeing that there are a variety of languages which provide better capabilities for specific steps in the data science workflow. *R* is typically used for data transformations, statistical models, and visualizations, while *Python* provides more robust functions for machine learning. In addition to this, *Spark* provides an environment to process high volume data - both as one-time/ batches or as streams.
 
 The job of today's data scientist is changing from one where they are married to a specific tool or language, to one where they are using all these tools for their specialized purposes. The key problem then becomes one of translation between these tools for seamless analysis. Additionally, in the work of a data scientist, there is a need to perform the same task repeatedly, as well as put certain analysis flows (or) pipelines into production to work on new data periodically, or work on streaming data.
 
 Recently, interfaces for using these various tools have been published. In terms of R packages, the *reticulate* package provides an interface to Python, and the *SparkR* and *sparklyr* packages provide an interface to Spark. 
 
-The *analysisPipelines* package uses these interfaces to enable *Interoperable Pipelines* i.e. the ability compose and execute a reusable data science pipeline which can contain functions to be executed in an *R* environment, in a *Python* environment or in a *Spark* environment. These pipelines can saved and loaded, to enable batch operation as datasets get updated with new data.
+The *analysisPipelines* package uses these interfaces to enable *Interoperable Pipelines* i.e. the ability compose and execute a reusable data science pipeline which can contain functions to be executed in an *R* environment, in a *Python* environment or in a *Spark* environment. These pipelines can be saved and loaded, to enable batch operation as datasets get updated with new data.
 
 The goal of the *analysisPipelines* package is to make the job of the data scientist easier and help them compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. The idea is for data scientists to use tools of their choice through an *R* interface, using this package
 Essentially, it allows data scientists to:
@@ -58,9 +58,11 @@ This package contains 5 vignettes:
 
 * This is the main vignette describing the package's core functionality, and explaining this through **batch** pipelines in just **R**
 * **Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses** - This vignette describes creating **batch** pipelines to execute solely in a *Spark* environment 
+* **Analysis pipelines for working with Python functions** - This vignette describes creating **batch** pipelines to execute solely in a *Python* environment 
 * **Interoperable analysis pipelines** - This vignette describes creating and executing **batch** pipelines which are composed of functions executing across *supported engines*
 * **Streaming Analysis Pipelines for working with Apache Spark Structured Streaming** - This vignette describes setting up streaming pipelines on *Apache Spark Structured Streaming*
 * **Using pipelines inside Shiny widgets or apps** - A brief vignette which illustrates an example of using a pipeline inside a shiny widget with reactive elements and changing data
+* **An introduction to meta-pipelines** - This vignette illustrates the use of meta-pipelines
 
 # Usage
 
