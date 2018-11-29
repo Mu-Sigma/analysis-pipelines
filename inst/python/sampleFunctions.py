@@ -9,10 +9,9 @@ def getColMeans(df):
         meanList.append(df[x].mean())
     return meanList
 
-def trainDecisionTree(data, target):
+def decisionTreeTrainAndTest(data, target, newData):
     model = DecisionTreeClassifier()
     model.fit(data, target)
-    #predicted = model.predict(data)
-    #return predicted
-    return model
+    testPred = model.predict(newData)
+    return testPred
 

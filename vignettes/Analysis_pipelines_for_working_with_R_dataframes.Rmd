@@ -297,13 +297,13 @@ plotSummary <- function(d, summaryVar, groupingVar){
 registerFunction("filterData")
 registerFunction("summarizeData")
 registerFunction("plotLine")
+registerFunction("plotSummary")
 
-## Non-data function operating on an auxiliary flow
-registerFunction("plotSummary", isDataFunction = F, firstArgClass = "data.frame")
+
 
 exampleObj %>>%  summarizeData(conditionVar = "Species") %>>% 
                 filterData(conditionVar = "Species", val = "setosa", outAsIn = F, storeOutput = F) %>>%
-                plotLine(y = "Sepal.Length", "Sepal.Width", outAsIn = T, storeOutput = T) %>>%
+                plotLine(y = "Sepal.Length", x = "Sepal.Width", outAsIn = T, storeOutput = T) %>>%
                 plotSummary(d = ~f1, summaryVar = "Sepal.Length", groupingVar = "Species", storeOutput = T) ->
   exampleObj
 

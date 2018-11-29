@@ -30,7 +30,7 @@ sparkRSessionCreateIfNotPresent <- function(...){
     .libPaths(c(file.path(sparkHome, "R", "lib"), .libPaths()))
   }
 
-  SparkR::sparkR.session(...)
+  sparkR.session(...)
 }
 
 #' @name castKafkaStreamAsString

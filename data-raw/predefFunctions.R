@@ -39,6 +39,18 @@
                                    exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
                                    isDataFunction = T,
                                    firstArgClass = "")            -> .batchPredefFunctions
+.batchPredefFunctions %>>% dplyr::add_row(functionName = "getFeaturesForPyClassification",
+                                          heading = "",
+                                          engine = "r",
+                                          exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
+                                          isDataFunction = T,
+                                          firstArgClass = "")           -> .batchPredefFunctions
+.batchPredefFunctions %>>% dplyr::add_row(functionName = "getTargetForPyClassification",
+                                          heading = "",
+                                          engine = "r",
+                                          exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
+                                          isDataFunction = T,
+                                          firstArgClass = "")           -> .batchPredefFunctions
 
 ##################################################################################################
 
