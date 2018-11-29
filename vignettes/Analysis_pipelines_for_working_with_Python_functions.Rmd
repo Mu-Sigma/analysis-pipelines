@@ -26,15 +26,19 @@ The functionality of adding Python functions to the pipeline is enabled under th
 On a separate note, there is a slight difference between how *SparkR* and *reticulate* are designed. SparkR provides wrappers to Spark functions and stays true to the conventions and classes used in *Apache Spark*, with the main type conversion offered being that on a data frame. *reticulate* is different in the sense that its aim is to provide interoperability, and provides type conversion between a wide range of object types between R and Python.
 
 The biggest difference is in terms of functions - in SparkR, functions written in Scala, etc. in a Python session cannot be accessed from an R session. However, using *reticulate* user-defined functions written in Python and sourced, can be accessed as objects in an R session. This allows greater flexibility, to write custom functions in Python, source the file, and then call those functions from R. This difference in design is important to understand, in order to construct functions which can then be used to compose pipelines.
+```{r}
+knitr::opts_chunk$set(
+    eval = TRUE
+  )
+```
+
 
 # Setup
 
 The *analysisPipelines* provides a couple of helper functions in R, making it easier to interact with the Python environment. One of them is to set the Python environment, which we do, like so:
 
 ```{r}
-knitr::opts_chunk$set(
-    eval = FALSE
-  )
+
 library(analysisPipelines)
 
 analysisPipelines::setPythonEnvir('python', '/Users/naren/anaconda3/bin/python')

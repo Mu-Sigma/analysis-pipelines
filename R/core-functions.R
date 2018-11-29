@@ -1505,7 +1505,7 @@ initializeLoggers <- function(object){
 #' @export
 genericPipelineException <- function(error){
   message <- error$message
-  m <- paste0("EXCEPTION OCCURED WHILE RUNNING THE PIPELINE FUNCTION WITH PROVIDED PARAMETERS: ", message)
+  m <- paste0("||  EXCEPTION OCCURED WHILE RUNNING THE PIPELINE FUNCTION WITH PROVIDED PARAMETERS: ", message, "  ||")
   futile.logger::flog.error(m, name = 'logger.func')
   stop(m)
 }
@@ -1553,29 +1553,29 @@ loadPipeline <- function(path, input = data.frame() , filePath = ""){
     schemaCheck <- object %>>% checkSchemaMatch(input)
     if(!schemaCheck$isSchemaSame){
       if(length(schemaCheck$removedColumns) > 0){
-        m <- paste0("Some columns which were present in the original schema ",
+        m <- paste0("||  Some columns which were present in the original schema ",
                     "for the pipeline, ",
                     "are not present in the new data frame. Some pipeline functions ",
                     "may not execute as expected. Use the checkSchemaMatch function to obtain ",
-                    "a detailed comparison")
+                    "a detailed comparison  ||")
         futile.logger::flog.warn(m, name = 'logger.pipeline')
         warning(m)
       }
 
       if(length(schemaCheck$addedColumns) > 0){
-        m <- paste0("Some new columns have been added to the new data frame ",
+        m <- paste0("||  Some new columns have been added to the new data frame ",
                     "as compared to the original schema for the pipeline. ",
                     "Use the checkSchemaMatch function to obtain ",
-                    "a detailed comparison")
+                    "a detailed comparison  ||")
         futile.logger::flog.warn(m, name = 'logger.pipeline')
         warning(m)
       }
 
       if(length(schemaCheck$addedColumns) == 0 && length(schemaCheck$removedColumns) == 0){
-        m <- paste0("Colummn names are the same but types have changed",
+        m <- paste0("||  Colummn names are the same but types have changed",
                     "Some pipeline functions may not execute as expected. ",
                     "Use the checkSchemaMatch function to obtain ",
-                    "a detailed comparison")
+                    "a detailed comparison  ||")
         futile.logger::flog.warn(m, name = 'logger.pipeline')
         warning(m)
       }
@@ -1609,15 +1609,29 @@ initDfBasedOnType <- function(input, filePath){
       if(!all(dim(input) == c(0,0))){
         #Check for R, Spark, Python data frame
         if(class(input) == "SparkDataFrame"){
-          input <- SparkR::as.data.frame(input)
+          if("SparkR" %in% installed.packages()){
+            input <- SparkR::as.data.frame(input)
+          }else{
+            futile.logger::flog.error(paste0("||  'SparkR' is not installed. Please install before initializing the pipeline",
+                                      " with a SparkDataFrame  ||"),
+                                      name = 'logger.pipeline')
+            stop()
+          }
         }else if(any(class(input) == "pandas.core.frame.DataFrame")){
-          input <- reticulate::py_to_r(input)
+          if("reticulate" %in% installed.packages()){
+            input <- reticulate::py_to_r(input)
+          }else{
+           futile.logger::flog.error(paste0("||  'reticulate' is not installed. Please install before initializing the pipeline",
+                                           " with a Pandas DataFrame  ||"),
+                                    name = 'logger.pipeline')
+            stop()
+          }
         }else if(any(class(input) %in% c("data.frame", "tibble"))){
           # do nothing for R - Check is required so that the exception is not thrown
         } else{
-          m <- "The provided input is not of class - data.frame, SparkDataFrame or Pandas DataFrame"
+          m <- "||  The provided input is not of class - data.frame, SparkDataFrame or Pandas DataFrame  ||"
           futile.logger::flog.error(m, name = 'logger.pipeline')
-          stop(m)
+          stop()
         }
       }
     }
