@@ -21,7 +21,7 @@ The vignette describes defining and executing *Python*-only pipelines using the 
 
 # Important Note
 
-The functionality of adding Python functions to the pipeline is enabled under the hood by the *reticulate* package. As the *reticulate* package itself is in its early stages of development and usage, some things might not work as expected. Additionally, for reiculating *Python* code itself in R MarkDown chunks (as opposed to sourcing Python files) **RStudio 1.2** is required, though it is still in Preview phase, as of the time of writing this vignette.
+The functionality of adding Python functions to the pipeline is enabled under the hood by the *reticulate* package. As the *reticulate* package itself is in its early stages of development and usage, some things might not work as expected. Additionally, for reticulating *Python* code itself in R MarkDown chunks (as opposed to sourcing Python files) **RStudio 1.2** is required, though it is still in Preview phase, as of the time of writing this vignette.
 
 On a separate note, there is a slight difference between how *SparkR* and *reticulate* are designed. SparkR provides wrappers to Spark functions and stays true to the conventions and classes used in *Apache Spark*, with the main type conversion offered being that on a data frame. *reticulate* is different in the sense that its aim is to provide interoperability, and provides type conversion between a wide range of object types between R and Python.
 
@@ -69,7 +69,7 @@ getRegistry()
 
 # Defining pipelines
 
-Pipelines are defined and executed as usual. Regardless of the engine being used the high level interface remains the same.
+Pipelines are defined and executed as usual. Regardless of the engine being used the high-level interface remains the same.
 
 ```{r}
 data("iris")
