@@ -222,7 +222,9 @@ singleFilterPipeline %>>% generateOutput -> opWithFilter
 opWithFilter %>>% getOutputById(2)
 ```
 
-Finally, we show a case, where sequential filtering steps are performed in Spark, before visualizing in R, and running a decision tree model in Python
+Finally, we show a case, where sequential filtering steps are performed in Spark, before visualizing in R, and running a decision tree model in Python.
+
+Note, that in this case, we register `getTargetForPyClassifcation` and `getTargetForPyClassification` as *non-data* functions. In this particular pipeline, there is no main *path* as such, as the pipeline branches into 2 paths - one in R and the other in Python. In such cases, using `outAsIn` or the `dataFunction` parameter with formula semantics is just a **question of convenience**. If the first argument of a *non-data* function is of a data frame class in R, Python (Pandas) or Spark, the package automatically performs type conversions when environments are switched (R -> Spark, Spark -> Python, and so on).
 
 ```{r}
 pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 

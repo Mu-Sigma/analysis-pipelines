@@ -11,16 +11,31 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+# Introduction
+
+*Python* has grown exponentially over the past few years in terms of usage for data science, and specifically machine learning. It provides an extensive set of modules for executing various machine learning tasks. The *reticulate* R package provides a mechanism for interoperability between R and Python. It provides direct translation between equivalent commonly used object types, as well as functions.
+
+The *analysisPipelines* package uses the *reticulate* package under the hood, and provides a consistent high-level interface for the data scientist, as discussed in other vignettes.
+
+The vignette describes defining and executing *Python*-only pipelines using the *analysisPipelines* package.
+
+# Important Note
+
+The functionality of adding Python functions to the pipeline is enabled under the hood by the *reticulate* package. As the *reticulate* package itself is in its early stages of development and usage, some things might not work as expected. Additionally, for reiculating *Python* code itself in R MarkDown chunks (as opposed to sourcing Python files) **RStudio 1.2** is required, though it is still in Preview phase, as of the time of writing this vignette.
+
+On a separate note, there is a slight difference between how *SparkR* and *reticulate* are designed. SparkR provides wrappers to Spark functions and stays true to the conventions and classes used in *Apache Spark*, with the main type conversion offered being that on a data frame. *reticulate* is different in the sense that its aim is to provide interoperability, and provides type conversion between a wide range of object types between R and Python.
+
+The biggest difference is in terms of functions - in SparkR, functions written in Scala, etc. in a Python session cannot be accessed from an R session. However, using *reticulate* user-defined functions written in Python and sourced, can be accessed as objects in an R session. This allows greater flexibility, to write custom functions in Python, source the file, and then call those functions from R. This difference in design is important to understand, in order to construct functions which can then be used to compose pipelines.
 
 # Setup
+
+The *analysisPipelines* provides a couple of helper functions in R, making it easier to interact with the Python environment. One of them is to set the Python environment, which we do, like so:
 
 ```{r}
 knitr::opts_chunk$set(
     eval = FALSE
   )
-
 library(analysisPipelines)
-
 
 analysisPipelines::setPythonEnvir('python', '/Users/naren/anaconda3/bin/python')
 os <- reticulate::import("os")
@@ -33,44 +48,47 @@ reticulate::source_python(system.file("python/sampleFunctions.py", package = "an
 reticulate::py_config()
 ```
 
+# Registering Python functions
 
-# Defining Python functions
+Python functions which have been sourced through *reticulate* are available as references in the R environment and can be directly registered as part of the pipeline.
 
-```{python eval = F}
-def getColMeans2(df):
-    meanList = []
-    for x in df.columns:
-        meanList.append(df[x].mean())
-    return meanList
-```
+For non-R engines, such as Spark and Python, a suffix with the engine name is added to the function name on registration. So, functions with this suffix need to be used when pipelining to an *Analysis Pipeline* object. The engine is added as a suffix for better readability. A suffix is used (as opposed to a prefix) to enable easier auto-completes.
 
-
-# Defining pipelines
+The *analysisPipelines* package creates wrapper methods which contain the *argument* signature of the Python function. This allows the user to know what arguments need to passed. Normal *reticulate* imports have a `...` signature.
 
 ```{r}
-data("iris")
-d <- iris
-obj <- AnalysisPipeline(input = iris)
-
-registerFunction("trainDecisionTree", engine = "python", isDataFunction = F, firstArgClass = "numpy.ndarray")
-registerFunction("getTargetForPyClassification", engine = "r")
+registerFunction("decisionTreeTrainAndTest", engine = "python", isDataFunction = F, firstArgClass = "numpy.ndarray")
+registerFunction("getTargetForPyClassification")
 registerFunction("getFeaturesForPyClassification")
 getRegistry()
 
-obj %>>%  getFeaturesForPyClassification(featureNames = colnames(d)[-ncol(d)]) %>>% 
+```
+
+# Defining pipelines
+
+Pipelines are defined and executed as usual. Regardless of the engine being used the high level interface remains the same.
+
+```{r}
+data("iris")
+trainSample <- sample(1:150, size = 100)
+train <- iris[trainSample,]
+test <- iris[-trainSample,]  #%>>% getFeaturesForPyClassification(featureNames = colnames(iris)[-ncol(iris)])
+obj <- AnalysisPipeline(input = train)
+
+obj %>>%  getFeaturesForPyClassification(featureNames = colnames(train)[-ncol(train)]) %>>% 
           getTargetForPyClassification(targetVarName = "Species", positiveClass = "setosa") %>>%
-          trainDecisionTree_py(data = ~f1, target = ~f2, storeOutput = T) -> objDecisionTree
+          getFeaturesForPyClassification(dataset = test, featureNames = colnames(test)[-ncol(test)]) %>>% 
+          decisionTreeTrainAndTest_py(data = ~f1, target = ~f2, newData = ~f3, storeOutput = T) -> objDecisionTree
 
 objDecisionTree %>>% assessEngineSetUp
 objDecisionTree %>>% visualizePipeline
 ```
 
-
 # Execution
 
 ```{r}
 objDecisionTree %>>% generateOutput -> op
-op %>>% generateReport("~/Desktop")
-op %>>% getOutputById("3")
+#op %>>% generateReport("~/Desktop")
+op %>>% getOutputById("4")
 ```
 

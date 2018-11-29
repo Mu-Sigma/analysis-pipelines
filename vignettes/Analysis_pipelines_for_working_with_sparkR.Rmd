@@ -17,7 +17,7 @@ vignette: >
 
 # Important Note
 
-Using *Spark* as an engine requires the *SparkR* package to be installed. *SparkR* is distributed natively with *Apache Spark* and is not distributed on CRAN.
+Using *Spark* as an engine requires the *SparkR* package to be installed. *SparkR* is distributed natively with *Apache Spark* and is not distributed on CRAN. *SparkR* versions closely map to the Spark version (hence the native distribution), and care needs to be taken to ensure that the right versions are available.
 
 # Initialize libraries
 
@@ -26,7 +26,7 @@ Using *Spark* as an engine requires the *SparkR* package to be installed. *Spark
 * Check if the  SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
-    eval = FALSE
+    eval = TRUE
   )
 library(ggplot2)
 library(analysisPipelines)
@@ -56,7 +56,6 @@ sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = sparkPacka
 Spark can connect to datasources like Hive, Kafka. Besides, it also also read parquet, json and csv files. In this example we will read a csv file.
 ```{r}
 pipelineObj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
-# pipelineObj <- AnalysisPipeline(input = SparkR::as.data.frame(system.file("hotel_new.csv", package = "analysisPipelines")))
 ```
 
 # User-defined spark functions
@@ -87,7 +86,9 @@ bookingChannelsAnalysis <- function(inputDataset, groupByColumn) {
 
 # Registering user-defined functions to the pipeline object
 
-Each user-defined function needs to be registered to the pipeline object. Post registration, the function can be used to construct a pipeline. A pipeline is a set of multiple functions called in a particular sequence.
+Each user-defined function needs to be registered to the pipeline object. For non-R engines, such as Spark and Python, a suffix with the engine name is added to the function name on registration. So, functions with this suffix need to be used when pipelining to an *Analysis Pipeline* object. The engine is added as a suffix for better readability. A suffix is used (as opposed to a prefix) to enable easier auto-completes.
+
+Post registration, the function can be used to construct a pipeline. A pipeline is a set of multiple functions called in a particular sequence.
 
 ```{r}
 # Register user-defined functions
@@ -100,8 +101,8 @@ registerFunction("bookingChannelsAnalysis", "Booking channels analysis",
 getRegistry()
 
 # Define pipeline from list of registered functions
-pipelineObj %>% occupancyAnalysis(groupByColumn = "location_type", storeOutput = T) %>% 
-                bookingChannelsAnalysis(groupByColumn = "location_type", storeOutput = T) -> pipelineObj
+pipelineObj %>% occupancyAnalysis_spark(groupByColumn = "location_type", storeOutput = T) %>% 
+                bookingChannelsAnalysis_spark(groupByColumn = "location_type", storeOutput = T) -> pipelineObj
 
 pipelineObj %>>% getPipeline
 pipelineObj %>>% visualizePipeline
@@ -120,17 +121,10 @@ occupancyAnalysisResult <- pipelineObj %>>% getOutputById(1)
 occupancyAnalysisResultDf <- as.data.frame(occupancyAnalysisResult)
 DT::datatable(head(occupancyAnalysisResultDf),options = list(scrollX = T, scrollY = T))
 
-
-# ggplot2::ggplot(occupancyAnalysisResultDf) + ggplot2::geom_col(ggplot2::aes(location_type, avgOccupancy, color=location_type)) 
-
 # Show booking channels analysis result
 bookingChannelsAnalysisResult <- pipelineObj %>>% getOutputById(2)
 bookingChannelsAnalysisResultDf <- as.data.frame(bookingChannelsAnalysisResult)
 DT::datatable(head(bookingChannelsAnalysisResultDf),options = list(scrollX = T, scrollY = T))
-
-
-# ggplot2::ggplot(bookingChannelsAnalysisResultDf) + ggplot2::geom_col(ggplot2::aes(location_type, avgCallCenterBookingPct, color=location_type)) + ggplot2::scale_y_continuous(labels = scales::percent)
-
 ```
 
 # Supplementary Note

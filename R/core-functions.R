@@ -238,6 +238,7 @@ registerFunction <- function( functionName, heading = "",
 
         f <- get(functionName, .GlobalEnv)
         origF <- f
+        originalArgs <- list()
 
         argEnv <- NULL
         #Checking for direct python functions
@@ -256,32 +257,49 @@ registerFunction <- function( functionName, heading = "",
         # firstArg <- names(originalArgs)[1]
 
 
-        if(isDataFunction){
-          # originalArgs <- originalArgs[-1]
-          newArgs <- originalArgs
-          firstArgClass <- dataFrameClass
-          paramsToBeParsed <- paste0(originalArgs[-1] %>>% names, collapse = ", ")
-          genericSignature <- names(originalArgs)[1]
-          objectName <- names(originalArgs)[1]
-
-          packageMethodSignature <- paste0('"', childClass, '"')
-          origMethodSignature <-paste0('"', dataFrameClass, '"')
-        }else{
+        # if(isDataFunction){
+        #   # originalArgs <- originalArgs[-1]
+        #   newArgs <- originalArgs
+        #   firstArgClass <- dataFrameClass
+        #   paramsToBeParsed <- paste0(originalArgs[-1] %>>% names, collapse = ", ")
+        #   genericSignature <- names(originalArgs)[1]
+        #   objectName <- names(originalArgs)[1]
+        #
+        #   packageMethodSignature <- paste0('"', childClass, '"')
+        #   origMethodSignature <-paste0('"', dataFrameClass, '"')
+        # }else{
+          if(isDataFunction){
+            firstArgClass <- dataFrameClass
+            originalArgs[[1]] <- rlang::.data
+          }
           newArgs <- append(objectArg, originalArgs)
           paramsToBeParsed <- paste0(originalArgs %>>% names, collapse = ", ")
           genericSignature <- c("object", names(originalArgs)[1])
 
-          formulaUnionClassName <- paste0("formulaOR", firstArgClass)
-           setClassUnion(name = formulaUnionClassName,
-                                             c("formula", firstArgClass),
-                                             where = .GlobalEnv)
-          packageMethodSignature <- c(childClass, formulaUnionClassName)
+          ## Adding missing signature to method
+          if(isDataFunction){
+            firstArgClassName <- paste0("formulaOR", firstArgClass, "ORmissing")
+            setClassUnion(name = firstArgClassName,
+                          c("formula", firstArgClass, "missing"),
+                          where = .GlobalEnv)
+          }else{
+            firstArgClassName <- paste0("formulaOR", firstArgClass)
+            setClassUnion(name = firstArgClassName,
+                          c("formula", firstArgClass),
+                          where = .GlobalEnv)
+          }
+
+          # formulaMissingUnionClassName <- paste0("formulaOR", firstArgClass, "ORmissing")
+          #  setClassUnion(name = formulaUnionClassName,
+          #                                    c("formula", firstArgClass, "missing"),
+          #                                    where = .GlobalEnv)
+          packageMethodSignature <- c(childClass, firstArgClassName)
           origMethodSignature <- c("missing", firstArgClass)
 
           #Converting to string
           packageMethodSignature <- paste0('c("', paste(packageMethodSignature, collapse = '", "'), '")')
           origMethodSignature <- paste0('c("', paste(origMethodSignature, collapse = '", "'), '")')
-        }
+        # }
 
         parametersName <- paste0(newArgs %>>% names, collapse = ", ")
         methodParams <- paste0(originalArgs %>>% names, collapse = ", ")
@@ -313,17 +331,16 @@ registerFunction <- function( functionName, heading = "",
         formals(f) <- genericArgs
         body(f) <- paste('standardGeneric("', functionName,'")')
 
-        ## Suffix for python functions
+        ## Suffix for python & Spark functions
         if(engine == 'python'){
-          # origFString <- paste0('function( ', methodParams, '){',
-          #                 'val <- ', functionName, '(', methodParams, ');',
-          #                 'return(val);}')
-          # eval(parse(text = paste0('origF <- ', origFString)))
           methodBody <- paste0('{',
                              'val <- ', functionName, '(', methodParams, ');',
                                'return(val);}')
           functionName <- paste0(functionName, "_py")
-
+        }else if(engine == "spark"){
+          functionName <- paste0(functionName, "_spark")
+        }else if(engine == "spark-structured-streaming"){
+          functionName <- paste0(functionName, "_sparkSS")
         }
 
         registerFunText <-
