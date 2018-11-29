@@ -14,14 +14,15 @@
 #' @importFrom utils installed.packages read.csv
 NULL
 
-
 pos <- 1
 globEnv = as.environment(pos)
 
 try({
   if(!("SparkR" %in% installed.packages())){
-    devtools::install_github("cran/SparkR")
-    futile.logger::flog.info("||  The SparkR package is not installed. Installing from Github  ||")
+    futile.logger::flog.warn(paste0("||  The SparkR package is not installed. Please ensure the right SparkR version compatible",
+                                  "compatible with the Spark distribution you plan to use is installed. You can use the 'devtools'",
+                                  "package to do the same using 'devtools::install_github('apache/spark@v2.x.x', subdir='R/pkg')'  ||"),
+                             name = "logger.base")
   }
 }, silent = TRUE)
 

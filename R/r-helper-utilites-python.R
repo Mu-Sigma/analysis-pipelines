@@ -5,6 +5,7 @@
 #' 'virtualenv' for Virtual environments, and 'python' to manually set the python path to use
 #' @param pathOrEnvirName Name of the environment for Anaconda and Virtual environments,
 #' or the Python path when type is 'python'
+#' @family R helper utilities for Python
 #' @export
 setPythonEnvir <- function(type = 'conda', pathOrEnvirName = 'base'){
   tryCatch({
@@ -35,7 +36,8 @@ setPythonEnvir <- function(type = 'conda', pathOrEnvirName = 'base'){
 #' extracts them from the R data frame as a matrix and converts them to the equivalent Python array.
 #' @details Typically this function can be used when providing a feature matrix to a Python machine learning function
 #' @param dataset an R data frame
-#' @param featureNames Column names to be extracted from the R data frames. A character vector
+#' @param featureNames Column names to be extracted from the R data frames. A character vector.
+#' @family R helper utilities for Python
 #' @export
 getFeaturesForPyClassification <- function(dataset, featureNames){
   dataset %>% dplyr::select(!!featureNames) %>% as.matrix %>% reticulate::r_to_py() -> featureMatrix

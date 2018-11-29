@@ -19,3 +19,7 @@ Sets the python environment to be used
 \details{
 Wrapper function over reticulate functions to set a python environment to be used
 }
+\seealso{
+Other R helper utilities for Python: \code{\link{getFeaturesForPyClassification}}
+}
+\concept{R helper utilities for Python}
