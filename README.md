@@ -41,21 +41,22 @@ The package allows both the use of *magrittr* pipe **(%>%)** or the *pipeR* pipe
 
 ## Supported engines
 
-As of this version, the package supports functions executed on *R*, or *Spark* through the SparkR interface for batch pipelines. It also supports *Apache Spark Structured Streaming* pipelines for streaming analyses. In subsequent releases, *Python* will also be supported.
+As of this version, the package supports functions executed on *R*, or *Spark* through the SparkR interface, as well as Python functions run through *reticulate* for batch pipelines. It also supports *Apache Spark Structured Streaming* pipelines for streaming analyses.
 
 ## Available vignettes
 
 This package contains 6 vignettes:
 
 * **Analysis pipelines - Core functionality and working with R data frames and functions** - This is the main vignette describing the package's core functionality, and explaining this through **batch** pipelines in just **R**
-* **Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses** - This vignette describes creating **batch** pipelines to execute in solely in a *Spark* environment 
+* **Analysis pipelines for working with Spark DataFrames for one-time/ batch analyses** - This vignette describes creating **batch** pipelines to execute solely in a *Spark* environment 
+* **Analysis pipelines for working with Python functions** - This vignette describes creating **batch** pipelines to execute solely in a *Python* environment 
 * **Interoperable analysis pipelines** - This vignette describes creating and executing **batch** pipelines which are composed of functions executing across *supported engines*
 * **Streaming Analysis Pipelines for working with Apache Spark Structured Streaming** - This vignette describes setting up streaming pipelines on *Apache Spark Structured Streaming*
 * **Using pipelines inside Shiny widgets or apps** - A brief vignette which illustrates an example of using a pipeline inside a shiny widget with reactive elements and changing data
-* **An introduction to meta-pipelines** - This vignette which illustrates the use of meta-pipelines
+* **An introduction to meta-pipelines** - This vignette illustrates the use of meta-pipelines
 
 
-#Usage
+# Usage
 
 ## Loading the package
 

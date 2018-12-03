@@ -7,6 +7,8 @@
 univarCatDistPlots(data, uniCol, priColor, optionalPlots)
 }
 \arguments{
+\item{data}{the dataset where the column on which the plot is to be generated is present}
+
 \item{uniCol}{the name of column on which the plot needs to be generated}
 
 \item{priColor}{the primary color for the plots}

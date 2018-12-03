@@ -8,7 +8,8 @@
 # proto' is an S3 class whic is used as a slot, and hence it is defined in the environment
 setOldClass("proto")
 
-#' @name MetaAnalysisPipeline
+#' @name MetaAnalysisPipeline-class
+#' @rdname MetaAnalysisPipeline-class
 #' @title Class for creating and working with meta-pipelines
 #' @details This class works with the \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline} classes, and allows the
 #' pipeline to be exported as meta-pipeline. A meta-pipeline is a construct, where the input dataset as well as the arguments
@@ -28,14 +29,12 @@ MetaAnalysisPipeline <- setClass("MetaAnalysisPipeline",
                                    type = "character"
                                  ))
 
-#' @name initializeMetaAnalysisPipeline
+#' MetaAnalysisPipeline constructor
+#' @docType methods
+#' @rdname initialize-methods
 #' @title This is the constructor for the \link{MetaAnalysisPipeline} class
-#' @param .Object The \code{MetaAnalysisPipeline} object
-#' @param type A string defining whether it is a batch or streaming pipeline. Acceptable values are 'batch' & 'streaming'
-#' @details This method is a constructor for the \code{MetaAnalysisPipeline} class
-#' @return an object of class \code{MetaAnalysisPipeline}"
 #' @family Package core functions
-#' @export
+#' @keywords internal
 
 setMethod(
   f = "initialize",
@@ -43,7 +42,7 @@ setMethod(
   definition = function(.Object, type = "batch")
   {
     tryCatch({
-      .Object@pipeline <- tibble(
+      .Object@pipeline <- dplyr::tibble(
         id = character(),
         operation = character(),
         heading = character(),
@@ -63,10 +62,11 @@ setMethod(
 )
 
 #' @name exportAsMetaPipeline
+#' @rdname exportAsMetaPipeline
 #' @title Method to export a meta-pipeline
 #' @details This method exports a Pipeline object i.e. of the classes \code{AnalysisPipeline} or
 #' \code{StreamingAnalysisPipeline} as a meta-pipeline
-#' @param .Object A Pipeline object
+#' @param object A Pipeline object
 #' @return an object of class "\code{MetaAnalysisPipeline}"
 #' @family Package core functions
 #' @export
@@ -101,9 +101,9 @@ setGeneric(
     purrr::imap(parameters, function(p, np){
       # n <- names(p)
       if(class(p) == "formula"){
-        if(analysisPipelines:::isDependencyParam(p)){
-          n <- analysisPipelines:::getResponse(p)
-          p <- paste0("~", analysisPipelines:::getTerm(p)) %>>% as.formula
+        if(analysisPipelines::isDependencyParam(p)){
+          n <- analysisPipelines::getResponse(p)
+          p <- paste0("~", analysisPipelines::getTerm(p)) %>>% as.formula()
         }
       }
       assign(x = paste0(np),
@@ -118,6 +118,7 @@ setGeneric(
   return(metaPipeline)
 }
 
+#' @rdname exportAsMetaPipeline
 setMethod(
   f = "exportAsMetaPipeline",
   signature = "BaseAnalysisPipeline",
@@ -126,8 +127,9 @@ setMethod(
 
 
 #' @name getPipelinePrototype
+#' @rdname getPipelinePrototype
 #' @title Obtain the prototype of the functions in the pipeline
-#' @param object  A \code{MetaAnalysisPipeline} object
+#' @param metaPipelineObj  A \code{MetaAnalysisPipeline} object
 #' @details This method returns the prototype of functions in the pipeline and their respective arguments as \code{proto} object.
 #' Functions in the pipeline can be accessed easily by using the '$' operator, and within the functions the arguments can
 #' be accessed the same way. These can be accessed and set to new values. This pipeline prototype can then be passed to the
@@ -146,6 +148,7 @@ setGeneric(
   return(metaPipelineObj@pipelinePrototype)
 }
 
+#' @rdname getPipelinePrototype
 setMethod(
   f = "getPipelinePrototype",
   signature = "MetaAnalysisPipeline",
@@ -154,6 +157,7 @@ setMethod(
 
 
 #' @name createPipelineInstance
+#' @rdname createPipelineInstance
 #' @title Create a Pipeline object from a meta-pipeline
 #' @param metaPipelineObj  A \code{MetaAnalysisPipeline} object
 #' @param newParams Either a nested named list containing all the functions in the pipeline, their arguments and
@@ -173,11 +177,6 @@ setGeneric(
 
 .createPipelineInstance <- function(metaPipelineObj, newParams){
 
-  ## deal with formulas
-  ## get named arguments when creating pipeline
-  ## provide a template to fill
-  ## error handling
-
   if(metaPipelineObj@type == "batch"){
     pipelineObj <- AnalysisPipeline()
   }else if(metaPipelineObj@type == "streaming"){
@@ -188,39 +187,46 @@ setGeneric(
 
   newParamList <- newParams
   if(any(class(newParams) == "proto")){
-    names(newParams) %>>% grep(x = ., pattern = "^[.]", value = T, invert = T ) -> fnNames
+    names(newParams) %>>% grep(pattern = "^[.]", value = T, invert = T ) -> fnNames
 
     newParamList <- purrr::imap(fnNames, function(fn, nfn){
       fnEnvir <- get(fn, envir = newParams)
-      fnEnvir %>>% names %>>% grep(x = ., pattern = "^[.]", invert = T, value = T ) -> argNames
+      fnEnvir %>>% names %>>% grep(pattern = "^[.]", invert = T, value = T ) -> argNames
       params <- mget(x = argNames, envir = newParams[[fn]])
       params <- purrr::imap(params, function(p, np){
         if(class(p) == "formula"){
-          if(analysisPipelines:::isDependencyParam(p)){
-            p <- paste(np, "~", analysisPipelines:::getTerm(p)) %>>% as.formula
-            # names(p) <- NULL
+          if(analysisPipelines::isDependencyParam(p)){
+            p <- paste(np, "~", analysisPipelines::getTerm(p)) %>>% as.formula
           }
           #TODO: Deal with normal formula parameters
-        } #else{
-          # names(p) <- np
-        # }
+        }
         return(p)
       })
-      # names(params) <- NULL
       return(params)
     })
     names(newParamList) <- fnNames
   }
 
+  # Match pipeline table order
   tblOrder <- match(pipelineObj@pipeline$operation, names(newParamList))
   newParamList <- newParamList[tblOrder]
-  names(newParamList) <- NULL
 
+  #Match argument list orders
+  newParamList <- purrr::imap(newParamList, function(params, fnName){
+    pipelineParams <- pipelineObj@pipeline %>>% dplyr::filter(.data$operation == fnName)
+    pipelineParams <- unlist(pipelineParams$parameters, recursive = F)
+    argOrder <- match(names(pipelineParams), names(params))
+    params <- params[argOrder]
+    return(params)
+  })
+
+  names(newParamList) <- NULL
   pipelineObj@pipeline %>>% dplyr::mutate(parameters = newParamList) -> pipelineObj@pipeline
 
   return(pipelineObj)
 }
 
+#' @rdname createPipelineInstance
 setMethod(
   f = "createPipelineInstance",
   signature = "MetaAnalysisPipeline",
@@ -240,6 +246,7 @@ setMethod(
   return(vis)
 }
 
+#' @rdname visualizePipeline
 setMethod(
   f = "visualizePipeline",
   signature = "MetaAnalysisPipeline",
@@ -264,6 +271,7 @@ setMethod(
   })
 }
 
+#' @rdname savePipeline
 setMethod(
   f = "savePipeline",
   signature = "MetaAnalysisPipeline",
@@ -282,15 +290,16 @@ setMethod(
 #' @export
 loadMetaPipeline <- function(path){
   tryCatch({
-
+    object <- NULL
     futile.logger::flog.warn("||  The existing registry will be overwritten with the registry from the RDS file  ||",
                                name = "logger.base")
     load(path, envir = environment())
     functionNames = setdiff(ls(envir = environment()), c("path", "object", ".registry"))
-    .setRegistry(.registry)
+    eval(parse(paste0(".setRegistry(.registry)")))
     lapply(functionNames, function(x){
-      assign(x, get(x, environment()), globalenv())
+      assign(x, get(x, environment()), globEnv)
     })
+
     return(object)
   },error = function(e){
     futile.logger::flog.error(e, name = "logger.base")

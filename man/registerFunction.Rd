@@ -19,6 +19,8 @@ registerFunction(functionName, heading = "", functionType = "batch",
 
 \item{engine}{specifies which engine the function is to be run on. Available engines include "r", "spark", and "python"}
 
+\item{exceptionFunction}{R object corresponding to the exception function}
+
 \item{isDataFunction}{logical parameter which defines whether the function to be registered operates on data i.e. the first parameter is a dataframe}
 
 \item{firstArgClass}{character string with the class of the first argument to the function, if it is a non-data function}
@@ -37,8 +39,8 @@ If the function already exists in the registry, registration will be skipped. In
 to be reassigned in the Global Environment and then the \code{registerFunction} called again.
 }
 \seealso{
-Other Package core functions: \code{\link{BaseAnalysisPipeline}},
-  \code{\link{MetaAnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
+  \code{\link{MetaAnalysisPipeline-class}},
   \code{\link{assessEngineSetUp}},
   \code{\link{checkSchemaMatch}},
   \code{\link{createPipelineInstance}},
@@ -50,8 +52,7 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{getPipelinePrototype}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
-  \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{initializeMetaAnalysisPipeline}},
+  \code{\link{initialize,BaseAnalysisPipeline-method}},
   \code{\link{loadMetaPipeline}},
   \code{\link{loadPipeline}},
   \code{\link{loadPredefinedFunctionRegistry}},

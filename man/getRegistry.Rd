@@ -16,8 +16,8 @@ Obtains the function registry
 Obtains the function registry as a tibble, including both predefined and user defined functions
 }
 \seealso{
-Other Package core functions: \code{\link{BaseAnalysisPipeline}},
-  \code{\link{MetaAnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
+  \code{\link{MetaAnalysisPipeline-class}},
   \code{\link{assessEngineSetUp}},
   \code{\link{checkSchemaMatch}},
   \code{\link{createPipelineInstance}},
@@ -29,8 +29,7 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{getPipelinePrototype}},
   \code{\link{getPipeline}},
   \code{\link{initDfBasedOnType}},
-  \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{initializeMetaAnalysisPipeline}},
+  \code{\link{initialize,BaseAnalysisPipeline-method}},
   \code{\link{loadMetaPipeline}},
   \code{\link{loadPipeline}},
   \code{\link{loadPredefinedFunctionRegistry}},
