@@ -368,8 +368,6 @@ checkSchema <- function(dfOld, dfNew){
           }
         }
 
-
-
           currEngine <- funcDetails$engine
 
           prevEngine <- ifelse(any(class(inputToExecute) == "SparkDataFrame"), 'spark',
