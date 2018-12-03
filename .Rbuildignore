@@ -1,3 +1,10 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 data-raw/
+inst/python/.ipynb_checkpoints
+metastore_db/
+vignettes/*.R
+vignettes/*.html
+vignettes/*.RDS
+vignettes/metastore_db/
+
