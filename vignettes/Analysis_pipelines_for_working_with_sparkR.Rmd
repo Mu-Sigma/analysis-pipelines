@@ -41,7 +41,7 @@ $ R -e "devtools::install('.')"
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
-    eval = TRUE
+    eval = FALSE
   )
 library(ggplot2)
 library(analysisPipelines)

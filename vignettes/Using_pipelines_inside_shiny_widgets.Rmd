@@ -2,7 +2,7 @@
 title: "Using pipelines inside Shiny widgets or apps"
 author: "Naren Srinivasan"
 date: "11/14/2018"
-runtime: shiny-prerendered
+runtime: shiny
 output: 
    rmarkdown::html_vignette:
      fig_width: 8

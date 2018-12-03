@@ -301,6 +301,7 @@ exampleObj %>>%  summarizeData(conditionVar = "Species") %>>%
                 plotSummary(d = ~f1, summaryVar = "Sepal.Length", groupingVar = "Species", storeOutput = T) ->
   exampleObj
 
+exampleObj %>>% visualizePipeline
 exampleObj %>>% generateOutput %>>% getOutputById("4")
 
 ```

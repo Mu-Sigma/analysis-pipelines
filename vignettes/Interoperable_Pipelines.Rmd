@@ -25,7 +25,7 @@ Using *Spark* as an engine requires the *SparkR* package to be installed. *Spark
 ```{r echo = FALSE}
 library(analysisPipelines)
 knitr::opts_chunk$set(
-    eval = TRUE
+    eval = FALSE
   )
 ```
 
@@ -84,13 +84,13 @@ getSchema <- function(inputDataset) {
  return(sparkSchema)
 }
 
-sparkFilterData <- function(inputDataset, condition) {
+filterData <- function(inputDataset, condition) {
   filteredData <- SparkR::filter(inputDataset, condition)
  return(filteredData)
 }
 
 registerFunction(functionName = "getSchema", engine = "spark") 
-registerFunction(functionName = "sparkFilterData", engine = "spark") 
+registerFunction(functionName = "filterData", engine = "spark") 
 
 
 getRegistry()
@@ -184,12 +184,11 @@ registerFunction(functionName = "rBivarPlots", engine = "r", heading = "Bivariat
 
 getRegistry()
 ```
-## Registering python functions
+## Registering Python functions
 
 ```{r}
-registerFunction("trainDecisionTree", engine = "python", isDataFunction = F, firstArgClass = "numpy.ndarray")
-registerFunction("getTargetForPyClassification", isDataFunction = F, firstArgClass = "data.frame", engine = "r")
-registerFunction("getFeaturesForPyClassification", isDataFunction = F, firstArgClass = "data.frame", engine = "r")
+registerFunction("decisionTreeTrainAndTest", engine = "python", isDataFunction = F, firstArgClass = "numpy.ndarray")
+getRegistry()
 ```
 
 
@@ -213,7 +212,7 @@ opWithoutFilter %>>% getOutputById(1)
 We then perform filtering on one of the variables in Spark, before visualizing in R
 
 ```{r}
-pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
+pipelineObj %>>% filterData_spark(condition = "Class == 'good'") %>>% 
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
                      priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) -> singleFilterPipeline
 singleFilterPipeline %>>% visualizePipeline
@@ -227,15 +226,15 @@ Finally, we show a case, where sequential filtering steps are performed in Spark
 Note, that in this case, we register `getTargetForPyClassifcation` and `getTargetForPyClassification` as *non-data* functions. In this particular pipeline, there is no main *path* as such, as the pipeline branches into 2 paths - one in R and the other in Python. In such cases, using `outAsIn` or the `dataFunction` parameter with formula semantics is just a **question of convenience**. If the first argument of a *non-data* function is of a data frame class in R, Python (Pandas) or Spark, the package automatically performs type conversions when environments are switched (R -> Spark, Spark -> Python, and so on).
 
 ```{r}
-pipelineObj %>>% sparkFilterData("Class == 'good'") %>>% 
-  sparkFilterData("Occupancy > 0.7", outAsIn = T) %>>%
+pipelineObj %>>% filterData_spark(condition = "Class == 'good'") %>>% 
+  filterData_spark(condition = "Occupancy > 0.7", outAsIn = T) %>>%
   rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
                      priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) %>>%
   getFeaturesForPyClassification(dataset = ~f2, featureNames = c("direct_call_booking_pct",
                                                                  "loyalty_pct",
                                                                  "call_center_booking_pct")) %>>% 
           getTargetForPyClassification(dataset = ~f2, targetVarName = "Class", positiveClass = "good") %>>%
-          trainDecisionTree_py(data = ~f4, target = ~f5, storeOutput = T) -> twoFilterPipeline
+          decisionTreeTrainAndTest_py(data = ~f4, target = ~f5, newData = ~f4, storeOutput = T) -> twoFilterPipeline
 
 twoFilterPipeline %>>% visualizePipeline
 
@@ -243,7 +242,6 @@ twoFilterPipeline %>>% generateOutput -> opWith2Filters
 opWith2Filters %>>% getOutputById(3)
 opWith2Filters %>>% getOutputById(6)
 
-#opWith2Filters %>>% generateReport(path = "~/Desktop")
 ```
 
 # Supplementary Note

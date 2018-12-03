@@ -356,24 +356,29 @@ checkSchema <- function(dfOld, dfNew){
 
         if(funcDetails$isDataFunction){
           # Not passed as a formula
-          if(class(params[[1]]) == "rlang_fake_data_pronoun"){
+          if(any(class(params[[1]]) == "rlang_fake_data_pronoun")){
             # Checking for outAsIn
             if(funcDetails$outAsIn && funcDetails$id  != "1"){
               dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
               actualDataObjectName <- paste0(dataOpFn, ".out")
               inputToExecute <-  get(actualDataObjectName, envir = outputCache)
             }
+          }else if(any(class(params[[1]]) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
+            inputToExecute <- params[[1]]
           }
         }
 
+
+
           currEngine <- funcDetails$engine
 
-          prevEngine <- ifelse(class(inputToExecute) == "SparkDataFrame", 'spark',
-                               ifelse(class(inputToExecute) == "data.frame" || class(inputToExecute) == "tibble",
-                                      'r', 'python'))
+          prevEngine <- ifelse(any(class(inputToExecute) == "SparkDataFrame"), 'spark',
+                               ifelse(any(class(inputToExecute) == "data.frame") ||
+                                        any(class(inputToExecute) == "tibble"),
+                                      'r', ifelse(any(class(inputToExecute) == "pandas.core.frame.DataFrame"),
+                                                  'python',
+                                                  'r')))
           #Check engine
-          ###TODO: Python to be added
-
           if(prevEngine != currEngine){
             if(prevEngine == 'spark'){
 
@@ -448,16 +453,9 @@ checkSchema <- function(dfOld, dfNew){
 
 
         #Setting converted dataframe for first parameter of data function
-        if(
-          funcDetails$isDataFunction &&
-            #  any(class(params[[1]]) %in% c("pandas.core.frame.DataFrame", "data.frame","SparkDataFrame"))){
-          class(params[[1]]) == "rlang_fake_data_pronoun"){
-
+        if(funcDetails$isDataFunction){
             inputToExecute -> params[[1]]
         }
-
-
-
 
         #Call
         args <- params
