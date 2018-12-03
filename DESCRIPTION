@@ -13,7 +13,8 @@ Authors@R: c(
 Description: This package aims at enabling data scientists to compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. It also aims to enable data scientists to use tools of their choice through an R interface, and compose interoperable pipelines between R, Spark, and Python. Credits to Mu Sigma for supporting the development of the package.
 Depends: R (>= 3.4.0), magrittr, pipeR, methods
 Imports: ggplot2, dplyr, futile.logger, RCurl, proto, rlang, purrr, devtools
-Suggests: plotly, knitr, rmarkdown, parallel, visNetwork, rjson, DT, shiny, R.devices, corrplot, reticulate
+Suggests: plotly, knitr, rmarkdown, parallel, visNetwork, rjson, DT, shiny, R.devices, corrplot, reticulate, SparkR
+Additional_repositories: https://github.com/apache/spark/tree/master/R/pkg
 Encoding: UTF-8
 License: Apache License 2.0
 LazyLoad: yes
