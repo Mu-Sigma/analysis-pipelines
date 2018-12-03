@@ -4,7 +4,7 @@ Title: This Package Allows Data Scientists to Compose Interoperable Analysis Pip
 Version: 0.0.0.9004
 Authors@R: c(
       person("Naren","Srinivasan", email = "naren1991@gmail.com", role = c("aut")),
-      person("Zubin Dowlaty","",  email = "Zubin.Dowlaty@mu-sigma.com", role = c("ctb")),
+      person("Zubin Dowlaty","",  email = "Zubin.Dowlaty@mu-sigma.com", role = c("aut")),
       person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("ctb")),
       person("Neeratyoy","Mallik", email = "Neeratyoy.Mallik@mu-sigma.com", role = c("ctb")),
 		  person("Anoop S","",  email = "Anoop.S@mu-sigma.com", role = c("ctb")),
