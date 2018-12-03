@@ -114,7 +114,9 @@ We set the input of the pipeline object to the `iris` dataset and then execute t
 ```{r}
 complexMetaPipeline %>>% createPipelineInstance(pipelineProto) -> newPipelineObj
 
-newPipelineObj %>>% setInput(input = iris) %>>% generateOutput %>>% getOutputById("3")
+newPipelineObj %>>% setInput(input = iris) -> newPipelineObj
+
+newPipelineObj %>>% generateOutput %>>% getOutputById("3")
 ```
 
 

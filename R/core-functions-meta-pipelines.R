@@ -177,11 +177,6 @@ setGeneric(
 
 .createPipelineInstance <- function(metaPipelineObj, newParams){
 
-  ## deal with formulas
-  ## get named arguments when creating pipeline
-  ## provide a template to fill
-  ## error handling
-
   if(metaPipelineObj@type == "batch"){
     pipelineObj <- AnalysisPipeline()
   }else if(metaPipelineObj@type == "streaming"){
@@ -212,10 +207,20 @@ setGeneric(
     names(newParamList) <- fnNames
   }
 
+  # Match pipeline table order
   tblOrder <- match(pipelineObj@pipeline$operation, names(newParamList))
   newParamList <- newParamList[tblOrder]
-  names(newParamList) <- NULL
 
+  #Match argument list orders
+  newParamList <- purrr::imap(newParamList, function(params, fnName){
+    pipelineParams <- pipelineObj@pipeline %>>% dplyr::filter(.data$operation == fnName)
+    pipelineParams <- unlist(pipelineParams$parameters, recursive = F)
+    argOrder <- match(names(pipelineParams), names(params))
+    params <- params[argOrder]
+    return(params)
+  })
+
+  names(newParamList) <- NULL
   pipelineObj@pipeline %>>% dplyr::mutate(parameters = newParamList) -> pipelineObj@pipeline
 
   return(pipelineObj)
