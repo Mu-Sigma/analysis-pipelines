@@ -75,7 +75,6 @@ setMethod(
     dplyr::left_join(object@pipeline, getRegistry(), by = c("operation" = "functionName")) %>>%
       dplyr::left_join(object@pipelineExecutor$topologicalOrdering, by = c("id" = "id")) -> pipelineRegistryOrderingJoin
 
-    # pipelineRegistryJoin <- dplyr::left_join(object@pipeline, getRegistry(), by = c("operation" = "functionName"))
     batches <- unique(pipelineRegistryOrderingJoin$level)
     numBatches <- max(as.numeric(batches))
 
@@ -83,11 +82,7 @@ setMethod(
     # Iterate across batches i.e. sets of independent functions
     lapply(batches, function(x, object, pipelineRegistryOrderingJoin, outputCache){
 
-      # startBatch <- Sys.time()
       pipelineRegistryOrderingJoin %>>% dplyr::filter(.data$level == x) -> functionsInBatch
-      # futile.logger::flog.info("||  Executing Batch Number : %s/%s containing functions '%s' ||",
-                               # x, numBatches, paste(functionsInBatch$operation, collapse = ", "),
-                               # name='logger.batch')
 
       ## Function execution in a stream
       lapply(functionsInBatch$id, function(y, object, functionsInBatch, outputCache){
@@ -98,21 +93,14 @@ setMethod(
                                  funcDetails$id, funcDetails$operation, funcDetails$engine,
                                  name='logger.func')
 
-        # Set Input data
-        inputToExecute <- object@input
-
-
-        if(funcDetails$outAsIn && funcDetails$id  != "1"){
-          dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
-          actualDataObjectName <- paste0(dataOpFn, ".out")
-          inputToExecute <-  get(actualDataObjectName, envir = outputCache)
-        }
 
         # Set parameters
 
         params <- unlist(funcDetails$parameters, recursive = F)
         dep <- unique(unlist(funcDetails$dependencies, recursive = F))
         depTerms <- paste0("f", dep)
+
+        # Datasets passed as a formula are updated here
 
         params <- lapply(params, function(p, depTerms, outputCache){
           if(class(p) == "formula"){
@@ -132,26 +120,26 @@ setMethod(
           return(p)
         }, depTerms, outputCache)
 
+        # No type conversion for Streaming pipelines
+
+        if(funcDetails$isDataFunction){
+          # Not passed as a formula
+          if(any(class(params[[1]]) == "rlang_fake_data_pronoun")){
+            # Checking for outAsIn
+            if(funcDetails$outAsIn && funcDetails$id  != "1"){
+              dataOpFn <- paste0("f", as.numeric(funcDetails$id) - 1)
+              actualDataObjectName <- paste0(dataOpFn, ".out")
+              params[[1]] <- get(actualDataObjectName, envir = outputCache)
+            }else{
+              # On original input
+              params[[1]]<- object@input
+            }
+          }
+        }
 
         #Call
         startFunc <- Sys.time()
-        #Assign as named parameters
-        #Get names of params
-        # paramNames <- lapply(params, function(p){
-        #   return(names(p))
-        # })  %>>% unlist
-        # params <-lapply(params, function(p){
-        #   names(p) <- NULL
-        #   return(p)
-        # })
-        # names(params) <- paramNames
         args <- params
-        if(funcDetails$isDataFunction){
-          formals(funcDetails$operation) %>>% as.list %>>% names %>>% dplyr::first() -> firstArgName
-          firstArg <- list(inputToExecute)
-          names(firstArg) <- firstArgName
-          args <- append(firstArg, params)
-        }
         output <- tryCatch({do.call(what = funcDetails$operation,
                                     args = args)},
                            error = function(e){
@@ -165,11 +153,6 @@ setMethod(
 
         endFunc <- Sys.time()
         funcExecTime <- endFunc - startFunc
-
-        # ##outAsIn
-        # if(funcDetails$outAsIn){
-        #   outputCache$workingInput <- output
-        # }
 
         opName <- paste0("f", funcDetails$id, ".out") #eg: f1.out
         if(funcDetails$storeOutput){
