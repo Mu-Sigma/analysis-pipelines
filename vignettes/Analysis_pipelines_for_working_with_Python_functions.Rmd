@@ -28,7 +28,7 @@ On a separate note, there is a slight difference between how *SparkR* and *retic
 The biggest difference is in terms of functions - in SparkR, functions written in Scala, etc. in a Python session cannot be accessed from an R session. However, using *reticulate* user-defined functions written in Python and sourced, can be accessed as objects in an R session. This allows greater flexibility, to write custom functions in Python, source the file, and then call those functions from R. This difference in design is important to understand, in order to construct functions which can then be used to compose pipelines.
 ```{r}
 knitr::opts_chunk$set(
-    eval = TRUE
+    eval = FALSE
   )
 ```
 
