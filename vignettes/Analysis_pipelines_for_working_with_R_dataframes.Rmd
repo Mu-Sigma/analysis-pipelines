@@ -301,8 +301,8 @@ exampleObj %>>%  summarizeData(conditionVar = "Species") %>>%
                 plotSummary(d = ~f1, summaryVar = "Sepal.Length", groupingVar = "Species", storeOutput = T) ->
   exampleObj
 
-exampleObj %>>% visualizePipeline
-exampleObj %>>% generateOutput %>>% getOutputById("4")
+#exampleObj %>>% visualizePipeline
+#exampleObj %>>% generateOutput %>>% getOutputById("4")
 
 ```
 
@@ -310,7 +310,7 @@ exampleObj %>>% generateOutput %>>% getOutputById("4")
 
 These pipelines can be visualized by calling the `visualizePipeline` method. This generates the whole pipeline as a network, showing the engines on which each function is run, and which outputs are stored.
 
-```{r out.width=10}
+```{r out.width=10, eval=F}
 complexPipeline %>>% visualizePipeline
 ```
 

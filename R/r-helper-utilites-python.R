@@ -46,6 +46,9 @@ getFeaturesForPyClassification <- function(dataset, featureNames){
 
 #' @name getTargetForPyClassification
 #' @title Extracts selected column from a data frame a binary class Python array
+#' @param dataset an R data frame
+#' @param targetVarName Name of the target variable for classification. Should be a categorical variable.
+#' @param positiveClass Name of the class of the target variable which should be coded as '1'
 #' @details Helper function, which when provided an R dataframe and a binary categorical column,
 #' extracts it from the R data frame, converts it to 1/0 class coding, and converts it to a Python array
 #' @details Typically this function can be used to extract a target variable for a classifier to be provided to a

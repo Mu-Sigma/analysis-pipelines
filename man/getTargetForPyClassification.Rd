@@ -6,6 +6,13 @@
 \usage{
 getTargetForPyClassification(dataset, targetVarName, positiveClass)
 }
+\arguments{
+\item{dataset}{an R data frame}
+
+\item{targetVarName}{Name of the target variable for classification. Should be a categorical variable.}
+
+\item{positiveClass}{Name of the class of the target variable which should be coded as '1'}
+}
 \description{
 Extracts selected column from a data frame a binary class Python array
 }

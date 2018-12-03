@@ -80,7 +80,8 @@ The meta-pipeline can be *visualized* similar to a normal pipeline object by cal
 ```{r}
 
 complexPipeline %>>% exportAsMetaPipeline -> complexMetaPipeline
-complexMetaPipeline %>>% visualizePipeline
+
+# complexMetaPipeline %>>% visualizePipeline
 ```
 
 ## Setting the new parameters
@@ -102,7 +103,7 @@ pipelineProto$getColor$color<- "green"
 pipelineProto$getColumnName$columnName<- "Sepal.Length"
 pipelineProto$univarCatDistPlots$uniCol <- "Species"
 
-complexMetaPipeline %>>% visualizePipeline
+#complexMetaPipeline %>>% visualizePipeline
 ```
 
 ## Execution
