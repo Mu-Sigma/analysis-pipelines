@@ -1,20 +1,19 @@
 Package: analysisPipelines
 Type: Package
-Title: Compose interoperable analysis pipelines, and put them into production
-Version: 0.0.0.9003
+Title: This Package Allows Data Scientists to Compose Interoperable Analysis Pipelines, and Put Them into Production
+Version: 0.0.0.9004
 Authors@R: c(
-      person("Naren","Srinivasan", email = "Naren.Srinivasan@mu-sigma.com", role = c("aut")),
+      person("Naren","Srinivasan", email = "naren1991@gmail.com", role = c("aut")),
       person("Zubin Dowlaty","",  email = "Zubin.Dowlaty@mu-sigma.com", role = c("ctb")),
       person("Sanjay","",  email = "Sanjay@mu-sigma.com", role = c("ctb")),
       person("Neeratyoy","Mallik", email = "Neeratyoy.Mallik@mu-sigma.com", role = c("ctb")),
 		  person("Anoop S","",  email = "Anoop.S@mu-sigma.com", role = c("ctb")),
 		  person("Mu Sigma, Inc.", email = "ird.experiencelab@mu-sigma.com", role = c("cre"))
 		  )
-Description: The package aims at enabling data scientists to compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. It also aims to enable data scientists to use tools of their choice through an R interface, and compose interoperable pipelines between R, Spark, and Python. Credits to Mu Sigma for supporting the development of the package.
-Depends: R (>= 3.4.0), tibble, magrittr, data.table, pipeR, devtools
-Imports: ggplot2, dplyr, futile.logger, RCurl, proto
-Suggests: plotly, knitr, rmarkdown, SparkR, parallel, visNetwork, rjson, DT, shiny
-Remotes: github::cran/SparkR
+Description: This package aims at enabling data scientists to compose pipelines of analysis which consist of data manipulation, exploratory analysis & reporting, as well as modeling steps. It also aims to enable data scientists to use tools of their choice through an R interface, and compose interoperable pipelines between R, Spark, and Python. Credits to Mu Sigma for supporting the development of the package.
+Depends: R (>= 3.4.0), magrittr, pipeR, methods
+Imports: ggplot2, dplyr, futile.logger, RCurl, proto, rlang, purrr, devtools
+Suggests: plotly, knitr, rmarkdown, parallel, visNetwork, rjson, DT, shiny, R.devices, corrplot, reticulate
 Encoding: UTF-8
 License: Apache License 2.0
 LazyLoad: yes
@@ -28,5 +27,6 @@ Collate:
     'core-functions-meta-pipelines.R'
     'core-streaming-functions.R'
     'r-batch-eda-utilities.R'
+    'r-helper-utilites-python.R'
     'spark-structured-streaming-utilities.R'
     'zzz.R'

@@ -27,8 +27,8 @@ Checks the schema of the new data frame that the pipeline is to be initialized w
          the original schema that the pipeline was saved with. Provides a detailed comparison
 }
 \seealso{
-Other Package core functions: \code{\link{BaseAnalysisPipeline}},
-  \code{\link{MetaAnalysisPipeline}},
+Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
+  \code{\link{MetaAnalysisPipeline-class}},
   \code{\link{assessEngineSetUp}},
   \code{\link{createPipelineInstance}},
   \code{\link{exportAsMetaPipeline}},
@@ -39,8 +39,7 @@ Other Package core functions: \code{\link{BaseAnalysisPipeline}},
   \code{\link{getPipelinePrototype}},
   \code{\link{getPipeline}}, \code{\link{getRegistry}},
   \code{\link{initDfBasedOnType}},
-  \code{\link{initializeBaseAnalysisPipeline}},
-  \code{\link{initializeMetaAnalysisPipeline}},
+  \code{\link{initialize,BaseAnalysisPipeline-method}},
   \code{\link{loadMetaPipeline}},
   \code{\link{loadPipeline}},
   \code{\link{loadPredefinedFunctionRegistry}},

@@ -5,7 +5,6 @@
 # Description: Functions to work with Spark, incuding Structured Streaming
 ######################################################################################################
 
-#' @import SparkR
 
 #' @name sparkRSessionCreateIfNotPresent
 #' @title Connect to a Spark session
@@ -31,8 +30,7 @@ sparkRSessionCreateIfNotPresent <- function(...){
     .libPaths(c(file.path(sparkHome, "R", "lib"), .libPaths()))
   }
 
-  library(SparkR)
-  sparkR.session(...)
+  SparkR::sparkR.session(...)
 }
 
 #' @name castKafkaStreamAsString
@@ -62,7 +60,7 @@ castKafkaStreamAsString <- function(streamObj){
 #' @export
 
 convertKafkaValueFromJson <- function(streamObj, schema){
-  streamObj <- select(streamObj, from_json(streamObj$value,
+  streamObj <- SparkR::select(streamObj, SparkR::from_json(streamObj$value,
                                            schema = schema))
   return(streamObj)
 }
