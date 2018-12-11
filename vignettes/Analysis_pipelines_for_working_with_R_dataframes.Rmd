@@ -376,7 +376,7 @@ In the case of *Interoperable pipelines* executing across multiple engines such 
 
 The package provides logging capabilities for execution of pipelines, as you might have noted when the output was generated in sections above. By default, logs are written to the *console*, but alternatively the user can specify an output file to which the logs need to be written through the `setLoggerDetails` function.
 
-```{r}
+```{r eval = F}
 obj2 %>>% setLoggerDetails(target = "file") -> obj2
 ```
 
