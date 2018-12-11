@@ -38,19 +38,27 @@ In this vignette we demonstrate an interoperable pipeline built using the **anal
 We initialize a Spark session using the `sparkRSessionCreateIfNotPresent` helper function in the **analysisPipelines** package, which internally uses *SparkR*. We then read the data into the Spark session using functions in the SparkR package. In this case we read a *.csv* file, though SparkR can work with multiple other data sources
 
 ```{r}
+
+## Define these variables as per the configuration of your machine. This is just an example.
 sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
 sparkMaster <- "local[1]"
 sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
 
 sparkRSessionCreateIfNotPresent(sparkHome = sparkHome, master = sparkMaster, sparkPackages = sparkPackages)
 
-inputDataset <- SparkR::read.df(path = system.file("hotel_new.csv", package = "analysisPipelines"),source="csv",header = TRUE, inferSchema = "true")
+inputDataset <- iris
+
+# Replacing '.' in column names with '_' as SparkR is not able to deal with '.' in column names
+colnames(inputDataset) <- gsub(".", "_", colnames(inputDataset), fixed = T)
 ```
 
 
 ##Initializing Python connection
 
 ```{r}
+
+## Define these variables as per the configuration of your machine. This is just an example.
+
 analysisPipelines::setPythonEnvir('python', '/Users/naren/anaconda3/bin/python')
 os <- reticulate::import("os")
 numpy <- reticulate::import("numpy")
@@ -201,7 +209,7 @@ We first visualize the data without filtering:
 
 ```{r}
 
-pipelineObj %>>% rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+pipelineObj %>>% rBivarPlots(select_var_name_1 = "Sepal_Length", select_var_name_2 =  "Sepal_Width", 
                      priColor = "blue", secColor = "green", storeOutput = T) -> vizWithoutFilterPipeline
 vizWithoutFilterPipeline %>>% getPipeline
 vizWithoutFilterPipeline %>>% assessEngineSetUp
@@ -212,8 +220,8 @@ opWithoutFilter %>>% getOutputById(1)
 We then perform filtering on one of the variables in Spark, before visualizing in R
 
 ```{r}
-pipelineObj %>>% filterData_spark(condition = "Class == 'good'") %>>% 
-  rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+pipelineObj %>>% filterData_spark(condition = "Species == 'setosa'") %>>% 
+  rBivarPlots(select_var_name_1 = "Sepal_Length", select_var_name_2 =  "Sepal_Width", 
                      priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) -> singleFilterPipeline
 singleFilterPipeline %>>% visualizePipeline
 
@@ -226,14 +234,14 @@ Finally, we show a case, where sequential filtering steps are performed in Spark
 Note, that in this case, we register `getTargetForPyClassifcation` and `getTargetForPyClassification` as *non-data* functions. In this particular pipeline, there is no main *path* as such, as the pipeline branches into 2 paths - one in R and the other in Python. In such cases, using `outAsIn` or the `dataFunction` parameter with formula semantics is just a **question of convenience**. If the first argument of a *non-data* function is of a data frame class in R, Python (Pandas) or Spark, the package automatically performs type conversions when environments are switched (R -> Spark, Spark -> Python, and so on).
 
 ```{r}
-pipelineObj %>>% filterData_spark(condition = "Class == 'good'") %>>% 
-  filterData_spark(condition = "Occupancy > 0.7", outAsIn = T) %>>%
-  rBivarPlots(select_var_name_1 = "Compet_Occupancy", select_var_name_2 =  "Occupancy", 
+pipelineObj %>>% filterData_spark(condition = "Species == 'setosa' or Species == 'virginica'") %>>% 
+  filterData_spark(condition = "Petal_Length > 3.7", outAsIn = T) %>>%
+  rBivarPlots(select_var_name_1 = "Sepal_Length", select_var_name_2 =  "Sepal_Width", 
                      priColor = "blue", secColor = "green", outAsIn = T, storeOutput = T) %>>%
-  getFeaturesForPyClassification(dataset = ~f2, featureNames = c("direct_call_booking_pct",
-                                                                 "loyalty_pct",
-                                                                 "call_center_booking_pct")) %>>% 
-          getTargetForPyClassification(dataset = ~f2, targetVarName = "Class", positiveClass = "good") %>>%
+  getFeaturesForPyClassification(dataset = ~f2, featureNames = c("Sepal_Length",
+                                                                 "Sepal_Width",
+                                                                 "Petal_Length")) %>>% 
+          getTargetForPyClassification(dataset = ~f2, targetVarName = "Species", positiveClass = "setosa") %>>%
           decisionTreeTrainAndTest_py(data = ~f4, target = ~f5, newData = ~f4, storeOutput = T) -> twoFilterPipeline
 
 twoFilterPipeline %>>% visualizePipeline

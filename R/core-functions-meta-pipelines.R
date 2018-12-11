@@ -263,6 +263,8 @@ setMethod(
     .registry <- getRegistry()
     listToBeSaved <- c("object", ".registry", getRegistry()$functionName, getRegistry()$exceptionHandlingFunction)
     save(list = listToBeSaved,file = path)
+    futile.logger::flog.info("|| Registry saved successfully at path '%s'  ||", path,
+                             name = "logger.base")
   },error = function(e){
     futile.logger::flog.error(e, name = "logger.base")
     stop()
@@ -295,7 +297,7 @@ loadMetaPipeline <- function(path){
                                name = "logger.base")
     load(path, envir = environment())
     functionNames = setdiff(ls(envir = environment()), c("path", "object", ".registry"))
-    eval(parse(paste0(".setRegistry(.registry)")))
+    eval(parse(text = paste0(".setRegistry(.registry)")))
     lapply(functionNames, function(x){
       assign(x, get(x, environment()), globEnv)
     })
