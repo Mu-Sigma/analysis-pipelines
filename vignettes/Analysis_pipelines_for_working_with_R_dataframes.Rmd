@@ -77,7 +77,9 @@ library(analysisPipelines)
 An object of class *AnalysisPipeline* can be created like so:
 
 ```{r creating object, warning=F}
-obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
+# obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
+obj <- AnalysisPipeline(input = iris)
+
 class(obj)
 ```
 
@@ -111,7 +113,7 @@ We can access the details of the pipeline as a tibble through the `getPipeline` 
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
 # ?analysisPipelines::univarCatDistPlots
-obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0, storeOutput = T)
+obj1 <- obj %>>% univarCatDistPlots(uniCol = "Species", priColor = "blue", optionalPlots = 0, storeOutput = T)
 obj1 %>>% getPipeline
 ```
 
@@ -122,8 +124,8 @@ We now construct a pipeline with a couple of functions, one to generate a catego
 # Running univariate categorical distribution plot and then 
 # outlier detection on the constructed object
 
-obj %>>% univarCatDistPlots(uniCol = "location_type", priColor = "green", optionalPlots = 0) %>>% 
-         outlierPlot(method = "iqr", columnName = "Occupancy", 
+obj %>>% univarCatDistPlots(uniCol = "Species", priColor = "green", optionalPlots = 0) %>>% 
+         outlierPlot(method = "iqr", columnName = "Sepal.Length", 
               cutoffValue = 0.01, priColor = "blue", optionalPlots = 0, storeOutput = T) -> obj2
 obj2 %>>% getPipeline
 ```
@@ -203,7 +205,7 @@ Now the newly registered user-defined function can be used as part of the pipeli
 ```{r register function 2, warning=F}
 # Chaining the user-defined function to the object's pipeline where it was registered
 obj2 <- obj2 %>>% 
-  bivariatePlots(select_var_name_1 = 'Occupancy', select_var_name_2 = 'max_rooms_capacity', 
+  bivariatePlots(select_var_name_1 = 'Sepal.Length', select_var_name_2 = 'Sepal.Width', 
                  priColor = "blue", secColor = "black")
 
 # Printing the updated pipeline
@@ -245,8 +247,8 @@ getRegistry()
 In the following pipeline, we pass the colour and column name we want to the *non-data* functions we defined, and use the output of those in subsequent functions. This can be done simply by specifying a **formula** of the form 'f*id*' against the argument to which we want to pass the output. The ID represents the ID of the function in the pipeline. For example, to pass the output of function with ID '1' as an argument to a parameter of a subsequent function, the formula '~f1' is passed to that corresponding argument.
 
 ```{r}
-obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy") %>>%
-      univarCatDistPlots(uniCol = "building_type", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
+obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Petal.Length") %>>%
+      univarCatDistPlots(uniCol = "Species", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
       outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
 
 complexPipeline %>>% getPipeline
@@ -323,7 +325,7 @@ obj2Output %>>% generateReport(path = '~/Desktop')
 ```
 
 ```{r generate report and tabs 2, message=FALSE, warning=FALSE, eval=FALSE}
-objRep <- obj %>>% bivariatePlots('Occupancy', 'PercentTransientNights', 
+objRep <- obj %>>% bivariatePlots(select_var_name_1 = 'Petal.Length',select_var_name_2 =  'Petal.Width', 
                            priColor = "blue", secColor = "black")
 
 objRep %>>% generateReport(path = '~/Desktop')
@@ -345,8 +347,7 @@ This pipeline can be loaded and while loading *instantiated* with a new dataset 
 
 ```{r load pipelines, message=FALSE, warning=FALSE, eval=FALSE}
 library(analysisPipelines)
-obj2 <- loadPipeline('pipeline.RDS',filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
-
+obj3 <- loadPipeline(path = 'pipeline.RDS', input = iris) 
 getRegistry()
 obj2 %>% getPipeline
 ```

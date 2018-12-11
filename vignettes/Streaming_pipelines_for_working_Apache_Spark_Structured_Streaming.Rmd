@@ -14,9 +14,7 @@ vignette: >
 
 # Introduction
 
-The vignette aims to show examples of using SparkR as an interface to run streaming Spark jobs through R - using the analysisPipelines package. The major use cases can be categorized as:<br>
-
-* Implement a pipeline using SparkR dataframes for streaming use cases
+The vignette aims to show examples of using SparkR as an interface to run streaming Spark jobs through R - using the analysisPipelines package. The major use case is that of implementing a pipeline using SparkR dataframes for streaming data.
 
 # Important Note
 
@@ -49,6 +47,8 @@ knitr::opts_chunk$set(
 library(analysisPipelines)
 library(SparkR)
 
+## Define these variables as per the configuration of your machine. This is just an example.
+
 sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
 sparkMaster <- "local[1]"
 sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
@@ -77,6 +77,8 @@ This example illustrates usage of pipelines for a streaming application. In this
 Read streaming data from Kafka.
 
 ```{r}
+## Define these variables as per the configuration of your machine. This is just an example.
+
 kafkaBootstrapServers <- "172.25.0.144:9092,172.25.0.98:9092,172.25.0.137:9092"
 consumerTopic <- "netlogo"
 streamObj <- read.stream(source = "kafka", kafka.bootstrap.servers = kafkaBootstrapServers, subscribe = consumerTopic, startingOffsets="earliest")
@@ -210,4 +212,4 @@ streamObj
 
 # Supplementary note
 
-Currently, streaming pipelines have the limitation that they are able to execute only linear flows, as this constrained by *Apache Spark Structured Streaming.* Non-linear flows can be defined but might throw execution errors in runtime.
+Currently, streaming pipelines have the limitation that they are able to execute only linear flows as this constrained by *Apache Spark Structured Streaming.* Non-linear flows can be defined but might throw execution errors in runtime. Also, streaming pipelines can be implemented using only 1 engine i.e. *Apache Spark Structured Streaming.* 

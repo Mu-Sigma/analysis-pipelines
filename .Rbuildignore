@@ -7,4 +7,5 @@ vignettes/*.R
 vignettes/*.html
 vignettes/*.RDS
 vignettes/metastore_db/
+knit-vignettes/
 
