@@ -216,7 +216,6 @@ registerFunction <- function( functionName, heading = "",
                                           ' Assuming that it is an S3 class and setting the definition in the ',
                                           environment  ||"),
                                     name = "logger.base")
-          # stop()
         })
 
       }
@@ -254,28 +253,14 @@ registerFunction <- function( functionName, heading = "",
           originalArgs <- formals(f) %>>% as.list
         }
         firstArg <- names(originalArgs)[1]
-        # originalArgs <- formals(f) %>>% as.list
-        # firstArg <- names(originalArgs)[1]
-
-
-        # if(isDataFunction){
-        #   # originalArgs <- originalArgs[-1]
-        #   newArgs <- originalArgs
-        #   firstArgClass <- dataFrameClass
-        #   paramsToBeParsed <- paste0(originalArgs[-1] %>>% names, collapse = ", ")
-        #   genericSignature <- names(originalArgs)[1]
-        #   objectName <- names(originalArgs)[1]
-        #
-        #   packageMethodSignature <- paste0('"', childClass, '"')
-        #   origMethodSignature <-paste0('"', dataFrameClass, '"')
-        # }else{
           if(isDataFunction){
             firstArgClass <- dataFrameClass
             originalArgs[[1]] <- rlang::.data
           }
           newArgs <- append(objectArg, originalArgs)
           paramsToBeParsed <- paste0(originalArgs %>>% names, collapse = ", ")
-          genericSignature <- c("object", names(originalArgs)[1])
+          # genericSignature <- c("object", names(originalArgs)[1])
+          genericSignature <- c("object", names(originalArgs))
 
           ## Adding missing signature to method
           if(isDataFunction){
@@ -290,36 +275,19 @@ registerFunction <- function( functionName, heading = "",
                           where = .GlobalEnv)
           }
 
-          # formulaMissingUnionClassName <- paste0("formulaOR", firstArgClass, "ORmissing")
-          #  setClassUnion(name = formulaUnionClassName,
-          #                                    c("formula", firstArgClass, "missing"),
-          #                                    where = .GlobalEnv)
-          packageMethodSignature <- c(childClass, firstArgClassName)
-          origMethodSignature <- c("missing", firstArgClass)
+          packageMethodSignature <- c(childClass, firstArgClassName,
+                                      rep("ANY", length(names(originalArgs)) - 1))
+          origMethodSignature <- c("missing", firstArgClass,
+                                   rep("ANY", length(names(originalArgs)) - 1))
 
           #Converting to string
           packageMethodSignature <- paste0('c("', paste(packageMethodSignature, collapse = '", "'), '")')
           origMethodSignature <- paste0('c("', paste(origMethodSignature, collapse = '", "'), '")')
-        # }
 
         parametersName <- paste0(newArgs %>>% names, collapse = ", ")
         methodParams <- paste0(originalArgs %>>% names, collapse = ", ")
 
-        # if(parametersName != ""){
-        #   parametersName <- paste0(", ", parametersName)
-        # }
-
         methodBody <- paste0(utils::capture.output(body(eval(parse(text=functionName)))),collapse="\n")
-
-        # if(engine == 'python'){
-        #   gsub(pattern = "py_resolve_dots", replacement = "reticulate:::py_resolve_dots", methodBody) -> methodBody
-        #   gsub(pattern = "py_call_impl", replacement = "reticulate:::py_call_impl", methodBody) -> methodBody
-        # }
-
-        # if(isDataFunction && childClass == "StreamingAnalysisPipeline"){
-        #   methodBody <- gsub(pattern = "\\{", replacement = paste0("{ check", firstArg , " = object;"), x = methodBody)
-        # }
-        # methodBody <- gsub(pattern = "\\{", replacement = paste0("{", firstArg , " = object;"), x = methodBody)
 
         ##Assigning the exception function to the global Environment
         assign(exceptionFunction, get(x = exceptionFunction,
@@ -378,9 +346,6 @@ registerFunction <- function( functionName, heading = "",
                      'signature = ', origMethodSignature, ',',
                      'definition = function( ', methodParams,')',
                      methodBody, ')'
-                 # 'setMethod(f = "',functionName,'",',
-                 #     'signature = ', origMethodSignature, ',',
-                 #     'definition = origF)'
           )
 
         #Register function
@@ -745,6 +710,8 @@ setGeneric(
     .registry <- getRegistry()
     listToBeSaved <- c("object", ".registry", getRegistry()$functionName, getRegistry()$exceptionHandlingFunction)
     save(list = listToBeSaved,file = path)
+    futile.logger::flog.info("|| Pipeline and associated registry saved successfully at path '%s'  ||", path,
+                             name = "logger.base")
   },error = function(e){
     futile.logger::flog.error(e, name = "logger.base")
   stop()
@@ -1537,14 +1504,16 @@ loadPipeline <- function(path, input = data.frame() , filePath = ""){
     futile.logger::flog.warn("||  The existing registry will be overwritten with the registry from the RDS file  ||",
                              name = "logger.base")
     load(path, envir = environment())
+    #load(path, envir = testEnv)
     functionNames = setdiff(ls(envir = environment()), c("path", "object", "input", "filePath", ".registry"))
-
+    #functionNames = setdiff(ls(envir = testEnv), c("path", "object", "input", "filePath", ".registry"))
 
     lapply(functionNames, function(x){
       assign(x, get(x, environment()), globEnv)
+      #assign(x, get(x, testEnv), .GlobalEnv)
     })
 
-    eval(parse(paste0(".setRegistry(.registry)")))
+    eval(parse(text = paste0(".setRegistry(.registry)")))
 
     futile.logger::flog.info("||  Registry loaded succesfully  ||",
                              name = "logger.base")
@@ -1587,7 +1556,7 @@ loadPipeline <- function(path, input = data.frame() , filePath = ""){
     return(object)
   },error = function(e){
     futile.logger::flog.error(e, name = "logger.base")
-  stop()
+    stop()
   })
 }
 
@@ -1683,7 +1652,7 @@ loadRegistry <- function(path){
     load(path, envir = environment())
     functionNames = setdiff(ls(envir = environment()), c("path", ".registry"))
 
-    eval(parse(paste0(".setRegistry(.registry)")))
+    eval(parse(text = paste0(".setRegistry(.registry)")))
 
     lapply(functionNames, function(x){
       assign(x, get(x, environment()), globEnv)

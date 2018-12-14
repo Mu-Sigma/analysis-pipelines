@@ -41,7 +41,7 @@ Through this package, *meta-pipelines* can be created by exporting an already cr
 In the example below, we first create a pipeline, similar to the one described in the other vignettes.
 
 ```{r}
-pipeline <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
+pipeline <- AnalysisPipeline(input = iris)
 getColor <- function(color){
   return(color)
 }
@@ -59,8 +59,8 @@ getRegistry()
 We then generate an output from the pipeline, just to validate that the pipeline works properly. Of course, to define a meta-pipeline generation of output is not required.
 
 ```{r}
-pipeline %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy") %>>%
-      univarCatDistPlots(uniCol = "building_type", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
+pipeline %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Sepal.Length") %>>%
+      univarCatDistPlots(uniCol = "Species", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
       outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
 
 complexPipeline %>>% getPipeline
@@ -80,7 +80,8 @@ The meta-pipeline can be *visualized* similar to a normal pipeline object by cal
 ```{r}
 
 complexPipeline %>>% exportAsMetaPipeline -> complexMetaPipeline
-complexMetaPipeline %>>% visualizePipeline
+
+# complexMetaPipeline %>>% visualizePipeline
 ```
 
 ## Setting the new parameters
@@ -98,11 +99,13 @@ In the following example, we reconfigure the pipeline for use with the 'iris' da
 ```{r}
 pipelineProto <- getPipelinePrototype(complexMetaPipeline)
 str(pipelineProto)
-pipelineProto$getColor$color<- "green"
-pipelineProto$getColumnName$columnName<- "Sepal.Length"
-pipelineProto$univarCatDistPlots$uniCol <- "Species"
 
-complexMetaPipeline %>>% visualizePipeline
+#Setting new parameters on ToothGrowth dataset
+pipelineProto$getColor$color<- "green"
+pipelineProto$getColumnName$columnName<- "len"
+pipelineProto$univarCatDistPlots$uniCol <- "supp"
+
+#complexMetaPipeline %>>% visualizePipeline
 ```
 
 ## Execution
@@ -114,7 +117,7 @@ We set the input of the pipeline object to the `iris` dataset and then execute t
 ```{r}
 complexMetaPipeline %>>% createPipelineInstance(pipelineProto) -> newPipelineObj
 
-newPipelineObj %>>% setInput(input = iris) -> newPipelineObj
+newPipelineObj %>>% setInput(input = ToothGrowth) -> newPipelineObj
 
 newPipelineObj %>>% generateOutput %>>% getOutputById("3")
 ```
@@ -132,7 +135,7 @@ complexMetaPipeline %>>% savePipeline("metaPipeline.RDS")
 getC <- function(color){
   return(color)
 }
-
+  
 getCol <-function(columnName){
   return(columnName)
 }
@@ -147,9 +150,9 @@ getRegistry()
 pipelineProtoLoaded <- getPipelinePrototype(loadedMetaPipeline)
 str(pipelineProtoLoaded)
 
-pipelineProto$getColor$color<- "green"
-pipelineProto$getColumnName$columnName<- "Sepal.Length"
-pipelineProto$univarCatDistPlots$uniCol <- "Species"
+pipelineProtoLoaded$getColor$color<- "green"
+pipelineProtoLoaded$getColumnName$columnName<- "Sepal.Length"
+pipelineProtoLoaded$univarCatDistPlots$uniCol <- "Species"
 
 loadedMetaPipeline %>>% createPipelineInstance(pipelineProtoLoaded) -> newPipelineObjLoaded
 

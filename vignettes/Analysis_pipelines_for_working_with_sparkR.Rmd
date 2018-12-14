@@ -38,16 +38,19 @@ $ R -e "devtools::install('.')"
 
 * Load the *analysisPipelines* and *SparkR* libraries
 * Check if the  SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
-
-```{r, include=FALSE}
+```{r}
 knitr::opts_chunk$set(
     eval = FALSE
   )
+```
+
+```{r, include=FALSE, eval = F}
+
 library(ggplot2)
 library(analysisPipelines)
 library(SparkR)
 
-## Define these variables as per the configuration of your machine
+## Define these variables as per the configuration of your machine. This is just an example.
 sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
 sparkMaster <- "local[1]"
 sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
@@ -72,33 +75,23 @@ sparkRSessionCreateIfNotPresent(master = sparkMaster, sparkPackages = sparkPacka
 Spark can connect to datasources like Hive, Kafka. Besides, it can also read parquet, json and csv files. In this example we will read a csv file.
 
 ```{r}
-pipelineObj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
+inputDataset <- iris
+
+# Replacing '.' in column names with '_' as SparkR is not able to deal with '.' in column names
+colnames(inputDataset) <- gsub(".", "_", colnames(inputDataset), fixed = T)
+
+pipelineObj <- AnalysisPipeline(input = iris)
 ```
 
 # User-defined spark functions
 The example below shows a few functions to perform simple aggregations.
 
 ```{r}
-# Function to calculate avg occupancy for the client as well as competitors - grouped by input parameter
-occupancyAnalysis <- function(inputDataset, groupByColumn) {
-  occupancySummary <- SparkR::summarize( SparkR::groupBy(inputDataset,inputDataset[[groupByColumn]]),
-                       avgOccupancy =  SparkR::mean(inputDataset$Occupancy),
-                       avgCompetitorOccupancy=  SparkR::mean(inputDataset$Compet_Occupancy))
- return(occupancySummary)
+meanByGroup <- function(inputDataset, groupByColumn, colToSummarize) {
+  groupSummary <- SparkR::summarize( SparkR::groupBy(inputDataset,inputDataset[[groupByColumn]]),
+                       avg =  SparkR::mean(inputDataset[[colToSummarize]]))
+ return(groupSummary)
 }
-
-# Function to calculate avg booking contribution for differen channels - grouped by input parameter
-bookingChannelsAnalysis <- function(inputDataset, groupByColumn) {
-  bookingChannelsAnalysisSummary <-  SparkR::summarize( SparkR::groupBy(inputDataset,inputDataset[[groupByColumn]]),
-                       avgCallCenterBookingPct =  SparkR::avg(inputDataset$call_center_booking_pct),
-                       avgAgencyBookingPct = SparkR::avg(inputDataset$travel_agency_booking_pct),
-                       avgThirdPartyBookingPct =  SparkR::avg(inputDataset$third_party_web_bookings_pct),
-                       avgHotelToHotelBookingPct = SparkR::avg(inputDataset$hotel_to_hotel_bookings_pct),
-                       avgDirectBookingPct = SparkR::avg(inputDataset$direct_call_booking_pct),
-                       avgWebBookingPct = SparkR::avg(inputDataset$direct_web_booking_pct))
- return(bookingChannelsAnalysisSummary)
-}
-
 ```
 
 # Registering user-defined functions to the pipeline object
@@ -109,17 +102,15 @@ Post registration, the function can be used to construct a pipeline. A pipeline 
 
 ```{r}
 # Register user-defined functions
-registerFunction("occupancyAnalysis", "Occupany analysis",
+registerFunction("meanByGroup", "Mean By Group",
                                                  engine = "spark")
 
-registerFunction("bookingChannelsAnalysis", "Booking channels analysis",
-                                                 engine = "spark")
 # List all registered functions 
 getRegistry()
 
 # Define pipeline from list of registered functions
-pipelineObj %>% occupancyAnalysis_spark(groupByColumn = "location_type", storeOutput = T) %>% 
-                bookingChannelsAnalysis_spark(groupByColumn = "location_type", storeOutput = T) -> pipelineObj
+pipelineObj %>% meanByGroup_spark(groupByColumn = "Species", colToSummarize = "Sepal_Length", storeOutput = T) %>% 
+                meanByGroup_spark(groupByColumn = "Species", colToSummarize = "Petal_Length", storeOutput = T) -> pipelineObj
 
 pipelineObj %>>% getPipeline
 pipelineObj %>>% visualizePipeline
@@ -133,15 +124,13 @@ The pipeline is run by calling the `generateOutput()` function. A particular out
 ```{r fig.width=6, fig.height=3}
 pipelineObj %>% generateOutput -> pipelineObj
 
-# Show occupancy analysis result
-occupancyAnalysisResult <- pipelineObj %>>% getOutputById(1)
-occupancyAnalysisResultDf <- as.data.frame(occupancyAnalysisResult)
-DT::datatable(head(occupancyAnalysisResultDf),options = list(scrollX = T, scrollY = T))
+sepalLengthBySpecies <- pipelineObj %>>% getOutputById(1)
+sepalLengthBySpeciesDf <- as.data.frame(sepalLengthBySpecies)
+DT::datatable(head(sepalLengthBySpeciesDf),options = list(scrollX = T, scrollY = T))
 
-# Show booking channels analysis result
-bookingChannelsAnalysisResult <- pipelineObj %>>% getOutputById(2)
-bookingChannelsAnalysisResultDf <- as.data.frame(bookingChannelsAnalysisResult)
-DT::datatable(head(bookingChannelsAnalysisResultDf),options = list(scrollX = T, scrollY = T))
+petalLengthBySpecies <- pipelineObj %>>% getOutputById(2)
+petalLengthBySpeciesDf <- as.data.frame(petalLengthBySpecies)
+DT::datatable(head(petalLengthBySpeciesDf),options = list(scrollX = T, scrollY = T))
 ```
 
 # Supplementary Note
