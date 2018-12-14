@@ -18,7 +18,8 @@ Description: Enables data scientists to compose pipelines of analysis which cons
     The other option is to install R by running the following terminal commands if Spark has already been installed: '$ export SPARK_HOME=/path/to/spark/directory && cd $SPARK_HOME/R/lib/SparkR/ && R -e "devtools::install('.')"'.
 Depends: R (>= 3.4.0), magrittr, pipeR, methods
 Imports: ggplot2, dplyr, futile.logger, RCurl, proto, rlang (>= 0.3.0), purrr, devtools
-Suggests: plotly, knitr, rmarkdown, parallel, visNetwork, rjson, DT, shiny, R.devices, corrplot, reticulate, SparkR
+Suggests: plotly, knitr, rmarkdown, parallel, visNetwork, rjson, DT, shiny, R.devices, corrplot
+Enhances: SparkR, reticulate
 BugReports: https://github.com/Mu-Sigma/analysis-pipelines/issues
 URL: https://github.com/Mu-Sigma/analysis-pipelines
 Encoding: UTF-8
