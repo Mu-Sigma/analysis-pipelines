@@ -40,10 +40,14 @@ $ R -e "devtools::install('.')"
 * Ensure you have a local installation of Spark and SparkR package is installed
 * Check if the SPARK_HOME environment variable is set to Spark installation folder. Else, define it using `sys.setenv()` function.
 
-```{r, include=FALSE}
+```{r}
 knitr::opts_chunk$set(
     eval = FALSE
   )
+```
+
+
+```{r, include=FALSE}
 library(analysisPipelines)
 library(SparkR)
 
