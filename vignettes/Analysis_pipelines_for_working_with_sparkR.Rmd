@@ -38,11 +38,14 @@ $ R -e "devtools::install('.')"
 
 * Load the *analysisPipelines* and *SparkR* libraries
 * Check if the  SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
-
-```{r, include=FALSE}
+```{r}
 knitr::opts_chunk$set(
     eval = FALSE
   )
+```
+
+```{r, include=FALSE, eval = F}
+
 library(ggplot2)
 library(analysisPipelines)
 library(SparkR)
