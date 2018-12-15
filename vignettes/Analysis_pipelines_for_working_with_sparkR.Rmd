@@ -37,14 +37,14 @@ $ R -e "devtools::install('.')"
 # Initialize libraries
 
 * Load the *analysisPipelines* and *SparkR* libraries
-* Check if the  SPARK_HOME environment variable is set to spark installation folder. Else, define it using `sys.setenv()` function.
+* Check if the  SPARK_HOME environment variable is set to Spark installation folder. Else, define it using `sys.setenv()` function.
 ```{r}
 knitr::opts_chunk$set(
     eval = FALSE
   )
 ```
 
-```{r, include=FALSE, eval = F}
+```{r, include=FALSE}
 
 library(ggplot2)
 library(analysisPipelines)
@@ -62,8 +62,8 @@ if(Sys.getenv("SPARK_HOME") == "") {
 
 # Connect to Spark cluster
 
-* Define the spark master URL
-* Specify dependency packages if any during spark connection. Example: `sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")`
+* Define the Spark master URL
+* Specify dependency packages if any during Spark connection. Example: `sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")`
 * Connect to the cluster using the package's `sparkRSessionCreateIfNotPresent` function
 
 ```{r}
@@ -83,7 +83,7 @@ colnames(inputDataset) <- gsub(".", "_", colnames(inputDataset), fixed = T)
 pipelineObj <- AnalysisPipeline(input = iris)
 ```
 
-# User-defined spark functions
+# User-defined Spark functions
 The example below shows a few functions to perform simple aggregations.
 
 ```{r}

@@ -77,7 +77,6 @@ library(analysisPipelines)
 An object of class *AnalysisPipeline* can be created like so:
 
 ```{r creating object, warning=F}
-# obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines"))
 obj <- AnalysisPipeline(input = iris)
 
 class(obj)

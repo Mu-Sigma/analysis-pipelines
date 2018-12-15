@@ -74,7 +74,7 @@ library(analysisPipelines)
 An object of class *AnalysisPipeline* can be created like so:
 
 ```{r creating object, warning=F}
-obj <- AnalysisPipeline(filePath = system.file("hotel_new.csv", package = "analysisPipelines")) 
+obj <- AnalysisPipeline(input = iris) 
 class(obj)
 ```
 
@@ -107,7 +107,7 @@ We can access the details of the pipeline as a tibble through the `getPipeline` 
 ```{r pipe demo 1, warning=F}
 # Running univariate categorical distribution plot on the constructed object
 # ?analysisPipelines::univarCatDistPlots
-obj1 <- obj %>>% univarCatDistPlots(uniCol = "building_type", priColor = "blue", optionalPlots = 0, storeOutput = T)
+obj1 <- obj %>>% univarCatDistPlots(uniCol = "Species", priColor = "blue", optionalPlots = 0, storeOutput = T)
 obj1 %>>% getPipeline
 ```
 
@@ -156,7 +156,7 @@ Now the newly registered user-defined function can be used as part of the pipeli
 ```{r register function 2, warning=F}
 # Chaining the user-defined function to the object's pipeline where it was registered
 obj2 <- obj2 %>>% 
-  bivariatePlots(select_var_name_1 = 'Occupancy', select_var_name_2 = 'max_rooms_capacity', 
+  bivariatePlots(select_var_name_1 = 'Sepal.Length', select_var_name_2 = 'Sepal.Width', 
                  priColor = "blue", secColor = "black")
 
 # Printing the updated pipeline
@@ -172,8 +172,8 @@ The package defines certain *formula* semantics to accomplish this. We take the 
 Preceding outputs can be passed to subsequent functions simply by specifying a **formula** of the form 'f*id*' against the argument to which the output is to be passed . The ID represents the ID of the function in the pipeline. For example, to pass the output of function with ID '1' as an argument to a parameter of a subsequent function, the formula '~f1' is passed to that corresponding argument.
 
 ```r
-obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Occupancy") %>>%
-      univarCatDistPlots(uniCol = "building_type", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
+obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Sepal.Length") %>>%
+      univarCatDistPlots(uniCol = "Species", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
       outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
 
 complexPipeline %>>% getPipeline
