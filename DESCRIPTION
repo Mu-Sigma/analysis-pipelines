@@ -1,5 +1,6 @@
 Package: analysisPipelines
 Type: Package
+Date: 2018-12-15
 Title: This Package Allows Data Scientists to Compose Interoperable Analysis Pipelines, and Put Them into Production
 Version: 1.0.0
 Authors@R: c(
