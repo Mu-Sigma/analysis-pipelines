@@ -19,7 +19,13 @@ Sets the python environment to be used
 \details{
 Wrapper function over reticulate functions to set a python environment to be used
 }
+\examples{
+\dontrun{
+setPythonEnvir()
+}
+}
 \seealso{
-Other R helper utilities for Python: \code{\link{getFeaturesForPyClassification}}
+Other R helper utilities for Python: \code{\link{getFeaturesForPyClassification}},
+  \code{\link{getTargetForPyClassification}}
 }
 \concept{R helper utilities for Python}

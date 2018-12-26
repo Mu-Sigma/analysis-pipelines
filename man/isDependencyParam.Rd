@@ -19,3 +19,7 @@ Checks if the parameter is the dependency parameter
 This is a helper function to check if the formula provided is a dependency parameter,
 as per the package's formula semantics, capturing function dependencies
 }
+\examples{
+library(analysisPipelines)
+isDependencyParam(~f1)
+}

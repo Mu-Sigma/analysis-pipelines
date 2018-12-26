@@ -4,7 +4,8 @@
 \alias{outlierPlot}
 \title{Outlier detection plot}
 \usage{
-outlierPlot(data, method, columnName, cutoffValue, priColor, optionalPlots)
+outlierPlot(data, method = "iqr", columnName, cutoffValue = 0.05,
+  priColor = "blue", optionalPlots = 0)
 }
 \arguments{
 \item{data}{the dataframe that needs to be loaded}
@@ -27,6 +28,11 @@ Outlier detection plot
 }
 \details{
 Outlier are to be identified on the selected column from the dataframe
+}
+\examples{
+\dontrun{
+outlierPlot(data = iris, columnName = "Sepal.Length")
+}
 }
 \seealso{
 Other Package EDA Utilites functions: \code{\link{CheckColumnType}},

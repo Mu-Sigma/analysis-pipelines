@@ -34,6 +34,12 @@ Another provided option, is to specify a filePath where the input dataset is pre
 Note - When a pipeline is loaded, the existing registry is overwritten with the registry saved with the
 pipeline
 }
+\examples{
+\dontrun{
+  library(analysisPipelines)
+  loadPipeline(path = "./pipeline.RDS")
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

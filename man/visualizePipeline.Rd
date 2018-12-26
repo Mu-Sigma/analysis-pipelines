@@ -27,6 +27,15 @@ Visualizes the pipeline as a graph
 Indicates dependencies amongst functions as well as functions for which output
 needs to be stored
 }
+\examples{
+\dontrun{
+library(analysisPipelines)
+pipelineObj <- AnalysisPipeline(input = iris)
+pipelineObj \%>>\% univarCatDistPlots(uniCol = "Species",
+ priColor = "blue", optionalPlots = 0, storeOutput = T) \%>>\%
+visualizePipeline
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

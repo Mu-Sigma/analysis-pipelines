@@ -23,6 +23,13 @@ Method to export a meta-pipeline
 This method exports a Pipeline object i.e. of the classes \code{AnalysisPipeline} or
 \code{StreamingAnalysisPipeline} as a meta-pipeline
 }
+\examples{
+\dontrun{
+#' pipelineObj <- AnalysisPipeline(input = iris)
+pipelineObj \%>>\% univarCatDistPlots(uniCol = "Species") \%>>\%
+ exportAsMetaPipeline -> exportedMetaPipeline
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

@@ -22,6 +22,11 @@ Obtains the logger configuration for the pipeline
 \details{
 This function obtains the logger configuration for the pipeline.
 }
+\examples{
+library(analysisPipelines)
+pipelineObj <- AnalysisPipeline(input = iris)
+pipelineObj \%>>\% getLoggerDetails
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

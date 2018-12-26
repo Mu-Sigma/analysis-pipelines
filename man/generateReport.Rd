@@ -25,6 +25,13 @@ Generate a HTML report from an \code{AnalysisPipeline} object
 The sequence of operations stored in the \code{AnalysisPipeline} object are run, outputs generated,
       and a HTML report is generated with outputs in the same sequence as the pipeline created by the user
 }
+\examples{
+\dontrun{
+pipelineObj <- AnalysisPipeline(input = iris)
+pipelineObj \%>>\% univarCatDistPlots(uniCol = "Species", storeOutput = T) -> pipelineObj
+pipelineObj \%>>\% generateReport(path = ".")
+}
+}
 \seealso{
 Other Package core functions for batch/one-time analyses: \code{\link{AnalysisPipeline-class}},
   \code{\link{checkSchema}},

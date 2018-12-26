@@ -1,9 +1,8 @@
 ######################################################################################################
-# Title: Functions for various EDA operations on data frames
-# Author: Naren Srinivasan, Sanjay
+# Title: Functions for various exploratory analysis operations on data frames
+# Author: Sanjay, Dheekshitha PS
 # Created on: June 14, 2018
-# Description: Consolidated file for all functions
-#                to be used for EDA out of the box
+# Description: Consolidated file for all functionsto be used out of the box for exploratory analysis
 ######################################################################################################
 
 
@@ -17,6 +16,8 @@
 #' @param columns the names of columns to be ignored from dataframe object
 #' @return Updated dataframe object
 #' @family Package EDA Utilites functions
+#' @examples
+#' ignoreCols(data = iris, columns = "Species")
 #' @export
 ignoreCols <- function(data, columns){
   tryCatch({
@@ -43,8 +44,10 @@ ignoreCols <- function(data, columns){
 #' @param optionalPlots A Flag for optional plots
 #' @return A univariate categoric distribution plot
 #' @family Package EDA Utilites functions
+#' @examples
+#' univarCatDistPlots(data = iris, uniCol = "Species")
 #' @export
-univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
+univarCatDistPlots <- function(data, uniCol, priColor = "blue", optionalPlots = 0){
   levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
   data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
   data <- data %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = dplyr::n())
@@ -83,9 +86,23 @@ univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
 #' @param optionalPlots A Flag for optional plots
 #' @return Outliers plot object
 #' @family Package EDA Utilites functions
+#' @examples
+#' \dontrun{
+#' outlierPlot(data = iris, columnName = "Sepal.Length")
+#' }
 #' @export
-outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlots){
+outlierPlot <- function(data, method = "iqr", columnName, cutoffValue = 0.05, priColor = "blue", optionalPlots = 0){
+
+
+  if(TRUE %in% unique(is.na(data[,columnName]))){
+    data <- data[-which(is.na(data[,columnName])),]
+  }
+
   if(method == "iqr"){
+    lower <- stats::quantile(data[, columnName], .25,na.rm = T) - 1.5*(stats::IQR(data[, columnName], na.rm = T))
+    upper <- stats::quantile(data[,columnName],.75,na.rm = T) + 1.5*(stats::IQR(data[,columnName],na.rm = T))
+    data$Outlier <- data[,columnName] > upper | data[,columnName] < lower
+
     outlierPlotObj <- ggplot2::ggplot(data, ggplot2::aes(x="", y = data[,columnName])) +
       ggplot2::geom_boxplot(fill = priColor,alpha=0.7) +
       ggplot2::theme_bw() +
@@ -93,10 +110,15 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
 
   }
   if(method == "percentile"){
+    lower <- stats::quantile(data[,columnName],cutoffValue,na.rm = T)
+    upper <- stats::quantile(data[,columnName],(1-cutoffValue),na.rm = T)
+    data$Outlier <- data[,columnName] > upper | data[,columnName] < lower
+
     Outlier<-data$Outlier
     Value<-data[,columnName]
     outlierPlotObj <- ggplot2::ggplot(data) +
-      ggplot2::geom_histogram(ggplot2::aes(x = Value, fill = .data$Outlier),bins=30,alpha=0.7) +
+      ggplot2::geom_histogram(ggplot2::aes(x = Value, fill = as.name("Outlier")),
+                              bins=30, alpha=0.7) +
       ggplot2::scale_fill_manual(values = c(priColor, "red"),breaks=c("FALSE", "TRUE"),
                                  labels=c("Normal", "Outlier"),name = "Status") +
       ggplot2::theme_bw() +
@@ -105,12 +127,17 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
 
   }
   if(method == "z_score"){
+
+    lower <- mean(data[,columnName],na.rm = T) - (cutoffValue*(stats::sd(data[,columnName],na.rm = T)))
+    upper <- mean(data[,columnName],na.rm = T) + (cutoffValue*(stats::sd(data[,columnName],na.rm = T)))
+    data$Outlier <- data[,columnName] > upper | data[,columnName] < lower
+
     data$zScore <- scale(data[,columnName],center = T, scale = T)
     Zscore<-as.vector(data$zScore)
     y<-data[,columnName]
     outlierPlotObj <-
       ggplot2::ggplot(data, ggplot2::aes(x = Zscore, y = y)) +
-      ggplot2::geom_point(ggplot2::aes(color = .data$Outlier),alpha=0.7)+
+      ggplot2::geom_point(ggplot2::aes(color = as.name("Outlier")), alpha=0.7)+
       ggplot2::scale_color_manual("Status", values = c("TRUE" = "red","FALSE" =priColor))+
       ggplot2::ylab(columnName)+
       ggplot2::theme_bw() +
@@ -143,15 +170,41 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
 #' @param sizeCol the name of column used to define the size of point in plots
 #' @param priColor the primary color for the plots
 #' @param optionalPlots A Flag for optional plots
+#' @param cutoffValue A p-alue cutoff for detecting outliers
 #' @return Outliers plot
 #' @family Package EDA Utilites functions
+#' @examples
+#' \dontrun{
+#' multiVarOutlierPlot(data = iris, depCol = "Sepal.Length",
+#'    indepCol = "Sepal.Width", sizeCol = "Petal.Length")
+#' }
 #' @export
-multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalPlots){
+multiVarOutlierPlot <- function(data, depCol, indepCol, sizeCol, priColor = "blue", optionalPlots = 0,
+                                cutoffValue = 0.05){
+  if(TRUE %in% unique(is.na(data[,depCol])))
+  {
+    data <- data[-which(is.na(data[,depCol])== T),]
+  }
+
+  indep_form <- paste(indepCol, collapse = "+")
+  form <- paste(depCol, indep_form, sep = "~")
+  form <- stats::formula(form)
+
+  lmObject <- lm(form,data)
+  limit <- nrow(data)
+  outlierDetect <- car::outlierTest(lmObject, cutoffValue, n.max = limit)
+  outlierDetect <- data.frame(outlierDetect[c(1,2,3)])
+  outlierDetect <- round(outlierDetect, 4)
+  colnames(outlierDetect) <- c("Studentized Residuals","P-Value", "P-Value(Bonferroni Correction)")
+  data$Outlier <- ifelse(rownames(data) %in% rownames(outlierDetect),"Outlier","Normal")
+  outlierTable <- data[data$Outlier == "Outlier", ]
+  outlierTable <- cbind(outlierDetect,outlierTable)
+
   x<-data[,indepCol]
   y<-data[,depCol]
   size<-data[,sizeCol]
-  outlierPlot <- ggplot2::ggplot(data,ggplot2::aes(x = x,y = y),alpha=0.6)+
-    ggplot2::geom_point(ggplot2::aes(color = .data$Outlier, size = size),alpha=0.7)+
+  outlierPlot <- ggplot2::ggplot(data, ggplot2::aes(x = x,y = y), alpha=0.6)+
+    ggplot2::geom_point(ggplot2::aes(color = as.name("Outlier"), size = size), alpha=0.7)+
     ggplot2::scale_color_manual("",values = c("Outlier" = "red", "Normal" = priColor))+
     ggplot2::labs(title = paste(depCol,"vs",indepCol)) +  ggplot2::theme_bw() +
     ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),legend.position = "bottom") +
@@ -178,6 +231,9 @@ multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalP
 #' @param secColor A secondary color for the plots
 #' @return Bivariate plot
 #' @family Package EDA Utilites functions
+#' @examples
+#' bivarPlots(dataset = iris, select_var_name_1 = "Sepal.Length",
+#'  select_var_name_2 = "Sepal.Width")
 #' @export
 bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
 
@@ -265,6 +321,8 @@ bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor =
 #' @param methodused methods to be used for computing correlation
 #' @return Correlation Matrix graph
 #' @family Package EDA Utilites functions
+#' @examples
+#' correlationMatPlot(dataset = iris)
 #' @export
 correlationMatPlot <- function(dataset, methodused = "everything"){
   numeric_cols <- getDatatype(dataset)['numeric_cols']
@@ -301,6 +359,8 @@ correlationMatPlot <- function(dataset, methodused = "everything"){
 #' @param dataVector a data vector of a column
 #' @return column Type
 #' @family Package EDA Utilites functions
+#' @examples
+#' CheckColumnType(iris$Sepal.Length)
 #' @export
 CheckColumnType <- function(dataVector) {
   #Check if the column type is "numeric" or "character" & decide type accordDingly
@@ -318,9 +378,11 @@ CheckColumnType <- function(dataVector) {
 #' @param dataset a dataset which needs to be loaded
 #' @return list with \code{numeric_cols} and \code{cat_cols}
 #' @family Package EDA Utilites functions
+#' @examples getDatatype(iris)
 #' @export
 getDatatype <- function(dataset){
   numeric_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){ CheckColumnType(x) == "numeric"}))]
   cat_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){CheckColumnType(x) == "character"|| CheckColumnType(x) == "factor"}))]
   return(list("numeric_cols"=numeric_cols , "cat_cols"=cat_cols))
 }
+

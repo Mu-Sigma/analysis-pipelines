@@ -25,6 +25,17 @@ Obtains the pipeline from the \code{AnalysisPipeline} or \code{StreamingAnalysis
 This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
 which extend this class
 }
+\examples{
+\dontrun{
+library(analysisPipelines)
+pipelineObj <- AnalysisPipeline(input = iris)
+getNumRows <- function(dataset){
+  return(nrow(dataset))
+}
+registerFunction("getNumRows")
+pipelineObj \%>>\% getNumRows \%>>\% getPipeline
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

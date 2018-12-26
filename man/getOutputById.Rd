@@ -36,6 +36,18 @@ Obtains a specific output from the \code{AnalysisPipeline} or \code{StreamingAna
 This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
 which extend this class
 }
+\examples{
+\dontrun{
+library(analysisPipelines)
+pipelineObj <- AnalysisPipeline(input = iris)
+getNumRows <- function(dataset){
+  return(nrow(dataset))
+}
+registerFunction("getNumRows")
+pipelineObj \%>>\% getNumRows(storeOutput = TRUE) -> pipelineObj
+pipelineObj \%>>\% generateOutput \%>>\% getOutputById("1")
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

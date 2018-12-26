@@ -32,6 +32,13 @@ The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object is saved 
 This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
 which extend this class
 }
+\examples{
+\dontrun{
+  library(analysisPipelines)
+  pipelineObj <- AnalysisPipeline(input = iris)
+  pipelineObj \%>>\% savePipeline(path = "./test.RDS")
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

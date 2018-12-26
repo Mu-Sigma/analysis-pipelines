@@ -16,6 +16,12 @@ Loads a function registry from a file
 This function loads a function registry and associated function definition stored in an RDS file into the
 environment. The existing registry is overwritten with the newly loaded registry
 }
+\examples{
+\dontrun{
+  library(analysisPipelines)
+  loadRegistry(path = "./registry.RDS")
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

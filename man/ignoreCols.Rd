@@ -20,6 +20,9 @@ Ignores the columns in the loaded dataframe object
 \details{
 The columns selected are removed from the object
 }
+\examples{
+ignoreCols(data = iris, columns = "Species")
+}
 \seealso{
 Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{bivarPlots}},

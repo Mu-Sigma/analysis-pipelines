@@ -18,3 +18,7 @@ Obtains the response term from the formula
 \details{
 This is a helper function to extract the response variable from a formula
 }
+\examples{
+library(analysisPipelines)
+getResponse(y ~ x1 + x2)
+}

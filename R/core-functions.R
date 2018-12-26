@@ -125,6 +125,15 @@ setMethod(
 #' @param loadPipeline logical parameter to see if function is being used in loadPipeline or not. This is for internal working
 #' @param userDefined logical parameter defining whether the function is user defined. By default, set to true
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#'   library(analysisPipelines)
+#'   getNumRows <- function(dataset){
+#'    return(nrow(dataset))
+#'   }
+#'
+#'   registerFunction("getNumRows")
+#'}
 #' @export
 registerFunction <- function( functionName, heading = "",
                               functionType = "batch", # batch, streaming
@@ -425,6 +434,11 @@ registerFunction <- function( functionName, heading = "",
 #' @title Loading the registry of predefined functions
 #' @details Loads the registry of predefined functions
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#'   library(analysisPipelines)
+#'   loadPredefinedFunctionRegistry()
+#' }
 #' @export
 loadPredefinedFunctionRegistry <- function(){
   tryCatch({
@@ -469,6 +483,10 @@ loadPredefinedFunctionRegistry <- function(){
 #' @param filePath path to the file which needs to be read (currently supports .csv files)
 #' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
+#' @examples
+#'   library(analysisPipelines)
+#'   pipelineObj <- AnalysisPipeline()
+#'   pipelineObj %>>% setInput(input = iris) -> pipelineObj
 #' @export
 
 setGeneric(
@@ -574,6 +592,13 @@ setMethod(
 #' @return Tibble containing the details of available engines, whether they are required for a pipeline, a logical value
 #'         reporting whether the engine has been set up, and comments.
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#' library(analysisPipelines)
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% univarCatDistPlots(uniCol = "Species", priColor = "blue",
+#'  optionalPlots = 0) %>>% assessEngineSetUp
+#' }
 #' @export
 
 setGeneric(
@@ -693,6 +718,12 @@ setMethod(
 #' a .Rda extension
 #' @return Does not return a value
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#'   library(analysisPipelines)
+#'   pipelineObj <- AnalysisPipeline(input = iris)
+#'   pipelineObj %>>% savePipeline(path = "./test.RDS")
+#' }
 #' @export
 
 setGeneric(
@@ -738,6 +769,16 @@ setMethod(
 #' which extend this class
 #' @return Tibble describing the pipeline
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#' library(analysisPipelines)
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' getNumRows <- function(dataset){
+#'   return(nrow(dataset))
+#' }
+#' registerFunction("getNumRows")
+#' pipelineObj %>>% getNumRows %>>% getPipeline
+#' }
 #' @export
 
 setGeneric(
@@ -766,6 +807,8 @@ setMethod(
 #'      Obtains the function registry as a tibble, including both predefined and user defined functions
 #' @return Tibble describing the registry
 #' @family Package core functions
+#' @examples
+#' getRegistry()
 #' @export
 
 getRegistry <- function(){
@@ -783,6 +826,10 @@ getRegistry <- function(){
 #' which extend this class
 #' @return Dataframe for an \code{AnalysisPipeline} & SparkDataFrame for a \code{StreamingAnalysisPipeline}
 #' @family Package core functions
+#' @examples
+#' library(analysisPipelines)
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% getInput
 #' @export
 
 setGeneric(
@@ -821,6 +868,17 @@ setMethod(
 #'         - call: tibble with 1 row containing the function call for the output desired
 #'         - output: output generated
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#' library(analysisPipelines)
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' getNumRows <- function(dataset){
+#'   return(nrow(dataset))
+#' }
+#' registerFunction("getNumRows")
+#' pipelineObj %>>% getNumRows(storeOutput = TRUE) -> pipelineObj
+#' pipelineObj %>>% generateOutput %>>% getOutputById("1")
+#' }
 #' @export
 
 setGeneric(
@@ -873,6 +931,9 @@ setMethod(
 #' @param f formula from which term is to be extracted.
 #' @details This is a helper function to extract the response variable from a formula
 #' @return The response variable in the formula as a string
+#' @examples
+#' library(analysisPipelines)
+#' getResponse(y ~ x1 + x2)
 #' @export
 getResponse <- function(f){
   resp <- dimnames(attr(stats::terms(f), "factors"))[[1]][1]
@@ -884,6 +945,9 @@ getResponse <- function(f){
 #' @param f formula from which term is to be extracted.
 #' @details This is a helper function to extract the terms from a formula
 #' @return String with the terms
+#' @examples
+#' library(analysisPipelines)
+#' getTerm(y ~ x)
 #' @export
 getTerm <- function(f){
   t <- attr(stats::terms(f), "term.labels")
@@ -896,6 +960,9 @@ getTerm <- function(f){
 #' @details This is a helper function to check if the formula provided is a dependency parameter,
 #' as per the package's formula semantics, capturing function dependencies
 #' @return Logical as to whether it is a dependency parameter
+#' @examples
+#' library(analysisPipelines)
+#' isDependencyParam(~f1)
 #' @export
 isDependencyParam <- function(f){
   termRegexPattern <- "[f]|[:digit:]"
@@ -1113,6 +1180,14 @@ identifyTopologicalLevels <- function(
 #' and dependency map in order to prepare for execution
 #' @return Updated \code{AnalysisPipeline} \code{StreamingAnalysisPipeline} object
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#' library(analysisPipelines)
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% univarCatDistPlots(uniCol = "Species",
+#'  priColor = "blue", optionalPlots = 0, storeOutput = T) %>>%
+#' prepExecution -> pipelineObj
+#' }
 #' @export prepExecution
 
 setGeneric(
@@ -1171,6 +1246,14 @@ setMethod(
 #' @param object The \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object
 #' @return A graph object which can be printed (or) plotted to visualize the pipeline
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#' library(analysisPipelines)
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% univarCatDistPlots(uniCol = "Species",
+#'  priColor = "blue", optionalPlots = 0, storeOutput = T) %>>%
+#' visualizePipeline
+#' }
 #' @export
 
 setGeneric(
@@ -1381,6 +1464,11 @@ setGeneric(
 #' @param targetFile File name of the log file in case the target is 'file'
 #' @param layout Specify the layout according to 'futile.logger' package convention
 #' @family Package core functions
+#' @examples
+#' library(analysisPipelines)
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% setLoggerDetails(target = "file",
+#'  targetFile = "pipeline.out") -> pipelineObj
 #' @export
 
 setGeneric(
@@ -1417,6 +1505,10 @@ setMethod(
 #' @param object A Pipeline object
 #' @return Logger configuration as a list
 #' @family Package core functions
+#' @examples
+#' library(analysisPipelines)
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% getLoggerDetails
 #' @export
 setGeneric(
   name = "getLoggerDetails",
@@ -1496,6 +1588,11 @@ genericPipelineException <- function(error){
 #' @param filePath (optional) path where a dataset in .CSV format is present which is to be loaded
 #' @return An \code{AnalysisPipeline} or \code{StreamingAnalysisPipeline} object, optinally initialized with the data frame provided
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#'   library(analysisPipelines)
+#'   loadPipeline(path = "./pipeline.RDS")
+#' }
 #' @export
 
 loadPipeline <- function(path, input = data.frame() , filePath = ""){
@@ -1624,6 +1721,11 @@ initDfBasedOnType <- function(input, filePath){
 #' @details This function saves  the existing function registry and associated function definition loaded in the
 #' environment into a file.
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#'   library(analysisPipelines)
+#'   saveRegistry(path = "./registry.RDS")
+#' }
 #' @export
 saveRegistry <- function(path){
     tryCatch({
@@ -1643,6 +1745,11 @@ saveRegistry <- function(path){
 #' @details This function loads a function registry and associated function definition stored in an RDS file into the
 #' environment. The existing registry is overwritten with the newly loaded registry
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#'   library(analysisPipelines)
+#'   loadRegistry(path = "./registry.RDS")
+#' }
 #' @export
 loadRegistry <- function(path){
   tryCatch({

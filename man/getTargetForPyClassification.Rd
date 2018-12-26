@@ -23,3 +23,14 @@ extracts it from the R data frame, converts it to 1/0 class coding, and converts
 Typically this function can be used to extract a target variable for a classifier to be provided to a
 Python machine learning function
 }
+\examples{
+\dontrun{
+getTargetForPyClassification(dataset = iris,
+ targetVarName = "Species", positiveClass = "setosa")
+}
+}
+\seealso{
+Other R helper utilities for Python: \code{\link{getFeaturesForPyClassification}},
+  \code{\link{setPythonEnvir}}
+}
+\concept{R helper utilities for Python}
