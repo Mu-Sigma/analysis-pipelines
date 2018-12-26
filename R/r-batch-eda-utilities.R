@@ -1,6 +1,6 @@
 ######################################################################################################
 # Title: Functions for various exploratory analysis operations on data frames
-# Author: Naren Srinivasan, Sanjay
+# Author: Sanjay, Dheekshitha PS
 # Created on: June 14, 2018
 # Description: Consolidated file for all functionsto be used out of the box for exploratory analysis
 ######################################################################################################
@@ -87,10 +87,22 @@ univarCatDistPlots <- function(data, uniCol, priColor = "blue", optionalPlots = 
 #' @return Outliers plot object
 #' @family Package EDA Utilites functions
 #' @examples
+#' \dontrun{
 #' outlierPlot(data = iris, columnName = "Sepal.Length")
+#' }
 #' @export
 outlierPlot <- function(data, method = "iqr", columnName, cutoffValue = 0.05, priColor = "blue", optionalPlots = 0){
+
+
+  if(TRUE %in% unique(is.na(data[,columnName]))){
+    data <- data[-which(is.na(data[,columnName])),]
+  }
+
   if(method == "iqr"){
+    lower <- stats::quantile(data[, columnName], .25,na.rm = T) - 1.5*(stats::IQR(data[, columnName], na.rm = T))
+    upper <- stats::quantile(data[,columnName],.75,na.rm = T) + 1.5*(stats::IQR(data[,columnName],na.rm = T))
+    data$Outlier <- data[,columnName] > upper | data[,columnName] < lower
+
     outlierPlotObj <- ggplot2::ggplot(data, ggplot2::aes(x="", y = data[,columnName])) +
       ggplot2::geom_boxplot(fill = priColor,alpha=0.7) +
       ggplot2::theme_bw() +
@@ -98,10 +110,15 @@ outlierPlot <- function(data, method = "iqr", columnName, cutoffValue = 0.05, pr
 
   }
   if(method == "percentile"){
+    lower <- stats::quantile(data[,columnName],cutoffValue,na.rm = T)
+    upper <- stats::quantile(data[,columnName],(1-cutoffValue),na.rm = T)
+    data$Outlier <- data[,columnName] > upper | data[,columnName] < lower
+
     Outlier<-data$Outlier
     Value<-data[,columnName]
     outlierPlotObj <- ggplot2::ggplot(data) +
-      ggplot2::geom_histogram(ggplot2::aes(x = Value, fill = .data$Outlier),bins=30,alpha=0.7) +
+      ggplot2::geom_histogram(ggplot2::aes(x = Value, fill = as.name("Outlier")),
+                              bins=30, alpha=0.7) +
       ggplot2::scale_fill_manual(values = c(priColor, "red"),breaks=c("FALSE", "TRUE"),
                                  labels=c("Normal", "Outlier"),name = "Status") +
       ggplot2::theme_bw() +
@@ -110,12 +127,17 @@ outlierPlot <- function(data, method = "iqr", columnName, cutoffValue = 0.05, pr
 
   }
   if(method == "z_score"){
+
+    lower <- mean(data[,columnName],na.rm = T) - (cutoffValue*(stats::sd(data[,columnName],na.rm = T)))
+    upper <- mean(data[,columnName],na.rm = T) + (cutoffValue*(stats::sd(data[,columnName],na.rm = T)))
+    data$Outlier <- data[,columnName] > upper | data[,columnName] < lower
+
     data$zScore <- scale(data[,columnName],center = T, scale = T)
     Zscore<-as.vector(data$zScore)
     y<-data[,columnName]
     outlierPlotObj <-
       ggplot2::ggplot(data, ggplot2::aes(x = Zscore, y = y)) +
-      ggplot2::geom_point(ggplot2::aes(color = .data$Outlier),alpha=0.7)+
+      ggplot2::geom_point(ggplot2::aes(color = as.name("Outlier")), alpha=0.7)+
       ggplot2::scale_color_manual("Status", values = c("TRUE" = "red","FALSE" =priColor))+
       ggplot2::ylab(columnName)+
       ggplot2::theme_bw() +
@@ -148,20 +170,41 @@ outlierPlot <- function(data, method = "iqr", columnName, cutoffValue = 0.05, pr
 #' @param sizeCol the name of column used to define the size of point in plots
 #' @param priColor the primary color for the plots
 #' @param optionalPlots A Flag for optional plots
+#' @param cutoffValue A p-alue cutoff for detecting outliers
 #' @return Outliers plot
 #' @family Package EDA Utilites functions
 #' @examples
 #' \dontrun{
-#'   multiVarOutlierPlot(data = iris, depCol = "Sepal.Length",
+#' multiVarOutlierPlot(data = iris, depCol = "Sepal.Length",
 #'    indepCol = "Sepal.Width", sizeCol = "Petal.Length")
 #' }
 #' @export
-multiVarOutlierPlot <- function(data, depCol, indepCol, sizeCol, priColor = "blue", optionalPlots = 0){
+multiVarOutlierPlot <- function(data, depCol, indepCol, sizeCol, priColor = "blue", optionalPlots = 0,
+                                cutoffValue = 0.05){
+  if(TRUE %in% unique(is.na(data[,depCol])))
+  {
+    data <- data[-which(is.na(data[,depCol])== T),]
+  }
+
+  indep_form <- paste(indepCol, collapse = "+")
+  form <- paste(depCol, indep_form, sep = "~")
+  form <- stats::formula(form)
+
+  lmObject <- lm(form,data)
+  limit <- nrow(data)
+  outlierDetect <- car::outlierTest(lmObject, cutoffValue, n.max = limit)
+  outlierDetect <- data.frame(outlierDetect[c(1,2,3)])
+  outlierDetect <- round(outlierDetect, 4)
+  colnames(outlierDetect) <- c("Studentized Residuals","P-Value", "P-Value(Bonferroni Correction)")
+  data$Outlier <- ifelse(rownames(data) %in% rownames(outlierDetect),"Outlier","Normal")
+  outlierTable <- data[data$Outlier == "Outlier", ]
+  outlierTable <- cbind(outlierDetect,outlierTable)
+
   x<-data[,indepCol]
   y<-data[,depCol]
   size<-data[,sizeCol]
   outlierPlot <- ggplot2::ggplot(data, ggplot2::aes(x = x,y = y), alpha=0.6)+
-    ggplot2::geom_point(ggplot2::aes(color = .data$Outlier, size = size), alpha=0.7)+
+    ggplot2::geom_point(ggplot2::aes(color = as.name("Outlier"), size = size), alpha=0.7)+
     ggplot2::scale_color_manual("",values = c("Outlier" = "red", "Normal" = priColor))+
     ggplot2::labs(title = paste(depCol,"vs",indepCol)) +  ggplot2::theme_bw() +
     ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),legend.position = "bottom") +
@@ -342,3 +385,4 @@ getDatatype <- function(dataset){
   cat_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){CheckColumnType(x) == "character"|| CheckColumnType(x) == "factor"}))]
   return(list("numeric_cols"=numeric_cols , "cat_cols"=cat_cols))
 }
+

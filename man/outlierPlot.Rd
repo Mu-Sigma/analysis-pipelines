@@ -30,7 +30,9 @@ Outlier detection plot
 Outlier are to be identified on the selected column from the dataframe
 }
 \examples{
+\dontrun{
 outlierPlot(data = iris, columnName = "Sepal.Length")
+}
 }
 \seealso{
 Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
