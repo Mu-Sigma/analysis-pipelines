@@ -69,6 +69,12 @@ setMethod(
 #' @param object A Pipeline object
 #' @return an object of class "\code{MetaAnalysisPipeline}"
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#' #' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% univarCatDistPlots(uniCol = "Species") %>>%
+#'  exportAsMetaPipeline -> exportedMetaPipeline
+#' }
 #' @export
 setGeneric(
   name = "exportAsMetaPipeline",
@@ -136,6 +142,12 @@ setMethod(
 #' \code{createPipelineInstance} method which will instantiate an executable pipeline with the inputs set in the prototype
 #' @return An object og class \code{proto} from the 'proto' package
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% univarCatDistPlots(uniCol = "Species") %>>%
+#'  exportAsMetaPipeline %>>% getPipelinePrototype
+#' }
 #' @export
 setGeneric(
   name = "getPipelinePrototype",
@@ -167,6 +179,15 @@ setMethod(
 #' a meta-pipeline as well as an object containing the new set of values for the arguments of all the functions in the pipeline.
 #' @return A Pipeline object
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% univarCatDistPlots(uniCol = "Species") -> pipelineObj
+#' pipelineObj %>>% exportAsMetaPipeline -> exportedMetaPipeline
+#' exportedMetaPipeline %>>%
+#' createPipelineInstance(newParams = exportedMetaPipeline %>>%
+#'  getPipelinePrototype)
+#' }
 #' @export
 setGeneric(
   name = "createPipelineInstance",
@@ -289,6 +310,10 @@ setMethod(
 #' meta-pipeline
 #' @return An \code{MetaAnalysisPipeline} object
 #' @family Package core functions
+#' @examples
+#' \dontrun{
+#'  loadMetaPipeline(path = "./metaPipeline.RDS")
+#' }
 #' @export
 loadMetaPipeline <- function(path){
   tryCatch({

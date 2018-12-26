@@ -20,7 +20,14 @@ extracts them from the R data frame as a matrix and converts them to the equival
 
 Typically this function can be used when providing a feature matrix to a Python machine learning function
 }
+\examples{
+\dontrun{
+ getFeaturesForPyClassification(dataset = iris,
+ featureNames = c("Sepal.Length", "Sepal.Width"))
+}
+}
 \seealso{
-Other R helper utilities for Python: \code{\link{setPythonEnvir}}
+Other R helper utilities for Python: \code{\link{getTargetForPyClassification}},
+  \code{\link{setPythonEnvir}}
 }
 \concept{R helper utilities for Python}

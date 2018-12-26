@@ -29,6 +29,11 @@ Assigns the input to the pipeline for an  \code{AnalysisPipeline} or \code{Strea
 This method is implemented on the base class as it is a shared functionality types of Analysis Pipelines
 which extend this class
 }
+\examples{
+  library(analysisPipelines)
+  pipelineObj <- AnalysisPipeline()
+  pipelineObj \%>>\% setInput(input = iris) -> pipelineObj
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

@@ -17,6 +17,9 @@ Correlation Matrix graph
 \description{
 A correlation matrix is created and plotted across all the columns in the dataset
 }
+\examples{
+correlationMatPlot(dataset = iris)
+}
 \seealso{
 Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{bivarPlots}}, \code{\link{getDatatype}},

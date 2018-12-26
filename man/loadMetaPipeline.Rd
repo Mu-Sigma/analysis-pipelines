@@ -22,6 +22,11 @@ to an object in the environment.
 Note - When a meta-pipeline is loaded, the existing registry is overwritten with the registry saved with the
 meta-pipeline
 }
+\examples{
+\dontrun{
+ loadMetaPipeline(path = "./metaPipeline.RDS")
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

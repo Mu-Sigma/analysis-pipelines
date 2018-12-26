@@ -1,9 +1,8 @@
 ######################################################################################################
-# Title: Functions for various EDA operations on data frames
+# Title: Functions for various exploratory analysis operations on data frames
 # Author: Naren Srinivasan, Sanjay
 # Created on: June 14, 2018
-# Description: Consolidated file for all functions
-#                to be used for EDA out of the box
+# Description: Consolidated file for all functionsto be used out of the box for exploratory analysis
 ######################################################################################################
 
 
@@ -17,6 +16,8 @@
 #' @param columns the names of columns to be ignored from dataframe object
 #' @return Updated dataframe object
 #' @family Package EDA Utilites functions
+#' @examples
+#' ignoreCols(data = iris, columns = "Species")
 #' @export
 ignoreCols <- function(data, columns){
   tryCatch({
@@ -43,8 +44,10 @@ ignoreCols <- function(data, columns){
 #' @param optionalPlots A Flag for optional plots
 #' @return A univariate categoric distribution plot
 #' @family Package EDA Utilites functions
+#' @examples
+#' univarCatDistPlots(data = iris, uniCol = "Species")
 #' @export
-univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
+univarCatDistPlots <- function(data, uniCol, priColor = "blue", optionalPlots = 0){
   levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
   data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
   data <- data %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = dplyr::n())
@@ -83,8 +86,10 @@ univarCatDistPlots <- function(data, uniCol, priColor,optionalPlots){
 #' @param optionalPlots A Flag for optional plots
 #' @return Outliers plot object
 #' @family Package EDA Utilites functions
+#' @examples
+#' outlierPlot(data = iris, columnName = "Sepal.Length")
 #' @export
-outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlots){
+outlierPlot <- function(data, method = "iqr", columnName, cutoffValue = 0.05, priColor = "blue", optionalPlots = 0){
   if(method == "iqr"){
     outlierPlotObj <- ggplot2::ggplot(data, ggplot2::aes(x="", y = data[,columnName])) +
       ggplot2::geom_boxplot(fill = priColor,alpha=0.7) +
@@ -145,13 +150,18 @@ outlierPlot <- function(data,method,columnName,cutoffValue, priColor,optionalPlo
 #' @param optionalPlots A Flag for optional plots
 #' @return Outliers plot
 #' @family Package EDA Utilites functions
+#' @examples
+#' \dontrun{
+#'   multiVarOutlierPlot(data = iris, depCol = "Sepal.Length",
+#'    indepCol = "Sepal.Width", sizeCol = "Petal.Length")
+#' }
 #' @export
-multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalPlots){
+multiVarOutlierPlot <- function(data, depCol, indepCol, sizeCol, priColor = "blue", optionalPlots = 0){
   x<-data[,indepCol]
   y<-data[,depCol]
   size<-data[,sizeCol]
-  outlierPlot <- ggplot2::ggplot(data,ggplot2::aes(x = x,y = y),alpha=0.6)+
-    ggplot2::geom_point(ggplot2::aes(color = .data$Outlier, size = size),alpha=0.7)+
+  outlierPlot <- ggplot2::ggplot(data, ggplot2::aes(x = x,y = y), alpha=0.6)+
+    ggplot2::geom_point(ggplot2::aes(color = .data$Outlier, size = size), alpha=0.7)+
     ggplot2::scale_color_manual("",values = c("Outlier" = "red", "Normal" = priColor))+
     ggplot2::labs(title = paste(depCol,"vs",indepCol)) +  ggplot2::theme_bw() +
     ggplot2::theme(panel.border=ggplot2::element_rect(size=0.1),panel.grid.minor.x=ggplot2::element_blank(),legend.position = "bottom") +
@@ -178,6 +188,9 @@ multiVarOutlierPlot <- function(data,depCol,indepCol,sizeCol, priColor,optionalP
 #' @param secColor A secondary color for the plots
 #' @return Bivariate plot
 #' @family Package EDA Utilites functions
+#' @examples
+#' bivarPlots(dataset = iris, select_var_name_1 = "Sepal.Length",
+#'  select_var_name_2 = "Sepal.Width")
 #' @export
 bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor = "blue", secColor= "black") {
 
@@ -265,6 +278,8 @@ bivarPlots <- function(dataset, select_var_name_1, select_var_name_2, priColor =
 #' @param methodused methods to be used for computing correlation
 #' @return Correlation Matrix graph
 #' @family Package EDA Utilites functions
+#' @examples
+#' correlationMatPlot(dataset = iris)
 #' @export
 correlationMatPlot <- function(dataset, methodused = "everything"){
   numeric_cols <- getDatatype(dataset)['numeric_cols']
@@ -301,6 +316,8 @@ correlationMatPlot <- function(dataset, methodused = "everything"){
 #' @param dataVector a data vector of a column
 #' @return column Type
 #' @family Package EDA Utilites functions
+#' @examples
+#' CheckColumnType(iris$Sepal.Length)
 #' @export
 CheckColumnType <- function(dataVector) {
   #Check if the column type is "numeric" or "character" & decide type accordDingly
@@ -318,6 +335,7 @@ CheckColumnType <- function(dataVector) {
 #' @param dataset a dataset which needs to be loaded
 #' @return list with \code{numeric_cols} and \code{cat_cols}
 #' @family Package EDA Utilites functions
+#' @examples getDatatype(iris)
 #' @export
 getDatatype <- function(dataset){
   numeric_cols <- colnames(dataset)[unlist(sapply(dataset,FUN = function(x){ CheckColumnType(x) == "numeric"}))]

@@ -18,3 +18,7 @@ Obtains the dependency term from the formula
 \details{
 This is a helper function to extract the terms from a formula
 }
+\examples{
+library(analysisPipelines)
+getTerm(y ~ x)
+}

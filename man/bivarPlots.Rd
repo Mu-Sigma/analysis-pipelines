@@ -27,6 +27,10 @@ Bi-Variate Plot
 \details{
 A bivariate distribution graph on the selected columns from the dataframe.Selected two columns are on two axis' and a plot is generated
 }
+\examples{
+bivarPlots(dataset = iris, select_var_name_1 = "Sepal.Length",
+ select_var_name_2 = "Sepal.Width")
+}
 \seealso{
 Other Package EDA Utilites functions: \code{\link{CheckColumnType}},
   \code{\link{correlationMatPlot}},

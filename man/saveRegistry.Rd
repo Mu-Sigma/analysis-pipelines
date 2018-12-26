@@ -16,6 +16,12 @@ Saves the registry to the file system
 This function saves  the existing function registry and associated function definition loaded in the
 environment into a file.
 }
+\examples{
+\dontrun{
+  library(analysisPipelines)
+  saveRegistry(path = "./registry.RDS")
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

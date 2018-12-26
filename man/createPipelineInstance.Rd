@@ -28,6 +28,16 @@ Create a Pipeline object from a meta-pipeline
 This method instantiates a Pipeline object (both \code{AnalysisPipeline} and \code{StreamingAnalysisPipeline}) from
 a meta-pipeline as well as an object containing the new set of values for the arguments of all the functions in the pipeline.
 }
+\examples{
+\dontrun{
+pipelineObj <- AnalysisPipeline(input = iris)
+pipelineObj \%>>\% univarCatDistPlots(uniCol = "Species") -> pipelineObj
+pipelineObj \%>>\% exportAsMetaPipeline -> exportedMetaPipeline
+exportedMetaPipeline \%>>\%
+createPipelineInstance(newParams = exportedMetaPipeline \%>>\%
+ getPipelinePrototype)
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

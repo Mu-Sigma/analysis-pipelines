@@ -4,7 +4,7 @@
 \alias{univarCatDistPlots}
 \title{Univariate Categoric Distribution}
 \usage{
-univarCatDistPlots(data, uniCol, priColor, optionalPlots)
+univarCatDistPlots(data, uniCol, priColor = "blue", optionalPlots = 0)
 }
 \arguments{
 \item{data}{the dataset where the column on which the plot is to be generated is present}
@@ -23,6 +23,9 @@ Univariate Categoric Distribution
 }
 \details{
 A univariate distribution graph on the selected categorical columns from the dataframe
+}
+\examples{
+univarCatDistPlots(data = iris, uniCol = "Species")
 }
 \seealso{
 Other Package EDA Utilites functions: \code{\link{CheckColumnType}},

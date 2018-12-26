@@ -11,6 +11,14 @@
 #' @details Loads the SparkR package and intializes a Spark session from R
 #' @param ... Arguments to sparkR.session
 #' @family Spark utilities
+#' @examples
+#' \dontrun{
+#' sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
+#' sparkMaster <- "local[1]"
+#' sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
+#' sparkRSessionCreateIfNotPresent(master = sparkMaster,
+#'  sparkPackages = sparkPackages)
+#' }
 #' @export
 
 sparkRSessionCreateIfNotPresent <- function(...){

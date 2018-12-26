@@ -38,6 +38,16 @@ The specified operation along with the heading and engine details is stored in t
 If the function already exists in the registry, registration will be skipped. In order to change the definition, the function needs
 to be reassigned in the Global Environment and then the \code{registerFunction} called again.
 }
+\examples{
+\dontrun{
+  library(analysisPipelines)
+  getNumRows <- function(dataset){
+   return(nrow(dataset))
+  }
+
+  registerFunction("getNumRows")
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

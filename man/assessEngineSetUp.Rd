@@ -26,6 +26,14 @@ Assesses whether engines required for executing functions in an \code{AnalysisPi
 
 This method is implemented on the base class as it is a shared functionality across Pipeline objects
 }
+\examples{
+\dontrun{
+library(analysisPipelines)
+pipelineObj <- AnalysisPipeline(input = iris)
+pipelineObj \%>>\% univarCatDistPlots(uniCol = "Species", priColor = "blue",
+ optionalPlots = 0) \%>>\% assessEngineSetUp
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

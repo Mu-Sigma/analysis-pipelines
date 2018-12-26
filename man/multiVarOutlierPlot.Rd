@@ -4,8 +4,8 @@
 \alias{multiVarOutlierPlot}
 \title{Multi-Variate Outlier Plot}
 \usage{
-multiVarOutlierPlot(data, depCol, indepCol, sizeCol, priColor,
-  optionalPlots)
+multiVarOutlierPlot(data, depCol, indepCol, sizeCol, priColor = "blue",
+  optionalPlots = 0)
 }
 \arguments{
 \item{data}{the dataframe that needs to be loaded}
@@ -28,6 +28,12 @@ Multi-Variate Outlier Plot
 }
 \details{
 Multivaraite outlier plot using the selected columns from the dataframe
+}
+\examples{
+\dontrun{
+  multiVarOutlierPlot(data = iris, depCol = "Sepal.Length",
+   indepCol = "Sepal.Width", sizeCol = "Petal.Length")
+}
 }
 \seealso{
 Other Package EDA Utilites functions: \code{\link{CheckColumnType}},

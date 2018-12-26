@@ -6,6 +6,10 @@
 #' @param pathOrEnvirName Name of the environment for Anaconda and Virtual environments,
 #' or the Python path when type is 'python'
 #' @family R helper utilities for Python
+#' @examples
+#' \dontrun{
+#' setPythonEnvir()
+#' }
 #' @export
 setPythonEnvir <- function(type = 'conda', pathOrEnvirName = 'base'){
   tryCatch({
@@ -38,6 +42,11 @@ setPythonEnvir <- function(type = 'conda', pathOrEnvirName = 'base'){
 #' @param dataset an R data frame
 #' @param featureNames Column names to be extracted from the R data frames. A character vector.
 #' @family R helper utilities for Python
+#' @examples
+#' \dontrun{
+#'  getFeaturesForPyClassification(dataset = iris,
+#'  featureNames = c("Sepal.Length", "Sepal.Width"))
+#' }
 #' @export
 getFeaturesForPyClassification <- function(dataset, featureNames){
   dataset %>% dplyr::select(!!featureNames) %>% as.matrix %>% reticulate::r_to_py() -> featureMatrix
@@ -53,6 +62,12 @@ getFeaturesForPyClassification <- function(dataset, featureNames){
 #' extracts it from the R data frame, converts it to 1/0 class coding, and converts it to a Python array
 #' @details Typically this function can be used to extract a target variable for a classifier to be provided to a
 #' Python machine learning function
+#' @family R helper utilities for Python
+#' @examples
+#' \dontrun{
+#' getTargetForPyClassification(dataset = iris,
+#'  targetVarName = "Species", positiveClass = "setosa")
+#' }
 #' @export
 getTargetForPyClassification <- function(dataset, targetVarName, positiveClass){
   dataset %>% dplyr::mutate(target = ifelse(!!rlang::sym(targetVarName) == !!(positiveClass) , 1, 0)) %>%     dplyr::select(target) %>%

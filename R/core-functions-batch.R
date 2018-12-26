@@ -549,6 +549,12 @@ setMethod(
 #' @param path path on the file system, where the generated html report should be stored
 #' @return Updated \code{AnalysisPipeline} object
 #' @family Package core functions for batch/one-time analyses
+#' @examples
+#' \dontrun{
+#' pipelineObj <- AnalysisPipeline(input = iris)
+#' pipelineObj %>>% univarCatDistPlots(uniCol = "Species", storeOutput = T) -> pipelineObj
+#' pipelineObj %>>% generateReport(path = ".")
+#' }
 #' @export
 
 setGeneric(

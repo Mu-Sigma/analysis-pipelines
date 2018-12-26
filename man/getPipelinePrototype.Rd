@@ -25,6 +25,13 @@ Functions in the pipeline can be accessed easily by using the '$' operator, and 
 be accessed the same way. These can be accessed and set to new values. This pipeline prototype can then be passed to the
 \code{createPipelineInstance} method which will instantiate an executable pipeline with the inputs set in the prototype
 }
+\examples{
+\dontrun{
+pipelineObj <- AnalysisPipeline(input = iris)
+pipelineObj \%>>\% univarCatDistPlots(uniCol = "Species") \%>>\%
+ exportAsMetaPipeline \%>>\% getPipelinePrototype
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

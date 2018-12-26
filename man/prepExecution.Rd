@@ -23,6 +23,15 @@ Prepare the pipleline for execution
 The pipeline is prepared for execution by identifying the graph of the pipeline as well as its topological ordering,
 and dependency map in order to prepare for execution
 }
+\examples{
+\dontrun{
+library(analysisPipelines)
+pipelineObj <- AnalysisPipeline(input = iris)
+pipelineObj \%>>\% univarCatDistPlots(uniCol = "Species",
+ priColor = "blue", optionalPlots = 0, storeOutput = T) \%>>\%
+prepExecution -> pipelineObj
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

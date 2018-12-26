@@ -12,6 +12,12 @@ Loading the registry of predefined functions
 \details{
 Loads the registry of predefined functions
 }
+\examples{
+\dontrun{
+  library(analysisPipelines)
+  loadPredefinedFunctionRegistry()
+}
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},

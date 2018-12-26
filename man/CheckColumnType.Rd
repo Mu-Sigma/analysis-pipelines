@@ -18,6 +18,9 @@ Check for type of column
 \details{
 Checking for type of columns in the datavector
 }
+\examples{
+CheckColumnType(iris$Sepal.Length)
+}
 \seealso{
 Other Package EDA Utilites functions: \code{\link{bivarPlots}},
   \code{\link{correlationMatPlot}},

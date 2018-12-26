@@ -15,6 +15,9 @@ Obtains the function registry
 \details{
 Obtains the function registry as a tibble, including both predefined and user defined functions
 }
+\examples{
+getRegistry()
+}
 \seealso{
 Other Package core functions: \code{\link{BaseAnalysisPipeline-class}},
   \code{\link{MetaAnalysisPipeline-class}},
