@@ -95,7 +95,7 @@ Users can define their own functions and use it as a part of the pipeline. These
 
 ```{r}
 
-# Function to convert datatype json struct to colums
+# Function to convert datatype json struct to columns
 convertStructToDf <- function(streamObj) {
   streamObj <- SparkR::select(streamObj,list(getField(streamObj$`jsontostructs(value)`,"bannerId"),
                                    getField(streamObj$`jsontostructs(value)`,"mobile"),
@@ -131,7 +131,7 @@ castDfColumns <- function(streamObj) {
   return (streamObj)
 }
 
-# Function to convert datatype json struct to colums
+# Function to convert datatype json struct to columns
 convertDfToKafkaKeyValuePairs <- function (streamObj, kafkaKey) {
   streamObj <- SparkR::toJSON(streamObj)
   streamObj$key <- kafkaKey
