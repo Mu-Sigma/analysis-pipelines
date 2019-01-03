@@ -16,7 +16,7 @@
                                 heading = c("Univariate Distribution Categorical"),
                                 engine = c("r"),
                                 exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
-                                isDataFunction = T,
+                                isDataFunction = TRUE,
                                 firstArgClass = "",
                                 stringsAsFactors = F)
 
@@ -25,7 +25,7 @@
                                    # outAsIn = FALSE,
                                    engine = "r",
                                    exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
-                                   isDataFunction = T,
+                                   isDataFunction = TRUE,
                                    firstArgClass = "")           -> .batchPredefFunctions
 .batchPredefFunctions %>>% dplyr::add_row(functionName = "multiVarOutlierPlot",
                                    heading = "Multivariate Outlier",
@@ -37,7 +37,7 @@
                                    heading = "Ignore Columns",
                                    engine = "r",
                                    exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
-                                   isDataFunction = T,
+                                   isDataFunction = TRUE,
                                    firstArgClass = "")            -> .batchPredefFunctions
 .batchPredefFunctions %>>% dplyr::add_row(functionName = "getFeaturesForPyClassification",
                                           heading = "",
@@ -49,7 +49,7 @@
                                           heading = "",
                                           engine = "r",
                                           exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
-                                          isDataFunction = T,
+                                          isDataFunction = TRUE,
                                           firstArgClass = "")           -> .batchPredefFunctions
 
 ##################################################################################################
@@ -66,7 +66,7 @@
                                         heading = c("Cast Kafka stream to a string"),
                                         engine = c("spark-structured-streaming"),
                                        exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
-                                       isDataFunction = T,
+                                       isDataFunction = TRUE,
                                        firstArgClass = "",
                                        stringsAsFactors = F)
 
@@ -74,7 +74,7 @@
                                        heading = "Convert Kafka Value from JSON",
                                        engine = c("spark-structured-streaming"),
                                        exceptionHandlingFunction = c(as.character(substitute(genericPipelineException))),
-                                       isDataFunction = T,
+                                       isDataFunction = TRUE,
                                        firstArgClass = ""
                                        )           -> .streamingPredefFunctions
 
