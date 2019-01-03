@@ -51,9 +51,9 @@ knitr::opts_chunk$set(
 library(analysisPipelines)
 library(SparkR)
 
-## Define these variables as per the configuration of your machine. This is just an example.
+## Define these variables as per the configuration of your machine. The below example is just illustrative.
 
-sparkHome <- "/Users/naren/softwares/spark-2.3.1-bin-hadoop2.7/"
+sparkHome <- "/path/to/spark/directory/"
 sparkMaster <- "local[1]"
 sparkPackages <- c("org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1")
 # Set spark home variable if not present
@@ -81,10 +81,10 @@ This example illustrates usage of pipelines for a streaming application. In this
 Read streaming data from Kafka.
 
 ```{r}
-## Define these variables as per the configuration of your machine. This is just an example.
+## Define these variables as per the configuration of your machine. The below example is just illustrative.
 
-kafkaBootstrapServers <- "172.25.0.144:9092,172.25.0.98:9092,172.25.0.137:9092"
-consumerTopic <- "netlogo"
+kafkaBootstrapServers <- "192.168.0.256:9092,192.168.0.257:9092,192.168.0.258:9092"
+consumerTopic <- "topic1"
 streamObj <- read.stream(source = "kafka", kafka.bootstrap.servers = kafkaBootstrapServers, subscribe = consumerTopic, startingOffsets="earliest")
 printSchema(streamObj)
 ```
