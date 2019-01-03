@@ -11,7 +11,7 @@
 #' \itemize{
 #' \item devtools::install_github('apache/spark@v2.x.x', subdir='R/pkg')
 #' }
-#' The other option is to install R by running the following terminal commands if Spark has already been installed:
+#' The other option is to install SparkR by running the following terminal commands if Spark has already been installed:
 #' \itemize{
 #' \item $ export SPARK_HOME=/path/to/spark/directory
 #' \item $ cd $SPARK_HOME/R/lib/SparkR/
