@@ -555,9 +555,10 @@ setGeneric(
 {
   tryCatch({
     if(nrow(object@pipeline) == 0){
-      id = 1
+      id = "1"
     }else{
       id = max(as.numeric(object@pipeline$id)) + 1
+      id <- as.character(id)
     }
     object@pipeline %>>% dplyr::add_row(id = id,
                                  operation = operation,
