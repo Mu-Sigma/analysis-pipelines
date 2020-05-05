@@ -18,7 +18,7 @@ Description: Enables data scientists to compose pipelines of analysis which cons
     To install SparkR from Github, run the following command if you know the Spark version: 'devtools::install_github('apache/spark@v2.x.x', subdir='R/pkg')'.
     The other option is to install SparkR by running the following terminal commands if Spark has already been installed: '$ export SPARK_HOME=/path/to/spark/directory && cd $SPARK_HOME/R/lib/SparkR/ && R -e "devtools::install('.')"'.
 Depends: R (>= 3.4.0), magrittr, pipeR, methods
-Imports: ggplot2, dplyr, futile.logger, RCurl, rlang (>= 0.3.0), proto, purrr, devtools
+Imports: ggplot2, dplyr, futile.logger, RCurl, rlang (>= 0.3.0), proto, purrr
 Suggests: plotly, knitr, rmarkdown, parallel, visNetwork, rjson, DT, shiny, R.devices, corrplot, car, foreign
 Enhances: SparkR, reticulate
 BugReports: https://github.com/Mu-Sigma/analysis-pipelines/issues
