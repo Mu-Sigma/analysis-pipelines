@@ -1076,10 +1076,15 @@ computeEdges <- function(pipelineRegistryJoin){
         }, id = id)
 
         edges <- dplyr::bind_rows(edges)
+      }else{
+        edges = dplyr::tibble(from = character(),
+                              to = character())
       }
 
       return(edges)
-    }) %>>% dplyr::bind_rows(.data) -> edgesDf
+    }) -> edgesList
+
+      dplyr::bind_rows(edgesList) -> edgesDf
 
     if(nrow(edgesDf) == 0 && ncol(edgesDf) == 0){
       edgesDf <- dplyr::tibble(from = character(),
