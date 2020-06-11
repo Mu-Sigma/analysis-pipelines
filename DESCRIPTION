@@ -1,8 +1,8 @@
 Package: analysisPipelines
 Type: Package
-Date: 2020-05-05
+Date: 2020-06-12
 Title: Compose Interoperable Analysis Pipelines & Put Them in Production
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: c(
       person("Naren","Srinivasan", email = "naren1991@gmail.com", role = c("aut")),
       person("Zubin Dowlaty","",  email = "Zubin.Dowlaty@mu-sigma.com", role = c("aut")),
