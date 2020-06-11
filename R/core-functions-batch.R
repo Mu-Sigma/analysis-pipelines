@@ -240,7 +240,8 @@ checkSchema <- function(dfOld, dfNew){
 
     # Set Input data and set type to engine with max. number of operations
 
-    pipelineRegistryOrderingJoin %>>% dplyr::group_by(.data$engine) %>>% dplyr::summarise(numOp = dplyr::n()) -> engineCount
+    pipelineRegistryOrderingJoin %>>% dplyr::group_by(.data$engine) %>>%
+      dplyr::summarise(numOp = dplyr::n()) -> engineCount
 
     engineCount %>>% dplyr::filter(.data$numOp == max(.data$numOp)) -> maxEngine
 

@@ -70,6 +70,7 @@ This package contains 5 vignettes:
 
 ```{r sourcing, message=F, results='hide'}
 library(analysisPipelines)
+knitr::opts_chunk$set(warning = FALSE)
 ```
 
 ## Creating an analysisPipeline object
@@ -245,7 +246,7 @@ getRegistry()
 
 In the following pipeline, we pass the colour and column name we want to the *non-data* functions we defined, and use the output of those in subsequent functions. This can be done simply by specifying a **formula** of the form 'f*id*' against the argument to which we want to pass the output. The ID represents the ID of the function in the pipeline. For example, to pass the output of function with ID '1' as an argument to a parameter of a subsequent function, the formula '~f1' is passed to that corresponding argument.
 
-```{r}
+```{r warning=F}
 obj %>>% getColor(color = "blue") %>>% getColumnName(columnName = "Petal.Length") %>>%
       univarCatDistPlots(uniCol = "Species", priColor = ~f1, optionalPlots = 0, storeOutput = T) %>>%
       outlierPlot(method = "iqr", columnName = ~f2, cutoffValue = 0.01, priColor = ~f1 , optionalPlots = 0) -> complexPipeline
@@ -263,7 +264,7 @@ Formula semantics are provided to implement more complex pipelines, and are not 
 
 In essence, you can implement any kind of complex pipeline with formula semantics. The `outAsIn` parameter is provided as an easy-to-use shortcut for simpler linear pipelines. When a formula is specified for the first argument, the `outAsIn` parameter is rendered irrelevant.
 
-```{r}
+```{r warning=F}
 exampleObj <- AnalysisPipeline(input = iris)
 
 filterData <- function(dataset, conditionVar, val){
