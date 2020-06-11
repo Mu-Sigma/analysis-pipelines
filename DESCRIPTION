@@ -1,6 +1,6 @@
 Package: analysisPipelines
 Type: Package
-Date: 2020-06-10
+Date: 2020-06-12
 Title: Compose Interoperable Analysis Pipelines & Put Them in Production
 Version: 1.0.2
 Authors@R: c(
