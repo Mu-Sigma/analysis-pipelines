@@ -8,6 +8,7 @@
 
 #' @importFrom pipeR %>>%
 #' @importFrom rlang .data
+#' @importFrom rlang !!
 #' @importFrom graphics image
 #' @importFrom methods getClass new removeMethod setClassUnion setGeneric setOldClass
 #' @importFrom stats as.formula lm reorder terms
