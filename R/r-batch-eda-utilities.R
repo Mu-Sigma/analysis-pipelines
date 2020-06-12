@@ -50,13 +50,13 @@ ignoreCols <- function(data, columns){
 univarCatDistPlots <- function(data, uniCol, priColor = "blue", optionalPlots = 0){
   levels(data[[uniCol]]) <- c(levels(data[[uniCol]]), "NA")
   data[[uniCol]][is.na(data[[uniCol]])] <- "NA"
-  data <- data %>% dplyr::group_by_(.dots = c(uniCol)) %>% dplyr::summarise(count = dplyr::n())
-  y=data[[uniCol]]
-  data %>>% dplyr::arrange(.data$count) -> data
+  # data <- data %>% dplyr::group_by({{ uniCol }}) %>% dplyr::summarise(count = dplyr::n())
+  y <- data[[uniCol]]
+  # data %>>% dplyr::arrange(.data$count) -> data
 
   catPlot <- ggplot2::ggplot(data,
-                             ggplot2::aes_(x = as.name(uniCol), y= as.name("count"))) +
-    ggplot2::geom_bar(stat = "identity",  fill = priColor,alpha=0.7) +
+                             ggplot2::aes(x = !! rlang::sym(uniCol))) +
+    ggplot2::geom_bar(fill = priColor,alpha=0.7) +
     ggplot2::xlab(uniCol) +
     ggplot2::ylab("Frequency") + ggplot2::theme_bw() +
     ggplot2::theme(
