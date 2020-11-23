@@ -24,7 +24,7 @@ Enhances: SparkR, reticulate
 BugReports: https://github.com/Mu-Sigma/analysis-pipelines/issues
 URL: https://github.com/Mu-Sigma/analysis-pipelines
 Encoding: UTF-8
-License: Apache License 2.0
+License: MIT
 LazyLoad: yes
 LazyData: yes
 RoxygenNote: 6.1.1
